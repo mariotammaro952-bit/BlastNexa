@@ -281,6 +281,15 @@
 <div class="collect-scroll settings-scroll"><div class="collect-hero"><small>COMANDI & COMFORT</small><h2>Gioca come preferisci.</h2><p>Le preferenze rimangono sul dispositivo. Nessun account richiesto.</p></div>
 <div class="settings-list"><button id="settingSound" class="setting-row" type="button"></button><button id="settingHaptic" class="setting-row" type="button"></button><button id="settingEffects" class="setting-row" type="button"></button><button id="settingContrast" class="setting-row" type="button"></button></div>
 <button id="settingsGuide" class="settings-guide" type="button">ⓘ Guida alle regole e ai poteri</button>
+<details class="bn-privacy" id="bnMetricsPanel"><summary>📊 Test: diagnostica locale volontaria</summary>
+<p>Questi conteggi restano sul dispositivo. Nessun ID, account, analisi remota o pubblicità viene attivato.</p>
+<button type="button" id="bnMetricsToggle" class="settings-guide">Attiva diagnostica locale</button>
+<button type="button" id="bnMetricsRefresh" class="settings-guide">Aggiorna report</button>
+<textarea id="bnMetricsReport" readonly aria-label="Report locale per i tester" style="width:100%;height:150px;background:#101c38;color:#fff;border:1px solid #6889af;border-radius:8px;padding:8px;font:11px monospace;resize:vertical"></textarea>
+<button type="button" id="bnMetricsClear" class="settings-guide">Cancella dati diagnostici</button>
+<p>Le indicazioni giorno 1/giorno 7 valgono soltanto per questo dispositivo: per una retention vera servono misure aggregate e consenso adeguato.</p>
+</details>
+
 <details class="bn-privacy" aria-label="Norme sulla privacy" id="bnPrivacy">
 <summary>🔒 Norme sulla privacy</summary>
 <p><b>BlastNexa: Block Puzzle</b> · com.blastnexa.blockpuzzle · Sviluppatore: Mario Tammaro · Aggiornamento: 11 ottobre 2026.</p>
@@ -371,6 +380,42 @@ const storage={get:(key,def)=>{try{return JSON.parse(localStorage.getItem(key))?
 unlocked=Math.min(2000,Math.max(1,storage.get('blastnexa_unlocked_v041',1)));best=storage.get('blastnexa_best',0);muted=storage.get('blastnexa_muted',false);stars=storage.get('blastnexa_stars_v041',{});
 
 // v0.8: independent offline Mosaic collection and explicit user-owned color themes.
+
+// Optional, entirely offline testing diagnostics. No SDK, no requests or identifiers.
+const BN_METRICS_KEY='blastnexa_local_test_metrics_v1';
+const BNMetrics=(()=>{
+ const initial=()=>({v:1,created:localDayKey(),enabled:false,days:{},counts:{},recent:[]});
+ let state=storage.get(BN_METRICS_KEY,initial());
+ if(!state||state.v!==1||typeof state.days!=='object')state=initial();
+ function save(){storage.set(BN_METRICS_KEY,state)}
+ function enabled(){return state.enabled===true}
+ function setEnabled(v){state.enabled=Boolean(v);save();return state.enabled}
+ function record(event,details={}){
+  if(!enabled()||!['start','resume','move','win','lose','hint','export'].includes(event))return;
+  const day=localDayKey();if(!state.days[day])state.days[day]={start:0,resume:0,move:0,win:0,lose:0,hint:0};
+  state.days[day][event]=(state.days[day][event]||0)+1;
+  state.counts[event]=(state.counts[event]||0)+1;
+  const row={day,event};
+  if(typeof details.mode==='string'&&['classic','adventure','daily','mosaic','circuit'].includes(details.mode))row.mode=details.mode;
+  for(const key of ['score','level','lines'])if(Number.isSafeInteger(details[key])&&details[key]>=0)row[key]=details[key];
+  state.recent.push(row);state.recent=state.recent.slice(-60);
+  for(const old of Object.keys(state.days))if((new Date(day).getTime()-new Date(old).getTime())>30*86400000)delete state.days[old];
+  save();
+ }
+ function report(){
+  const days=Object.keys(state.days).sort(),first=days[0]||null;
+  const after=(n)=>{if(!first)return null;const dt=new Date(first+'T12:00:00');dt.setDate(dt.getDate()+n);return Object.prototype.hasOwnProperty.call(state.days,localDayKey(dt));};
+  return {version:1,source:'local-voluntary-device',periodDays:30,day1Observed:first?after(1):null,day7Observed:first?after(7):null,note:'Sono SOLO segnali di un dispositivo; non rappresentano retention D1/D7 aggregata.',counts:state.counts,days:state.days,recent:state.recent};
+ }
+ function clear(){state=initial();save()}
+ return {enabled,setEnabled,record,report,clear};
+})();
+function bnMetricsDisplay(){
+ const t=$('bnMetricsToggle'),d=$('bnMetricsReport');
+ if(t)t.textContent=BNMetrics.enabled()?'Disattiva diagnostica locale':'Attiva diagnostica locale';
+ if(d)d.value=JSON.stringify(BNMetrics.report(),null,2);
+}
+
 const BN_SESSION_KEY='blastnexa_session_v09';
 const BN_SETTINGS_KEY='blastnexa_settings_v09';
 let playerSettings=storage.get(BN_SETTINGS_KEY,{haptics:true,effects:'full',contrast:false});
@@ -420,7 +465,7 @@ function resumeSession(){
  return true;
 }
 function evalSavedAssign(key,value){switch(key){case 'score':score=value;break;case 'combo':combo=value;break;case 'pulse':pulse=value;break;case 'totalLines':totalLines=value;break;case 'totalTiles':totalTiles=value;break;case 'totalRelics':totalRelics=value;break;case 'totalLocks':totalLocks=value;break;case 'undoCharges':undoCharges=value;break;case 'drillCharges':drillCharges=value;break;case 'placedCount':placedCount=value;break;case 'trayIndex':trayIndex=value;break;case 'runBestCombo':runBestCombo=value;break;case 'dailySeed':dailySeed=value;break;}}
-function openSettings(){closeAllForGallery('settingsScreen');renderSettings();}
+function openSettings(){closeAllForGallery('settingsScreen');renderSettings();bnMetricsDisplay();}
 function renderSettings(){
  const entries=[['settingSound','♫ Audio',muted?'Disattivato':'Attivo',!muted],['settingHaptic','✥ Vibrazione',playerSettings.haptics===false?'Disattivata':'Attiva',playerSettings.haptics!==false],['settingEffects','✦ Effetti',playerSettings.effects==='lite'?'Leggeri':'Completi',playerSettings.effects!=='lite'],['settingContrast','◈ Contrasto elevato',playerSettings.contrast?'Attivo':'Disattivato',!!playerSettings.contrast]];
  for(const [id,label,txt,on] of entries)$(id).innerHTML=`<div><b>${label}</b><small>${txt}</small></div><span class="setting-switch ${on?'on':''}">${on?'ON':'OFF'}</span>`;
@@ -545,6 +590,7 @@ function scriptedTray(){
  return group.map(([shape,color])=>({shape:SHAPES[shape],color}));
 }
 function start(type='classic',lvl=1){
+ BNMetrics.record('start',{mode:type,level:lvl});
  cancelCinematicFx();
  gameSession++;mode=type;level=Math.max(1,Math.min(2000,lvl));
  score=0;combo=0;pulse=0;circuitCharged=new Set();runBestCombo=0;runStatsCommitted=false;dailyCompletedThisRun=false;totalLines=0;totalTiles=0;totalRelics=0;totalLocks=0;relics=new Set();locks=new Set();prisms=new Set();undoSnapshot=null;recentTurns=[];lastTrayReport=null;placedCount=0;undoCharges=type==='adventure'?1:3;drillCharges=type==='adventure'&&lvl>=201?1:0;selected=-1;pulseMode=false;playing=true;
@@ -635,6 +681,7 @@ function bestStrategicHint(){
  return bestHint;
 }
 function showStrategicHint(){
+ BNMetrics.record('hint',{mode,level,score});
  if(!playing||fxBusy||$('game').style.display==='none')return false;
  const h=bestStrategicHint();
  if(!h){showToast('Nessun incastro disponibile');return false;}
@@ -897,6 +944,7 @@ function showBlastFx(keys,rows,cols,cleared,earned,colors,fever=false){
 }
 function placePiece(i,x,y){
  const p=pieces[i];if(!playing||(fxBusy&&!window.__BN_TEST_FAST__)||!canPlace(p,x,y))return false;
+ BNMetrics.record('move',{mode,level,score,lines:totalLines});
  clearTimeout(hintTimer);hintTimer=null;hintPreview=null;
  undoSnapshot={board:board.map(r=>r.slice()),pieces:pieces.map(q=>q?{shape:q.shape,color:q.color}:null),score,best,combo,pulse,totalLines,totalTiles,totalRelics,totalLocks,relics:[...relics],locks:[...locks],prisms:[...prisms],moves,trayIndex,placedCount,dailySeed,runBestCombo,recentTurns:recentTurns.slice(),mosaicSnapshot:mode==='mosaic'?JSON.stringify(mosaicSaved):null};
  for(const [dx,dy]of p.shape)board[y+dy][x+dx]=p.color;
@@ -1028,6 +1076,7 @@ function showLastChance(){
    ()=>{if(drillReady&&pulseReady){$('overlay').classList.remove('on');playing=true;render();activateDrill();}else complete?win(true):lose('Nessuno dei pezzi disponibili può entrare nella griglia.');});
 }
 function lose(msg){
+ BNMetrics.record('lose',{mode,level,score,lines:totalLines});
  clearSession();playing=false;
  const dailySuccess=mode==='daily'&&completeDailyIfMet();
  commitRunStats();
@@ -1044,6 +1093,7 @@ function win(endByChoice=false){
  // The next level never unlocks merely because the goal counter reached its target.
  // A player may explicitly conclude a stuck round instead of using Nexa Pulse.
  if(!missionMet()||(!endByChoice&&adventureOutcome()!=='win'))return;
+  BNMetrics.record('win',{mode,level,score,lines:totalLines});
  clearSession();playing=false;commitRunStats();
  // Since successful rounds may use all moves, award stars for score, not remaining moves.
  const baseScore=mission.type==='score'?mission.target:mission.type==='lines'?Math.max(180,mission.target*210):mission.type==='tiles'?Math.max(180,mission.target*22):Math.max(180,mission.target*160);
@@ -1067,5 +1117,8 @@ $('undoBtn').addEventListener('click',undoMove);$('drillBtn').addEventListener('
 $('pulseBtn').addEventListener('click',()=>{if(pulse<100||!playing||fxBusy)return;selected=-1;activateBestPulse()});
 $('homeBtn').onclick=pauseGame;$('soundBtn').onclick=()=>{muted=!muted;storage.set('blastnexa_muted',muted);$('soundBtn').textContent=muted?'♪̸':'♫'};
 $('resumeGame').onclick=resumeSession;$('startCircuit').onclick=()=>start('circuit');$('openSettings').onclick=openSettings;$('settingsBack').onclick=displayMenu;$('openGuide').onclick=()=>showGuide();$('settingsGuide').onclick=()=>showGuide();for(const [id,k] of [['settingSound','sound'],['settingHaptic','haptics'],['settingEffects','effects'],['settingContrast','contrast']])$(id).onclick=()=>setPlayerSetting(k);$('openMosaics').onclick=openMosaicGallery;$('mosaicBack').onclick=displayMenu;$('openThemes').onclick=openThemeStudio;$('themeBack').onclick=displayMenu;$('startClassic').onclick=()=>start('classic');$('startAdventure').onclick=()=>openAdventureMap();$('startDaily').onclick=()=>start('daily');$('openTrophies').onclick=()=>openTrophyRoom();$('trophiesBack').onclick=()=>displayMenu();$('mapBack').onclick=()=>displayMenu();$('dialogHome').onclick=()=>mode==='adventure'?openAdventureMap():mode==='mosaic'?openMosaicGallery():displayMenu();$('soundBtn').textContent=muted?'♪̸':'♫';applyTheme(currentTheme,false);applyPlayerSettings();refreshDailyMenu();refreshResume();
+$('bnMetricsToggle').onclick=()=>{BNMetrics.setEnabled(!BNMetrics.enabled());bnMetricsDisplay();};
+$('bnMetricsRefresh').onclick=bnMetricsDisplay;
+$('bnMetricsClear').onclick=()=>{if(confirm('Eliminare tutti i dati diagnostici locali?')){BNMetrics.clear();bnMetricsDisplay()}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)storeSession();});
 </script></body></html>

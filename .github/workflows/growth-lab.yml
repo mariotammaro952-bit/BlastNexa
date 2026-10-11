@@ -1,0 +1,18 @@
+name: Growth Lab (no ads, no releases)
+on:
+  push:
+    branches: [feature/growth-lab-v1]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lab-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static privacy and gameplay checks
+        run: python3 tests/growth_lab_validation.py
+      - name: Ad pacing policy tests (no real ads)
+        run: node tests/ad_policy.test.cjs
+      - name: Verify existing 2000 levels
+        run: python3 tools/verify_release_inputs.py
