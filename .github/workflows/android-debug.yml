@@ -1,0 +1,74 @@
+name: BlastNexa APK and signed AAB
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_aab:
+        description: 'Build signed release AAB (requires four BN_* secrets)'
+        required: false
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate game and level catalog
+        run: python tools/verify_release_inputs.py
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install API 36
+        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Build debug APK
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlastNexa-v0.9-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - name: Check upload signing secrets
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_aab }}
+        env:
+          KEYSTORE_B64: ${{ secrets.BN_KEYSTORE_B64 }}
+          BN_STORE_PASSWORD: ${{ secrets.BN_STORE_PASSWORD }}
+          BN_KEY_ALIAS: ${{ secrets.BN_KEY_ALIAS }}
+          BN_KEY_PASSWORD: ${{ secrets.BN_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_B64" && test -n "$BN_STORE_PASSWORD" && test -n "$BN_KEY_ALIAS" && test -n "$BN_KEY_PASSWORD" || { echo "Missing private signing secrets"; exit 1; }
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/blastnexa-upload.jks"
+          test -s "$RUNNER_TEMP/blastnexa-upload.jks"
+      - name: Build signed AAB
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_aab }}
+        env:
+          BN_KEYSTORE_PATH: ${{ runner.temp }}/blastnexa-upload.jks
+          BN_STORE_PASSWORD: ${{ secrets.BN_STORE_PASSWORD }}
+          BN_KEY_ALIAS: ${{ secrets.BN_KEY_ALIAS }}
+          BN_KEY_PASSWORD: ${{ secrets.BN_KEY_PASSWORD }}
+        run: gradle --no-daemon --stacktrace :app:bundleRelease
+      - name: Verify AAB signature
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_aab }}
+        run: |
+          set -o pipefail
+          jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab | tee "$RUNNER_TEMP/aab-verify.txt"
+          grep -q 'jar verified.' "$RUNNER_TEMP/aab-verify.txt"
+      - name: Upload signed AAB
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_aab }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlastNexa-v0.9-SIGNED-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
