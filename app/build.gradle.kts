@@ -7,8 +7,8 @@ android {
         applicationId = "com.blastnexa.blockpuzzle"
         minSdk = 23
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.9.0"
+        versionCode = 10
+        versionName = "0.9.1"
     }
 
     val keyPath = System.getenv("BN_KEYSTORE_PATH")
