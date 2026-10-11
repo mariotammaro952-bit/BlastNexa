@@ -24,10 +24,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-      - name: Install API 36
-        run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - name: Install API 36 using preinstalled runner SDK
+        run: |
+          test -n "$ANDROID_HOME" || { echo 'ANDROID_HOME is not configured on runner'; exit 1; }
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install 'platforms;android-36' 'build-tools;35.0.0'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
