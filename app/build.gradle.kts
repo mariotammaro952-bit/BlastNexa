@@ -5,10 +5,10 @@ android {
     compileSdk = 36
     defaultConfig {
         applicationId = "com.blastnexa.blockpuzzle"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 36
-        versionCode = 11
-        versionName = "1.0.0-beta1"
+        versionCode = 12
+        versionName = "1.0.0-beta2"
     }
 
     val keyPath = System.getenv("BN_KEYSTORE_PATH")
