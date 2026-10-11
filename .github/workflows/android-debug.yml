@@ -44,6 +44,14 @@ jobs:
           name: BlastNexa-v0.9-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+      - name: Build unsigned AAB for private offline signing
+        run: gradle --no-daemon --stacktrace :app:bundleRelease
+      - name: Upload unsigned AAB (not Play-ready)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlastNexa-v0.9-UNSIGNED-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
       - name: Check upload signing secrets
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_aab }}
         env:
