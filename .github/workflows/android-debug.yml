@@ -1,7 +1,7 @@
 name: BlastNexa APK and signed AAB
 on:
   push:
-    branches: [main]
+    branches: [main, codex/admob-beta3]
   workflow_dispatch:
     inputs:
       release_aab:
@@ -18,7 +18,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Validate game and level catalog
-        run: python tools/verify_release_inputs.py
+        run: |
+          python tools/verify_release_inputs.py
+          node tools/test_ad_flow.cjs
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
@@ -41,7 +43,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: BlastNexa-v1.0-Beta-debug-apk
+          name: BlastNexa-v1.0-Beta3-AdMob-TEST-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Build unsigned AAB for private offline signing
@@ -49,7 +51,7 @@ jobs:
       - name: Upload unsigned AAB (not Play-ready)
         uses: actions/upload-artifact@v4
         with:
-          name: BlastNexa-v1.0-Beta-UNSIGNED-aab
+          name: BlastNexa-v1.0-Beta3-AdMob-TEST-UNSIGNED-aab
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
       - name: Check upload signing secrets
@@ -81,6 +83,6 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_aab }}
         uses: actions/upload-artifact@v4
         with:
-          name: BlastNexa-v1.0-Beta-SIGNED-aab
+          name: BlastNexa-v1.0-Beta3-AdMob-TEST-SIGNED-aab
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error

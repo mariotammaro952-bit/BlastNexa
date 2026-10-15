@@ -7,8 +7,9 @@ android {
         applicationId = "com.blastnexa.blockpuzzle"
         minSdk = 24
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.0.0-beta2"
+        versionCode = 13
+        versionName = "1.0.0-beta3-admob-test"
+        buildConfigField("boolean", "LIVE_ADS", "false")
     }
 
     val keyPath = System.getenv("BN_KEYSTORE_PATH")
@@ -31,8 +32,14 @@ android {
             }
         }
     }
+    buildFeatures { buildConfig = true }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+}
+
+dependencies {
+    implementation("com.google.android.libraries.ads.mobile.sdk:ads-mobile-sdk:1.5.0")
+    implementation("com.google.android.ump:user-messaging-platform:4.0.0")
 }

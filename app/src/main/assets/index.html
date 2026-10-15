@@ -281,15 +281,16 @@
 <div class="collect-scroll settings-scroll"><div class="collect-hero"><small>COMANDI & COMFORT</small><h2>Gioca come preferisci.</h2><p>Le preferenze rimangono sul dispositivo. Nessun account richiesto.</p></div>
 <div class="settings-list"><button id="settingSound" class="setting-row" type="button"></button><button id="settingHaptic" class="setting-row" type="button"></button><button id="settingEffects" class="setting-row" type="button"></button><button id="settingContrast" class="setting-row" type="button"></button></div>
 <button id="settingsGuide" class="settings-guide" type="button">ⓘ Guida alle regole e ai poteri</button>
+<button id="adPrivacyOptions" class="setting-row" style="display:none" onclick="window.BlastNexaAds?.privacyOptions()">Preferenze privacy annunci</button>
 <details class="bn-privacy" aria-label="Norme sulla privacy" id="bnPrivacy">
 <summary>🔒 Norme sulla privacy</summary>
-<p><b>BlastNexa: Block Puzzle</b> · com.blastnexa.blockpuzzle · Sviluppatore: Mario Tammaro · Aggiornamento: 11 ottobre 2026.</p>
+<p><b>BlastNexa: Block Puzzle</b> · com.blastnexa.blockpuzzle · Sviluppatore: Mario Tammaro · Aggiornamento: 15 ottobre 2026 · Beta 3 con annunci di test.</p>
 <h3>Dati usati</h3>
-<p>BlastNexa non richiede un account, non raccoglie dati personali e non invia informazioni ai server dello sviluppatore. Punteggi, livelli, statistiche, mosaici, stato della partita e preferenze sono memorizzati solo sul dispositivo.</p>
+<p>BlastNexa non richiede un account e non invia i progressi ai server dello sviluppatore. Punteggi, livelli, statistiche, mosaici, stato della partita e preferenze sono memorizzati solo sul dispositivo.</p>
 <h3>Autorizzazioni</h3>
-<p>Il gioco funziona offline e non richiede Internet, fotocamera, microfono, posizione o contatti. Il feedback di vibrazione è facoltativo.</p>
+<p>Le partite funzionano anche offline. Internet è utilizzato dagli SDK Google per annunci e gestione delle preferenze privacy. Non sono richiesti fotocamera, microfono, posizione GPS o contatti. Il feedback di vibrazione è facoltativo.</p>
 <h3>Terze parti</h3>
-<p>La versione 1.0 Beta non include pubblicità, analytics, account né servizi cloud. Non condivide dati di gioco con terze parti. Google Play e Android possono gestire autonomamente dati tecnici dell'installazione secondo le rispettive informative.</p>
+<p>La Beta 3 integra Google Mobile Ads e User Messaging Platform. Gli SDK possono trattare indirizzo IP, identificativi del dispositivo, interazioni pubblicitarie e dati diagnostici, secondo la configurazione e le scelte privacy. Questa beta usa unità pubblicitarie di test. Le preferenze annunci sono modificabili dal pulsante nelle impostazioni quando richiesto. Informazioni Google: policies.google.com/privacy e policies.google.com/technologies/ads.</p>
 <h3>Conservazione e cancellazione</h3>
 <p>I dati restano nell'archiviazione privata locale dell'app, senza backup automatico Android. Per cancellarli: Impostazioni Android → App → BlastNexa → Spazio di archiviazione → Cancella dati, oppure disinstalla l'app.</p>
 <h3>Minori e modifiche</h3>
@@ -366,6 +367,7 @@ function renderTrophyRoom(){const st=trophyStats(),d=dailyRecord(),earned=trophy
 }
 function refreshDailyMenu(){const key=localDayKey();$('dailyMenuLabel').textContent=dailyCompleted(key)?`✓ ${key} · completata — rigioca per il record`:`${key} · ${dailyObjective(key).target} punti + 2 linee`;}
 
+let rewardedContinueUsed=false;
 let hintTimer=null, hintPreview=null, board=[],pieces=[],recentTurns=[],lastTrayReport=null,placedCount=0,score=0,best=0,combo=0,pulse=0,totalLines=0,totalTiles=0,totalRelics=0,relics=new Set(),locks=new Set(),prisms=new Set(),totalLocks=0,undoSnapshot=null,undoCharges=0,drillCharges=0,levelSpec=null,trayIndex=0,mapWorld=0,mapPage=0,mission=null,stars={},mode='classic',level=1,unlocked=1,moves=0,goal=0,drag=null,selected=-1,pulseMode=false,playing=false,muted=false,toastTimer=null,afterDropBlock=false,ac=null,gameSession=0,fxBusy=false,fxEpoch=0,fxEndTimer=null;
 const storage={get:(key,def)=>{try{return JSON.parse(localStorage.getItem(key))??def}catch{return def}},set:(key,v)=>{try{localStorage.setItem(key,JSON.stringify(v))}catch{}}};
 unlocked=Math.min(2000,Math.max(1,storage.get('blastnexa_unlocked_v041',1)));best=storage.get('blastnexa_best',0);muted=storage.get('blastnexa_muted',false);stars=storage.get('blastnexa_stars_v041',{});
@@ -401,7 +403,7 @@ function deserializeUndo(u){
 }
 function storeSession(){
  if(!playing)return;
- const snapshot={v:9,mode,level,activeMosaic,board:board.map(row=>row.slice()),pieces:pieces.map(p=>p?{id:SHAPES.indexOf(p.shape),color:p.color}:null),score,combo,pulse,totalLines,totalTiles,totalRelics,totalLocks,relics:[...relics],locks:[...locks],prisms:[...prisms],undoCharges,drillCharges,placedCount,trayIndex,runBestCombo,recentTurns:recentTurns.slice(),dailySeedDate,dailySeed,circuitCharged:[...circuitCharged],undo:serializeUndo(),updatedAt:Date.now()};
+ const snapshot={v:9,rewardedContinueUsed,mode,level,activeMosaic,board:board.map(row=>row.slice()),pieces:pieces.map(p=>p?{id:SHAPES.indexOf(p.shape),color:p.color}:null),score,combo,pulse,totalLines,totalTiles,totalRelics,totalLocks,relics:[...relics],locks:[...locks],prisms:[...prisms],undoCharges,drillCharges,placedCount,trayIndex,runBestCombo,recentTurns:recentTurns.slice(),dailySeedDate,dailySeed,circuitCharged:[...circuitCharged],undo:serializeUndo(),updatedAt:Date.now()};
  if(snapshot.pieces.some(p=>p?.id===-1))return;
  storage.set(BN_SESSION_KEY,snapshot);
 }
@@ -411,6 +413,7 @@ function resumeSession(){
  const s=safeStoredSession();if(!s){clearSession();refreshResume();showToast('Nessuna partita da riprendere');return false;}
  if(s.mode==='mosaic')activeMosaic=Number.isInteger(s.activeMosaic)?Math.min(3,Math.max(0,s.activeMosaic)):0;
  start(s.mode,s.level); // Build mode-specific level info, then hydrate only validated data.
+ rewardedContinueUsed=s.rewardedContinueUsed===true;
  board=s.board.map(row=>row.slice());pieces=s.pieces.map(p=>p?{shape:SHAPES[p.id],color:p.color}:null);
  for(const key of ['score','combo','pulse','totalLines','totalTiles','totalRelics','totalLocks','undoCharges','drillCharges','placedCount','trayIndex','runBestCombo','dailySeed']){if(Number.isFinite(s[key]))evalSavedAssign(key,s[key]);}
  recentTurns=Array.isArray(s.recentTurns)?s.recentTurns.filter(v=>Number.isInteger(v)&&v>=0&&v<=16).slice(-8):[];
@@ -444,6 +447,7 @@ function pauseGame(){
  dialog('Ⅱ','PARTITA IN PAUSA','Il tuo progresso è salvato sul dispositivo. Puoi riprendere anche dopo aver chiuso il gioco.','CONTINUA A GIOCARE',back,'TORNA AL MENU',()=>{displayMenu();refreshResume();});
 }
 function backAction(){
+ if(bnPendingAd)return 'handled';
  if($('overlay').classList.contains('on')){if(!playing&&$('dialogTitle').textContent!=='PARTITA IN PAUSA'&&$('dialogTitle').textContent!=='COME SI GIOCA'){displayMenu();return 'handled';}$('overlay').classList.remove('on');if($('game').style.display!=='none'){playing=true;render();}return 'handled';}
  if($('game').style.display!=='none'){pauseGame();return 'handled';}
  if(['adventureMap','mosaicGallery','themeStudio','trophiesScreen','settingsScreen'].some(k=>$(k).style.display!=='none')){displayMenu();return 'handled';}
@@ -545,6 +549,7 @@ function scriptedTray(){
  return group.map(([shape,color])=>({shape:SHAPES[shape],color}));
 }
 function start(type='classic',lvl=1){
+ rewardedContinueUsed=false;
  cancelCinematicFx();
  gameSession++;mode=type;level=Math.max(1,Math.min(2000,lvl));
  score=0;combo=0;pulse=0;circuitCharged=new Set();runBestCombo=0;runStatsCommitted=false;dailyCompletedThisRun=false;totalLines=0;totalTiles=0;totalRelics=0;totalLocks=0;relics=new Set();locks=new Set();prisms=new Set();undoSnapshot=null;recentTurns=[];lastTrayReport=null;placedCount=0;undoCharges=type==='adventure'?1:3;drillCharges=type==='adventure'&&lvl>=201?1:0;selected=-1;pulseMode=false;playing=true;
@@ -1027,18 +1032,49 @@ function showLastChance(){
    drillReady&&pulseReady?'🛠 USA TRAPANO':(complete?'CONCLUDI LIVELLO':'TERMINA PARTITA'),
    ()=>{if(drillReady&&pulseReady){$('overlay').classList.remove('on');playing=true;render();activateDrill();}else complete?win(true):lose('Nessuno dei pezzi disponibili può entrare nella griglia.');});
 }
-function lose(msg){
+let bnAdToken=0,bnPendingAd=null;
+function bnRequestAd(kind,callback){
+ if(bnPendingAd)return;
+ if(!window.BlastNexaAds){callback(false);return;}
+ const token=++bnAdToken;
+ bnPendingAd={token,session:gameSession,callback};
+ $('dialogPrimary').disabled=true;$('dialogSecondary').disabled=true;
+ try{window.BlastNexaAds[kind](token);}catch{window.BlastNexaAdResult(token,false);}
+}
+window.BlastNexaAdResult=(token,earned)=>{
+ if(!bnPendingAd||bnPendingAd.token!==token)return;
+ const pending=bnPendingAd;bnPendingAd=null;
+ $('dialogPrimary').disabled=false;$('dialogSecondary').disabled=false;
+ if(pending.session===gameSession)pending.callback(earned===true);
+};
+function bnTransition(action){bnRequestAd('betweenRounds',()=>action());}
+window.BlastNexaPrivacyStatus=required=>{const b=$('adPrivacyOptions');if(b)b.style.display=required?'block':'none';};
+function lose(msg,skipReward=false){
+ if(mode==='classic'&&!rewardedContinueUsed&&!skipReward&&window.BlastNexaAds){
+  playing=false;
+  dialog('▶','VUOI CONTINUARE?', 'Guarda un annuncio per liberare il quadrato centrale 3×3 e ricevere tre pezzi singoli. Una volta per partita.',
+   'GUARDA E CONTINUA',()=>bnRequestAd('rewarded',earned=>{
+    if(!earned){showToast('Annuncio non completato o non disponibile');return;}
+    rewardedContinueUsed=true;
+    for(let y=2;y<5;y++)for(let x=2;x<5;x++)board[y][x]=-1;
+    pieces=Array.from({length:3},()=>({shape:SHAPES.find(shape=>shape.length===1),color:0}));
+    undoSnapshot=null;selected=-1;combo=0;playing=true;
+    $('overlay').classList.remove('on');render();storeSession();
+   }), 'TERMINA PARTITA',()=>lose(msg,true));
+  return;
+ }
+
  clearSession();playing=false;
  const dailySuccess=mode==='daily'&&completeDailyIfMet();
  commitRunStats();
- if(mode==='circuit'){const success=circuitCharged.size===4;const top=storage.get('blastnexa_circuit_best_v09',0);if(success&&score>top)storage.set('blastnexa_circuit_best_v09',score);dialog(success?'⚡':'◆',success?'CIRCUITO COMPLETATO!':'CIRCUITO NON COMPLETO',`Hai caricato <b>${circuitCharged.size}/4 nodi</b> e totalizzato <b>${score.toLocaleString('it-IT')} punti</b>.`,'RIGIOCA CIRCUIT',()=>start('circuit'),'TORNA AL MENU',displayMenu);return;}
- if(mode==='mosaic'){const n=mosaicCount(activeMosaic);dialog('🧩','MOSAICO IN PROGRESSO',`Hai rivelato <b>${n}/64 frammenti</b> di ${MOSAICS[activeMosaic].name}.<br>Il progresso resta salvato: puoi riprendere quando vuoi.`,'RIGIOCA',()=>start('mosaic'), 'TORNA ALLA COLLEZIONE',()=>openMosaicGallery());return;}
+ if(mode==='circuit'){const success=circuitCharged.size===4;const top=storage.get('blastnexa_circuit_best_v09',0);if(success&&score>top)storage.set('blastnexa_circuit_best_v09',score);dialog(success?'⚡':'◆',success?'CIRCUITO COMPLETATO!':'CIRCUITO NON COMPLETO',`Hai caricato <b>${circuitCharged.size}/4 nodi</b> e totalizzato <b>${score.toLocaleString('it-IT')} punti</b>.`,'RIGIOCA CIRCUIT',()=>bnTransition(()=>start('circuit')),'TORNA AL MENU',displayMenu);return;}
+ if(mode==='mosaic'){const n=mosaicCount(activeMosaic);dialog('🧩','MOSAICO IN PROGRESSO',`Hai rivelato <b>${n}/64 frammenti</b> di ${MOSAICS[activeMosaic].name}.<br>Il progresso resta salvato: puoi riprendere quando vuoi.`,'RIGIOCA',()=>bnTransition(()=>start('mosaic')), 'TORNA ALLA COLLEZIONE',()=>openMosaicGallery());return;}
  if(mode==='daily'){
   const text=`Punti: <b>${score.toLocaleString('it-IT')}</b> · Linee: <b>${totalLines}</b>.<br>${dailySuccess?'Sfida del giorno completata! 🏅':'Obiettivo non raggiunto. Puoi riprovare oggi.'}`;
-  dialog(dailySuccess?'☀':'◆',dailySuccess?'SFIDA COMPLETATA!':'SFIDA TERMINATA',text,'RIGIOCA LA SFIDA',()=>start('daily'));
+  dialog(dailySuccess?'☀':'◆',dailySuccess?'SFIDA COMPLETATA!':'SFIDA TERMINATA',text,'RIGIOCA LA SFIDA',()=>bnTransition(()=>start('daily')));
   return;
  }
- dialog('◆','PARTITA FINITA',`${msg}<br><br>Punteggio finale: <b>${score.toLocaleString('it-IT')}</b>`,'RIPROVA',()=>start(mode,level));
+ dialog('◆','PARTITA FINITA',`${msg}<br><br>Punteggio finale: <b>${score.toLocaleString('it-IT')}</b>`,'RIPROVA',()=>bnTransition(()=>start(mode,level)));
 }
 function win(endByChoice=false){
  // The next level never unlocks merely because the goal counter reached its target.
@@ -1050,7 +1086,7 @@ function win(endByChoice=false){
  const awarded=1+Number(score>=baseScore*1.5)+Number(score>=baseScore*2.3);
  stars[level]=Math.max(stars[level]||0,awarded);storage.set('blastnexa_stars_v041',stars);
  unlocked=Math.max(unlocked,Math.min(2000,level+1));storage.set('blastnexa_unlocked_v041',unlocked);
- dialog('🏆','LIVELLO SUPERATO!',`<span style="font-size:30px;color:#ffde86">${'★'.repeat(awarded)}${'☆'.repeat(3-awarded)}</span><br>Missione completata! Hai ottenuto <b>${score.toLocaleString('it-IT')} punti</b>. ${level===2000?'Hai completato tutti i 20 mondi!':'Nuove sfide ti aspettano.'}`,level===2000?'TORNA ALLA MAPPA':'PROSSIMO LIVELLO',()=>level===2000?openAdventureMap():start('adventure',level+1));
+ dialog('🏆','LIVELLO SUPERATO!',`<span style="font-size:30px;color:#ffde86">${'★'.repeat(awarded)}${'☆'.repeat(3-awarded)}</span><br>Missione completata! Hai ottenuto <b>${score.toLocaleString('it-IT')} punti</b>. ${level===2000?'Hai completato tutti i 20 mondi!':'Nuove sfide ti aspettano.'}`,level===2000?'TORNA ALLA MAPPA':'PROSSIMO LIVELLO',()=>bnTransition(()=>level===2000?openAdventureMap():start('adventure',level+1)));
  sClear();haptic([30,40,65])
 }
 
