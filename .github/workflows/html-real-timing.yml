@@ -1,0 +1,22 @@
+name: HTML actual timer checks (no APK)
+on:
+  push:
+    branches: [codex/html-real-qa]
+permissions:
+  contents: read
+jobs:
+  real-clock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/bn-browser" playwright@1.58.2
+          node "$RUNNER_TEMP/bn-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Verify with actual browser timing
+        run: NODE_PATH="$RUNNER_TEMP/bn-browser/node_modules" node tools/test_real_timing.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlastNexa-HTML-v4-real-timing
+          path: qa-output
