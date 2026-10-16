@@ -16,5 +16,5 @@ build = (root / 'app/build.gradle.kts').read_text()
 assert 'compileSdk = 36' in build and 'targetSdk = 36' in build
 assert 'com.blastnexa.blockpuzzle' in build
 assert 'minSdk = 24' in build, 'Play automatic protection requires API 24 or higher'
-assert 'versionCode = 13' in build, 'Version must increase for the Play Store'
-print("PASS: BlastNexa v1.0 Beta3 AdMob TEST, 2000 levels, minSdk24/targetSdk36, versionCode13")
+assert 'versionCode = 14' in build, 'Version must increase for the Play Store'
+print("PASS: BlastNexa v1.0 Beta4 War/Ocean TEST, 2000 levels, minSdk24/targetSdk36, versionCode14")

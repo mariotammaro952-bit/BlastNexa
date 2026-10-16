@@ -7,8 +7,8 @@ android {
         applicationId = "com.blastnexa.blockpuzzle"
         minSdk = 24
         targetSdk = 36
-        versionCode = 13
-        versionName = "1.0.0-beta3-admob-test"
+        versionCode = 14
+        versionName = "1.0.0-beta4-war-ocean-test"
         buildConfigField("boolean", "LIVE_ADS", "false")
     }
 

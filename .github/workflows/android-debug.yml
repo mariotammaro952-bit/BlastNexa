@@ -21,6 +21,7 @@ jobs:
         run: |
           python tools/verify_release_inputs.py
           node tools/test_ad_flow.cjs
+          node tools/test_adventure.cjs
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
@@ -43,7 +44,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: BlastNexa-v1.0-Beta3-AdMob-TEST-debug-apk
+          name: BlastNexa-v1.0-Beta4-War-Ocean-TEST-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
       - name: Build unsigned AAB for private offline signing
@@ -51,7 +52,7 @@ jobs:
       - name: Upload unsigned AAB (not Play-ready)
         uses: actions/upload-artifact@v4
         with:
-          name: BlastNexa-v1.0-Beta3-AdMob-TEST-UNSIGNED-aab
+          name: BlastNexa-v1.0-Beta4-War-Ocean-TEST-UNSIGNED-aab
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
       - name: Check upload signing secrets
@@ -83,6 +84,22 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.release_aab }}
         uses: actions/upload-artifact@v4
         with:
-          name: BlastNexa-v1.0-Beta3-AdMob-TEST-SIGNED-aab
+          name: BlastNexa-v1.0-Beta4-War-Ocean-TEST-SIGNED-aab
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
+  browser-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/bn-browser" playwright@1.58.2
+          node "$RUNNER_TEMP/bn-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Check phone layouts and gameplay
+        run: NODE_PATH="$RUNNER_TEMP/bn-browser/node_modules" node tools/test_browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlastNexa-Beta4-UI-QA
+          path: qa-output
