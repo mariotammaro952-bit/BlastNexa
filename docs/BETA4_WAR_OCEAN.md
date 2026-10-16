@@ -15,3 +15,9 @@ Validation:
 - `tools/test_browser.cjs` in GitHub Actions: phone viewports, actual game bootstrap, scene choice, restart persistence, undo, wins/losses, animated Pulse and callback cancellation. Screenshots are QA artifacts.
 
 The APK is a test build. A release AAB requires the owner's existing Play upload signing key.
+
+## HTML revision 2 — menu and round completion
+War and Ocean now replace the original two large main menu buttons and open the level map. Classic remains available as a smaller menu link. Remaining moves replace the record stat during Adventure. Completing the target no longer ends a playable round: results appear at the move limit or when no placements remain. Existing proof budgets are preserved. No APK was built for this revision.
+
+## HTML revision 3 — blocked rounds and Pulse
+A blocked board now loses even if its target is met, including on the last move. Pulse/Drill may rescue before the move limit. win() rechecks the outcome and cannot bypass it via last-chance controls. Adventure uses single-cell reserve trays after the authored trays; all 2,000 rounds are verified through the full budget with a playable final board. War adds synthesized jet pass, falling-bomb whistles, and low explosion sounds, with target blocks visible until impact. Ocean uses original shaded SVG sharks with articulated tail/body animation. Audio respects mute and is cancelled on navigation. No APK generated.

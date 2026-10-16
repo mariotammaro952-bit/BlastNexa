@@ -1,0 +1,30 @@
+name: HTML game simulations (no APK)
+on:
+  push:
+    branches: [codex/html-qa]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  html:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check all level solutions and audio
+        run: |
+          node tools/test_adventure.cjs
+          node tools/test_ad_flow.cjs
+          node tools/test_pulse_audio.cjs
+          python tools/verify_release_inputs.py
+      - name: Install browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/bn-browser" playwright@1.58.2
+          node "$RUNNER_TEMP/bn-browser/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Simulate game flow in browser
+        run: NODE_PATH="$RUNNER_TEMP/bn-browser/node_modules" node tools/test_browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: BlastNexa-HTML-v4-QA
+          path: qa-output
