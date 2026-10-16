@@ -7,7 +7,7 @@ function setup(){
  const elements=new Map(); const calls=[];
  const c={window:{BlastNexaAds:{rewarded:t=>calls.push(['rewarded',t]),betweenRounds:t=>calls.push(['between',t])}},
   $:id=>{if(!elements.has(id))elements.set(id,{disabled:false,style:{},classList:{remove(){}}});return elements.get(id);},
-  gameSession:1,mode:'classic',rewardedContinueUsed:false,playing:true,board:Array.from({length:8},()=>Array(8).fill(2)),
+  roundDecision:{outcome:'lose',resolved:false},gameSession:1,mode:'classic',rewardedContinueUsed:false,playing:true,board:Array.from({length:8},()=>Array(8).fill(2)),
   pieces:[],SHAPES:[[[0,0]],[[0,0],[1,0]]],undoSnapshot:{},selected:0,combo:4,score:123,
   render(){},storeSession(){c.saved=true;},showToast(m){c.toast=m;},clearSession(){},commitRunStats(){},
   dialog(...args){c.dialogArgs=args;},level:1,start(){c.started=true;}};
@@ -18,7 +18,7 @@ function setup(){
  c.dialogArgs[4]();assert.equal(calls.length,1);c.dialogArgs[4]();assert.equal(calls.length,1);
  c.window.BlastNexaAdResult(calls[0][1],false);assert.equal(c.rewardedContinueUsed,false);assert.equal(c.board[2][2],2);assert.ok(c.toast);
  c.dialogArgs[4]();const token=calls[1][1];c.window.BlastNexaAdResult(token,true);
- assert.equal(c.rewardedContinueUsed,true);assert.equal(c.playing,true);assert.equal(c.saved,true);
+ assert.equal(c.rewardedContinueUsed,true);assert.equal(c.roundDecision,null);assert.equal(c.playing,true);assert.equal(c.saved,true);
  assert.equal(c.board.flat().filter(x=>x===-1).length,9);assert.equal(c.pieces.length,3);assert.ok(c.pieces.every(p=>p.shape.length===1));assert.equal(c.score,123);
  c.board[2][2]=5;c.window.BlastNexaAdResult(token,true);assert.equal(c.board[2][2],5);
  run("lose('again')");assert.equal(c.dialogArgs[1],'PARTITA FINITA');

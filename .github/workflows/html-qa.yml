@@ -8,7 +8,7 @@ permissions:
 jobs:
   html:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Check all level solutions and audio
@@ -22,7 +22,21 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/bn-browser" playwright@1.58.2
           node "$RUNNER_TEMP/bn-browser/node_modules/playwright/cli.js" install --with-deps chromium
       - name: Simulate game flow in browser
-        run: NODE_PATH="$RUNNER_TEMP/bn-browser/node_modules" node tools/test_browser.cjs
+        run: |
+          for BEGIN in 1 251 501 751 1001 1251 1501 1751; do
+            END=$((BEGIN + 249))
+            BN_QA_FROM="$BEGIN" BN_QA_TO="$END" NODE_PATH="$RUNNER_TEMP/bn-browser/node_modules" node tools/test_browser.cjs
+          done
+          python - <<'PYREPORT'
+          import json,pathlib
+          reports=[json.loads(p.read_text()) for p in pathlib.Path('qa-output').glob('simulations-*.json')]
+          assert len(reports)==8
+          result={k:sum(r[k] for r in reports) for k in reports[0] if isinstance(reports[0][k],int)}
+          assert result['winningGames']==4000 and result['exhaustedMoves']==4000 and result['blockedBoards']==4000 and result['randomGames']==2000
+          result['scenes']=['war','ocean']
+          pathlib.Path('qa-output/simulations.json').write_text(json.dumps(result,indent=2))
+          print(result)
+          PYREPORT
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -1125,7 +1125,7 @@ function lose(msg,skipReward=false){
     rewardedContinueUsed=true;
     for(let y=2;y<5;y++)for(let x=2;x<5;x++)board[y][x]=-1;
     pieces=Array.from({length:3},()=>({shape:SHAPES.find(shape=>shape.length===1),color:0}));
-    undoSnapshot=null;selected=-1;combo=0;playing=true;
+    undoSnapshot=null;selected=-1;combo=0;roundDecision=null;playing=true;
     $('overlay').classList.remove('on');render();storeSession();
    }), 'TERMINA PARTITA',()=>lose(msg,true));
   return;

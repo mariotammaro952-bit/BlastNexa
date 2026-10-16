@@ -1,5 +1,6 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const FROM=Number(process.env.BN_QA_FROM||1),TO=Number(process.env.BN_QA_TO||2000);
 (async()=>{
  fs.mkdirSync('qa-output',{recursive:true});
  const browser=await chromium.launch({headless:true});
@@ -20,13 +21,13 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   await page.evaluate(()=>displayMenu());await page.locator(scene==='war'?'#startWar':'#startOcean').click();
   assert.equal(await page.locator('#app').getAttribute('data-scene'),scene);
   report.scenes.push(scene);
-  for(let begin=1;begin<=2000;begin+=50){
-   const counts=await page.evaluate(({begin})=>{
+  for(let begin=FROM;begin<=TO;begin+=50){
+   const counts=await page.evaluate(({begin,end})=>{
     const counts={winningGames:0,placements:0,exhaustedMoves:0,blockedBoards:0,zeroMovesWins:0,lateCallbacks:0};
     const check=(v,message)=>{if(!v)throw Error('Level '+level+': '+message)};
     const state=()=>JSON.stringify({board,pieces,moves,score,level,gameSession});
     const targetReached=()=>{switch(mission.type){case 'score':return score>=mission.target&&totalLines>=mission.minLines;case 'lines':return totalLines>=mission.target;case 'tiles':return totalTiles>=mission.target;case 'relics':return totalRelics>=mission.target;case 'locks':return totalLocks>=mission.target;}};
-    for(let n=begin;n<Math.min(2001,begin+50);n++){
+    for(let n=begin;n<Math.min(end+1,begin+50);n++){
      start('adventure',n);playerSettings.effects=n%2?'full':'lite';
      check(window.__BN_TEST_FAST__!==true,'Fast-test bypass must stay disabled');
      for(const step of LEVELS[n-1].proof){
@@ -65,9 +66,10 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
      check(playing&&moves===0&&!$('overlay').classList.contains('on'),'Restart cancels old FX');counts.lateCallbacks++;
     }
     return counts;
-   },{begin});
+   },{begin,end:TO});
    for(const [key,value]of Object.entries(counts))report[key]+=value;
-   if(begin%250===1)console.log(scene,'verified through',Math.min(begin+49,2000));
+   fs.writeFileSync(`qa-output/partial-${FROM}-${TO}.json`,JSON.stringify(report));
+   console.log(scene,'verified through',Math.min(begin+49,TO));
   }
  }
  // End-to-end resume, undo, terminal saves, final-move wins, both Pulse effects.
@@ -84,9 +86,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   return {zeroMovesWins:1};
  });report.zeroMovesWins+=extra.zeroMovesWins;
  // Deterministic legal but unplanned play: check UI outcome against actual counters.
- report.randomPlacements=await page.evaluate(()=>{
+ report.randomPlacements=await page.evaluate(({from,to})=>{
   let turns=0,seed=812371;const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
-  for(let n=1;n<=2000;n++){
+  for(let n=from;n<=to;n++){
    start('adventure',n);playerSettings.effects='lite';
    while(playing){
     const options=[];for(let i=0;i<3;i++)if(pieces[i])for(let y=0;y<8;y++)for(let x=0;x<8;x++)if(canPlace(pieces[i],x,y))options.push([i,x,y]);
@@ -99,11 +101,11 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
     if(!playing)break;
    }
   }return turns;
- });report.randomGames=2000;
+ },{from:FROM,to:TO});report.randomGames=TO-FROM+1;
  for(const scene of ['war','ocean']){
   await page.evaluate(scene=>{setScene(scene);start('adventure',1);playerSettings.effects='full';},scene);
   await page.screenshot({path:`qa-output/${scene}-v4-game.png`});
  }
- assert.deepEqual(errors,[]);fs.writeFileSync('qa-output/simulations.json',JSON.stringify(report,null,2));console.log('PASS',JSON.stringify(report));
+ assert.deepEqual(errors,[]);fs.writeFileSync(`qa-output/simulations-${FROM}-${TO}.json`,JSON.stringify(report,null,2));console.log('PASS',JSON.stringify(report));
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});
