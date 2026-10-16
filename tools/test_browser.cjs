@@ -36,6 +36,7 @@ const assert=require('node:assert/strict');const fs=require('node:fs');const pat
  }
  for(const size of [{width:360,height:640},{width:412,height:915}]){
   await page.setViewportSize(size);await page.evaluate(()=>start('adventure',2000));
+  const fits=await page.locator('.minigrid').evaluateAll(grids=>grids.every(g=>{const r=g.getBoundingClientRect(),s=g.parentElement.getBoundingClientRect();return r.left>=s.left&&r.right<=s.right&&r.top>=s.top&&r.bottom<=s.bottom;}));assert.ok(fits,'All tray pieces fit their slots');
   const r=await page.locator('#board').boundingBox();assert.ok(r.x>=0&&r.x+r.width<=size.width);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.screenshot({path:`qa-output/layout-${size.width}.png`,fullPage:true});

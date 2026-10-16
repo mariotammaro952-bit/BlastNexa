@@ -271,7 +271,7 @@
 #app[data-scene="war"]{--scene:#f5bf64;--scene-edge:#84745a;--scene-panel:#252f29; background:radial-gradient(ellipse at 85% 0,#a776353d,transparent 52%),repeating-linear-gradient(135deg,transparent 0 80px,#53604a0c 80px 160px),#101b18}
 #app[data-scene="ocean"]{--scene:#78f2e1;--scene-edge:#298d9c;--scene-panel:#073b4a;background:radial-gradient(ellipse at 20% -10%,#2ec7ce66,transparent 55%),linear-gradient(170deg,#06394b,#041723 80%)}
 #app[data-scene="war"]:before{background-image:linear-gradient(#adc39b15 1px,transparent 1px),linear-gradient(90deg,#adc39b15 1px,transparent 1px);background-size:32px 32px;opacity:.8}
-#app[data-scene="ocean"]:before{background-image:repeating-conic-gradient(from 165deg at 40% -10%,transparent 0deg 8deg,#a2fff216 9deg 13deg,transparent 14deg 23deg);opacity:.6}
+#app[data-scene="ocean"]:before{background-image:repeating-conic-gradient(from 165deg at 40% -10%,transparent 0deg 8deg,#a2fff216 9deg 13deg,transparent 14deg 23deg);background-size:100% 100%;opacity:.6}
 #app[data-scene] .brand span,#app[data-scene] .game-title span,#app[data-scene] .kicker{color:var(--scene)}
 .scene-picker{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:370px;flex-shrink:0}
 .scene-choice{position:relative;overflow:hidden;text-align:left;min-height:100px;padding:12px;color:#fff;border:1px solid #658081;border-radius:15px;background:linear-gradient(135deg,#384333,#162720)}
@@ -464,7 +464,7 @@ function resumeSession(){
  board=s.board.map(row=>row.slice());pieces=s.pieces.map(p=>p?{shape:SHAPES[p.id],color:p.color}:null);
  for(const key of ['score','combo','pulse','totalLines','totalTiles','totalRelics','totalLocks','undoCharges','drillCharges','placedCount','trayIndex','runBestCombo','dailySeed']){if(Number.isFinite(s[key]))evalSavedAssign(key,s[key]);}
  recentTurns=Array.isArray(s.recentTurns)?s.recentTurns.filter(v=>Number.isInteger(v)&&v>=0&&v<=16).slice(-8):[];
- dailySeedDate=s.dailySeedDate||'';relics=new Set(s.relics||[]);locks=new Set(s.locks||[]);prisms=new Set(s.prisms||[]);circuitCharged=new Set(s.circuitCharged||[]);undoSnapshot=deserializeUndo(s.undo);selected=-1;playing=true;
+ dailySeedDate=s.dailySeedDate||'';relics=new Set(s.relics||[]);locks=new Set(s.locks||[]);prisms=new Set(s.prisms||[]);circuitCharged=new Set(s.circuitCharged||[]);undoSnapshot=deserializeUndo(s.undo);if(undoSnapshot&&!Number.isInteger(s.moves))undoSnapshot.moves=Math.max(0,undoSnapshot.placedCount||0);selected=-1;playing=true;
  render();const outcome=mode==='adventure'?adventureOutcome():(!hasMove()?(pulse>=100&&findBestPulse()?'rescue':'lose'):'continue');
  if(outcome==='win')win();else if(outcome==='rescue'){playing=false;showLastChance();}else if(outcome==='lose')lose('Nessun pezzo disponibile.');else showToast('↻ PARTITA RIPRISTINATA');
  return true;
@@ -847,7 +847,7 @@ function renderBoard(preview){
   c.dataset.x=x;c.dataset.y=y;holder.append(c);
  }
 }
-function renderTray(){const holder=$('tray');holder.replaceChildren();pieces.forEach((p,i)=>{let slot=document.createElement('div');slot.className='piece-slot'+(p?'':' used')+(selected===i?' selected':'');slot.dataset.index=i;if(p){let [w,h]=shapeSize(p.shape),cell=26;if(w>=5)cell=21;let grid=document.createElement('div');grid.className='minigrid';grid.style.gridTemplateColumns=`repeat(${w},${cell}px)`;grid.style.gridTemplateRows=`repeat(${h},${cell}px)`;grid.style.gap='3px';let used=new Set(p.shape.map(([x,y])=>y*w+x));for(let j=0;j<w*h;j++){let tile=document.createElement('span');if(used.has(j)){tile.className='mini-tile';tile.style.setProperty('--tile',COLORS[p.color])}grid.append(tile)}slot.append(grid)}holder.append(slot)})}
+function renderTray(){const holder=$('tray');holder.replaceChildren();pieces.forEach((p,i)=>{let slot=document.createElement('div');slot.className='piece-slot'+(p?'':' used')+(selected===i?' selected':'');slot.dataset.index=i;holder.append(slot);if(p){let [w,h]=shapeSize(p.shape);const bounds=slot.getBoundingClientRect();let cell=Math.max(8,Math.min(26,Math.floor((bounds.width-12-(w-1)*3)/w),Math.floor((bounds.height-12-(h-1)*3)/h)));let grid=document.createElement('div');grid.className='minigrid';grid.style.gridTemplateColumns=`repeat(${w},${cell}px)`;grid.style.gridTemplateRows=`repeat(${h},${cell}px)`;grid.style.gap='3px';let used=new Set(p.shape.map(([x,y])=>y*w+x));for(let j=0;j<w*h;j++){let tile=document.createElement('span');if(used.has(j)){tile.className='mini-tile';tile.style.setProperty('--tile',COLORS[p.color])}grid.append(tile)}slot.append(grid)}holder.append(slot)})}
 function showToast(message){clearTimeout(toastTimer);$('toast').textContent=message;$('toast').classList.add('show');toastTimer=setTimeout(()=>$('toast').classList.remove('show'),950)}
 
 // ORIGINAL cinematic FX: board is updated logically first, visualization then resolves.
