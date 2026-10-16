@@ -16,6 +16,9 @@ const FROM=Number(process.env.BN_QA_FROM||1),TO=Number(process.env.BN_QA_TO||200
  });
  await page.goto('file://'+path.resolve('app/src/main/assets/index.html'));
  await page.evaluate(()=>{muted=true;playerSettings.haptics=false;});
+ // Decorative CSS is checked with normal timing separately; avoid accumulating
+ // compositor animations during thousands of accelerated logical rounds.
+ const bulkStyle=await page.addStyleTag({content:'*,*::before,*::after{animation:none!important;transition:none!important;box-shadow:none!important;filter:none!important;text-shadow:none!important;background-image:none!important}'});
  const report={winningGames:0,placements:0,exhaustedMoves:0,blockedBoards:0,zeroMovesWins:0,lateCallbacks:0,randomGames:0,randomPlacements:0,scenes:[]};
  for(const scene of ['war','ocean']){
   await page.evaluate(()=>displayMenu());await page.locator(scene==='war'?'#startWar':'#startOcean').click();
@@ -72,6 +75,7 @@ const FROM=Number(process.env.BN_QA_FROM||1),TO=Number(process.env.BN_QA_TO||200
    console.log(scene,'verified through',Math.min(begin+49,TO));
   }
  }
+ console.log('Authored paths and systematic losses complete',FROM,TO);
  // End-to-end resume, undo, terminal saves, final-move wins, both Pulse effects.
  const extra=await page.evaluate(()=>{
   const check=(v,s)=>{if(!v)throw Error(s)};
@@ -85,12 +89,15 @@ const FROM=Number(process.env.BN_QA_FROM||1),TO=Number(process.env.BN_QA_TO||200
   check(!playing,'Final-move win immediately locks');__advance(100);check($('dialogTitle').textContent==='LIVELLO SUPERATO!','Final-move win');
   return {zeroMovesWins:1};
  });report.zeroMovesWins+=extra.zeroMovesWins;
+ console.log('Resume, undo and Pulse checks complete',FROM,TO);
  // Deterministic legal but unplanned play: check UI outcome against actual counters.
  report.randomPlacements=await page.evaluate(({from,to})=>{
   let turns=0,seed=812371;const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
   for(let n=from;n<=to;n++){
    start('adventure',n);playerSettings.effects='lite';
+   let guard=0;
    while(playing){
+    if(++guard>32||level!==n)throw Error('Non-terminating or auto-advanced random round '+n);
     const options=[];for(let i=0;i<3;i++)if(pieces[i])for(let y=0;y<8;y++)for(let x=0;x<8;x++)if(canPlace(pieces[i],x,y))options.push([i,x,y]);
     if(!options.length)break;
     const [i,x,y]=options[Math.floor(rnd()*options.length)];if(!placePiece(i,x,y))throw Error('Random legal move rejected');turns++;
@@ -102,6 +109,7 @@ const FROM=Number(process.env.BN_QA_FROM||1),TO=Number(process.env.BN_QA_TO||200
    }
   }return turns;
  },{from:FROM,to:TO});report.randomGames=TO-FROM+1;
+ await bulkStyle.evaluate(el=>el.remove());
  for(const scene of ['war','ocean']){
   await page.evaluate(scene=>{setScene(scene);start('adventure',1);playerSettings.effects='full';},scene);
   await page.screenshot({path:`qa-output/${scene}-v4-game.png`});

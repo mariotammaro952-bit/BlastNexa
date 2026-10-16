@@ -24,4 +24,18 @@ load(pack.levels[0]);assert.equal(c.placePiece(0,-1,-1),false);assert.equal(c.mo
 c.mode='classic';c.moves=10000;assert.equal(c.adventureOutcome(),'continue');c.mode='adventure';
 load(pack.levels[0]);const step=pack.levels[0].proof[0];c.placePiece(step.slot,step.x,step.y);assert.equal(c.moves,1);
 Object.assign(c,{$:()=>({replaceChildren:dummy,classList:{remove:dummy}}),showToast:dummy,gameSession:1});c.undoMove();assert.equal(c.moves,0);assert.equal(c.placedCount,0);
+let randomTurns=0,randomSeed=812371,randomWins=0,randomLosses=0;
+for(const l of pack.levels){
+ load(l);let attempts=0;
+ while(c.adventureOutcome()==='continue'){
+  assert.ok(++attempts<=c.mission.moves+1,`non-terminating random round ${l.id}`);
+  const legal=[];for(let i=0;i<3;i++)if(c.pieces[i])for(let y=0;y<8;y++)for(let x=0;x<8;x++)if(c.canPlace(c.pieces[i],x,y))legal.push([i,x,y]);
+  if(!legal.length)break;
+  randomSeed=(Math.imul(randomSeed,1664525)+1013904223)>>>0;
+  const [i,x,y]=legal[Math.floor(randomSeed/4294967296*legal.length)];assert.equal(c.placePiece(i,x,y),true);randomTurns++;
+ }
+ const outcome=c.adventureOutcome();assert.ok(outcome==='win'||outcome==='lose');assert.ok(c.moves<=c.mission.moves);
+ if(outcome==='win'){assert.ok(c.missionMet()&&c.hasMove());randomWins++;}else randomLosses++;
+}
+console.log('PASS: 2000 seeded random rounds, '+randomTurns+' placements, '+randomWins+' wins / '+randomLosses+' losses, no loop or budget overrun');
 console.log(`PASS: all 2000 target solutions within their move limits (max ${maxUsed} placements), final-move victory, cutoff, invalid placement, undo, infinite Classic`);
