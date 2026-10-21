@@ -1,0 +1,21 @@
+{
+  "spins": 10000,
+  "counts": {
+    "spin": 9499,
+    "free": 45,
+    "respin": 456,
+    "chests": 269,
+    "breaks": 199,
+    "reloads": 104
+  },
+  "exactExpectedBalance": 4576,
+  "maxPendingTimers": 0,
+  "malformedStorageCases": 42,
+  "seconds": 46.798,
+  "tests": [
+    "10,000 actual slot commits: all modes, bonus/free/respin/hold, ad breaks and history conservation",
+    "104 reloads during a committed spin preserve the exact balance and never repeat a reward",
+    "42 malformed saved-state cases restore bounded, usable progress without exceptions"
+  ],
+  "scope": "Exact production transactions and state with DOM/clock adapters; physical-device thermal/ANR profiling is not represented."
+}

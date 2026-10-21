@@ -1,0 +1,12 @@
+{
+  "unchangedCatalogsAndMedia": [
+    "levelCatalog",
+    "universeCatalog",
+    "wordsLegacyCatalog",
+    "wordsCatalog",
+    "slotAudioCatalog",
+    "slotWorldCatalog",
+    "slotBuildManifest"
+  ],
+  "htmlSha256": "52dad1ee475b3dbebb2027934917b839391de02ed77401c20013ea7dc12c866a"
+}

@@ -1,0 +1,194 @@
+package com.blastnexa.blockpuzzle;
+
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.graphics.Color;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.view.View;
+import android.view.WindowManager;
+import android.webkit.ConsoleMessage;
+import android.webkit.JavascriptInterface;
+import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
+import android.widget.Toast;
+import android.window.OnBackInvokedDispatcher;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+/** Bundled game with native ads, bounded HTTPS ranking and renderer recovery. */
+public final class OdysseyActivity extends Activity {
+    private static final String GAME_URL = "file:///android_asset/index.html";
+    private WebView game;
+    private FrameLayout root;
+    private OdysseyAds ads;
+    private OdysseyRanking ranking;
+    private boolean pageReady;
+    private boolean backPending;
+    private boolean foreground;
+
+    @Override public void onCreate(Bundle state) {
+        super.onCreate(state);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        getWindow().setStatusBarColor(Color.rgb(8,19,43));
+        getWindow().setNavigationBarColor(Color.rgb(8,19,43));
+        root = new FrameLayout(this);
+        root.setBackgroundColor(Color.rgb(8,19,43));
+        root.setOnApplyWindowInsetsListener((v,insets) -> {
+            v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),
+                insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
+            return insets.consumeSystemWindowInsets();
+        });
+        game = new WebView(this);
+        game.setBackgroundColor(Color.rgb(8,19,43));
+        game.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        WebSettings settings = game.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDomStorageEnabled(true);
+        settings.setAllowFileAccess(true);
+        settings.setAllowContentAccess(false);
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setJavaScriptCanOpenWindowsAutomatically(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setSupportZoom(false);
+        settings.setBuiltInZoomControls(false);
+        settings.setTextZoom(100);
+        WebView.setWebContentsDebuggingEnabled((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0);
+        root.addView(game,new FrameLayout.LayoutParams(-1,-1));
+        ads = new OdysseyAds(this,root,game,this::evaluate);
+        ranking = new OdysseyRanking(this,this::evaluate);
+        Bridge bridge = new Bridge();
+        game.addJavascriptInterface(bridge,"BlastNexaAds");
+        game.addJavascriptInterface(bridge,"BlastNexaNative");
+        game.setWebViewClient(Build.VERSION.SDK_INT>=26?new RecoveryClient():new GameClient());
+        game.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onConsoleMessage(ConsoleMessage message) {
+                if(message.messageLevel()==ConsoleMessage.MessageLevel.ERROR) android.util.Log.e("BlastNexa-Web",message.message());
+                return true;
+            }
+        });
+        setContentView(root);
+        root.requestApplyInsets();
+        if(Build.VERSION.SDK_INT>=33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT,this::requestBack);
+        }
+        game.loadUrl(GAME_URL);
+    }
+
+
+    private class GameClient extends WebViewClient {
+            @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest request) {
+                Uri uri=request.getUrl();
+                if(GAME_URL.equals(uri.toString())) return false;
+                if(request.isForMainFrame() && ("https".equals(uri.getScheme()) || "http".equals(uri.getScheme()))) {
+                    try { startActivity(new Intent(Intent.ACTION_VIEW,uri)); } catch(Exception ignored) {}
+                }
+                return true;
+            }
+            @Override public void onPageFinished(WebView view,String url) {
+                if(view!=game || ads==null || isDestroyed() || !GAME_URL.equals(url)) return;
+                pageReady=true;
+                evaluate("navigator.vibrate=function(p){window.BlastNexaNative.vibrate(JSON.stringify(p));return true;};"
+                    +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
+                if(!(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false)))ads.start();
+            }
+
+    }
+    /** API 26+: a lost renderer must not take down the native host. */
+    private final class RecoveryClient extends GameClient {
+        @Override public boolean onRenderProcessGone(WebView view,android.webkit.RenderProcessGoneDetail detail) {
+            pageReady=false;
+            android.util.Log.e("BlastNexa-Recovery","WebView interrupted; native recovery shown; crashed="+detail.didCrash());
+            if(ads!=null){ads.destroy();ads=null;}
+            if(ranking!=null){ranking.destroy();ranking=null;}
+            view.removeJavascriptInterface("BlastNexaAds");view.removeJavascriptInterface("BlastNexaNative");
+            root.removeView(view);view.destroy();if(game==view)game=null;
+            if(!isFinishing()&&!isDestroyed())new AlertDialog.Builder(OdysseyActivity.this)
+                .setTitle("Riapri BlastNexa")
+                .setMessage("Il gioco è stato interrotto. Puoi riaprirlo per recuperare i progressi salvati.")
+                .setCancelable(false).setPositiveButton("RIAPRI",(dialog,which)->recreate())
+                .setNegativeButton("ESCI",(dialog,which)->finish()).show();
+            return true;
+        }
+    }
+
+    void evaluate(String script) {
+        runOnUiThread(() -> { if(game!=null && pageReady && !isDestroyed()) game.evaluateJavascript(script,null); });
+    }
+
+    private void requestBack() {
+        if(backPending || game==null) return;
+        if(!pageReady) { finish(); return; }
+        backPending=true;
+        game.evaluateJavascript("(window.BlastNexaBack?window.BlastNexaBack():'exit')",result -> {
+            backPending=false;
+            if("\"exit\"".equals(result)) new AlertDialog.Builder(this)
+                .setTitle("Uscire da BlastNexa?").setMessage("I tuoi progressi sono salvati.")
+                .setNegativeButton("RESTA",(dialog,which)->{})
+                .setPositiveButton("ESCI",(dialog,which)->finish()).show();
+        });
+    }
+
+    @Override public void onBackPressed() { requestBack(); }
+    @Override public void onWindowFocusChanged(boolean focused) {
+        super.onWindowFocusChanged(focused);
+        if(ads!=null) ads.setActive(focused && foreground);
+        if(pageReady) evaluate(focused?"window.dispatchEvent(new Event('focus'));"
+            :"if(typeof stopSlotAuto==='function')stopSlotAuto();window.dispatchEvent(new Event('blur'));");
+    }
+    @Override protected void onPause() {
+        foreground=false;
+        if(ads!=null) ads.setActive(false);
+        evaluate("window.dispatchEvent(new Event('blur'));if(typeof cancelSlotAnimation==='function')cancelSlotAnimation();"
+            +"window.BlastNexaSave&&window.BlastNexaSave();");
+        if(game!=null) game.onPause();
+        super.onPause();
+    }
+    @Override protected void onResume() {
+        super.onResume();foreground=true;
+        if(game!=null) game.onResume();
+        if(ads!=null) ads.setActive(hasWindowFocus());
+        if(pageReady) evaluate("window.dispatchEvent(new Event('focus'));"
+            +"if(typeof slotVisible==='function'&&slotVisible()&&!bnPendingAd)renderLifeSlot(document.getElementById('universeBody'));"
+            +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
+    }
+    @Override protected void onDestroy() {
+        if(ads!=null) ads.destroy();
+        if(ranking!=null) ranking.destroy();
+        pageReady=false;
+        if(game!=null) { game.removeJavascriptInterface("BlastNexaAds");game.removeJavascriptInterface("BlastNexaNative");root.removeView(game);game.destroy();game=null; }
+        super.onDestroy();
+    }
+
+    public final class Bridge {
+        @JavascriptInterface public void rankingRequest(int id,String payload) { if(ranking!=null)ranking.request(id,payload); }
+        @JavascriptInterface public void betweenRounds(int token) { runOnUiThread(()->{if(ads!=null)ads.betweenRounds(token);}); }
+        @JavascriptInterface public void slotBreak(int token) { runOnUiThread(()->{if(ads!=null)ads.slotBreak(token);}); }
+        @JavascriptInterface public void rewarded(int token) { runOnUiThread(()->{if(ads!=null)ads.rewarded(token);}); }
+        @JavascriptInterface public void privacyOptions() { runOnUiThread(()->{if(ads!=null)ads.privacyOptions();}); }
+        @JavascriptInterface public void syncStatus() { runOnUiThread(()->{if(ads!=null)ads.syncStatus();}); }
+        @JavascriptInterface public void bannerLayout(String payload) { runOnUiThread(()->{if(ads!=null)ads.bannerLayout(payload);}); }
+        @JavascriptInterface public void vibrate(String payload) {
+            runOnUiThread(()->{
+                try {
+                    JSONArray values=payload.startsWith("[")?new JSONArray(payload):new JSONArray("["+payload+"]");
+                    int count=Math.min(16,values.length());if(count==0)return;
+                    long[] pattern=new long[count+1];for(int i=0;i<count;i++)pattern[i+1]=Math.max(0,Math.min(300,values.optLong(i)));
+                    Vibrator vibrator=(Vibrator)getSystemService(VIBRATOR_SERVICE);if(vibrator==null||!vibrator.hasVibrator())return;
+                    if(Build.VERSION.SDK_INT>=26)vibrator.vibrate(VibrationEffect.createWaveform(pattern,-1));else vibrator.vibrate(pattern,-1);
+                } catch(Exception ignored) {}
+            });
+        }
+    }
+}

@@ -1,0 +1,16 @@
+{
+  "passed": 8,
+  "tests": [
+    "Two independent browser players register and see an empty real database",
+    "A won level is validated, uploaded and shown with its server-computed points",
+    "A connection failure retains the offline queue; reconnection sends it exactly once",
+    "Players see each other and personal local totals stay distinct from Adventure rank",
+    "Private code restores a profile on a separate device without merging local progress",
+    "A name can be reported and hidden, then the player can reset their blocks",
+    "Leaving during an in-flight refresh cannot reopen a departed screen",
+    "Deleting an online profile removes only that player and preserves local progress"
+  ],
+  "pageErrors": [],
+  "transport": "Browser requests routed to the production server handler and actual SQLite D1 schema",
+  "liveService": false
+}

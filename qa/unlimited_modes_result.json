@@ -1,0 +1,155 @@
+{
+  "modeSceneRuns": 16,
+  "records": [
+    {
+      "mode": "classic",
+      "scene": "war",
+      "moves": 47,
+      "tools": 1,
+      "score": 3656,
+      "lines": 16,
+      "ended": true
+    },
+    {
+      "mode": "classic",
+      "scene": "ocean",
+      "moves": 29,
+      "tools": 1,
+      "score": 1964,
+      "lines": 9,
+      "ended": true
+    },
+    {
+      "mode": "classic",
+      "scene": "alien",
+      "moves": 56,
+      "tools": 2,
+      "score": 4472,
+      "lines": 20,
+      "ended": true
+    },
+    {
+      "mode": "classic",
+      "scene": "explosive",
+      "moves": 98,
+      "tools": 4,
+      "score": 9280,
+      "lines": 38,
+      "ended": true
+    },
+    {
+      "mode": "daily",
+      "scene": "war",
+      "moves": 53,
+      "tools": 1,
+      "score": 5762,
+      "lines": 20,
+      "ended": true
+    },
+    {
+      "mode": "daily",
+      "scene": "ocean",
+      "moves": 53,
+      "tools": 1,
+      "score": 5762,
+      "lines": 20,
+      "ended": true
+    },
+    {
+      "mode": "daily",
+      "scene": "alien",
+      "moves": 53,
+      "tools": 1,
+      "score": 5762,
+      "lines": 20,
+      "ended": true
+    },
+    {
+      "mode": "daily",
+      "scene": "explosive",
+      "moves": 53,
+      "tools": 1,
+      "score": 5762,
+      "lines": 20,
+      "ended": true
+    },
+    {
+      "mode": "circuit",
+      "scene": "war",
+      "moves": 44,
+      "tools": 1,
+      "score": 3316,
+      "lines": 14,
+      "ended": true
+    },
+    {
+      "mode": "circuit",
+      "scene": "ocean",
+      "moves": 89,
+      "tools": 3,
+      "score": 8386,
+      "lines": 38,
+      "ended": true
+    },
+    {
+      "mode": "circuit",
+      "scene": "alien",
+      "moves": 32,
+      "tools": 1,
+      "score": 2202,
+      "lines": 9,
+      "ended": true
+    },
+    {
+      "mode": "circuit",
+      "scene": "explosive",
+      "moves": 71,
+      "tools": 1,
+      "score": 5794,
+      "lines": 28,
+      "ended": true
+    },
+    {
+      "mode": "mosaic",
+      "scene": "war",
+      "moves": 56,
+      "tools": 1,
+      "score": 4434,
+      "lines": 19,
+      "ended": true
+    },
+    {
+      "mode": "mosaic",
+      "scene": "ocean",
+      "moves": 50,
+      "tools": 2,
+      "score": 4222,
+      "lines": 17,
+      "ended": true
+    },
+    {
+      "mode": "mosaic",
+      "scene": "alien",
+      "moves": 77,
+      "tools": 2,
+      "score": 7034,
+      "lines": 31,
+      "ended": true
+    },
+    {
+      "mode": "mosaic",
+      "scene": "explosive",
+      "moves": 71,
+      "tools": 2,
+      "score": 6458,
+      "lines": 29,
+      "ended": true
+    }
+  ],
+  "rush": {
+    "durationMs": 90000,
+    "pauseAndHiddenExcluded": true,
+    "finalizedOnce": true
+  },
+  "scope": "Actual production gameplay and RUSH clock; presentation adapted for unlimited-play traversal, full DOM clock events for Rush."
+}

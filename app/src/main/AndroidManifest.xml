@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
     <application
         android:allowBackup="false"
         android:label="BlastNexa: Block Puzzle"
@@ -7,8 +10,9 @@
         android:supportsRtl="true"
         android:theme="@style/BlastNexaTheme"
         android:usesCleartextTraffic="false">
+        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="${adMobAppId}"/>
         <activity
-            android:name=".MainActivity"
+            android:name=".OdysseyActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>

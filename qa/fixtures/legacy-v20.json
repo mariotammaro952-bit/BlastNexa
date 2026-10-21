@@ -1,0 +1,9 @@
+{
+  "storage": {
+    "blastnexa_muted": "true",
+    "blastnexa_universe_v9": "{\"v\":1,\"materials\":0,\"xp\":0,\"serial\":0,\"ledger\":{},\"buildings\":{\"war\":[0,0,0,0],\"ocean\":[0,0,0,0],\"alien\":[0,0,0,0],\"explosive\":[0,0,0,0]},\"perfect\":{},\"expeditions\":{\"war\":[0,0,0],\"ocean\":[0,0,0],\"alien\":[0,0,0],\"explosive\":[0,0,0]},\"questCycle\":0,\"quest\":null,\"companion\":{\"kind\":\"drone\",\"color\":0,\"accessory\":\"none\"}}",
+    "blastnexa_adrenaline_v10": "{\"v\":1,\"rushBest\":{\"war\":0,\"ocean\":0,\"alien\":0,\"explosive\":0},\"rushGames\":0,\"signalRead\":[],\"pendingRaid\":null}",
+    "blastnexa_lives_v13": "{\"balance\":5,\"anchor\":1792609523952,\"charged\":[],\"visualSerial\":0,\"wordSerial\":0,\"slot\":{\"total\":1,\"sinceAd\":1,\"seed\":84772474,\"last\":{\"prize\":0,\"symbols\":[\"B\",\"B\",\"B\",\"B\",\"B\"],\"spin\":1,\"arcade\":{\"version\":19,\"machine\":\"crystal\",\"kind\":\"spin\",\"grid\":[[\"B\",\"B\",\"B\"],[\"B\",\"B\",\"B\"],[\"B\",\"B\",\"B\"],[\"B\",\"B\",\"B\"],[\"B\",\"B\",\"B\"]],\"held\":[],\"freeAward\":3},\"beforeBalance\":5,\"credited\":0},\"archive\":{\"first\":1,\"spins\":1,\"wins\":0,\"lives\":0,\"best\":0,\"history\":[{\"spin\":1,\"prize\":0,\"credited\":0,\"symbols\":[\"B\",\"B\",\"B\",\"B\",\"B\"],\"arcade\":{\"version\":19,\"machine\":\"crystal\",\"kind\":\"spin\",\"grid\":[[\"B\",\"B\",\"B\"],[\"B\",\"B\",\"B\"],[\"B\",\"B\",\"B\"],[\"B\",\"B\",\"B\"],[\"B\",\"B\",\"B\"]],\"held\":[],\"freeAward\":3}}]},\"arcade\":{\"version\":19,\"musicEnabled\":true,\"machine\":\"crystal\",\"spins\":1,\"xp\":10,\"lines\":0,\"freePlayed\":0,\"respins\":0,\"chests\":0,\"bonusLives\":0,\"missionLives\":0,\"treasure\":0,\"freeSpins\":3,\"reactor\":0,\"modeSpins\":{\"temple\":0,\"crystal\":1,\"forge\":0},\"collection\":[\"B\"],\"claimed\":[],\"bonus\":null,\"revealed\":null}}}",
+    "blastnexa_scene_v1": "\"war\""
+  }
+}

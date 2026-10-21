@@ -1,0 +1,37 @@
+{
+  "storage": {
+    "blastnexa_muted": "true",
+    "blastnexa_universe_v9": "{\"v\":1,\"materials\":0,\"xp\":0,\"serial\":0,\"ledger\":{},\"buildings\":{\"war\":[0,0,0,0],\"ocean\":[0,0,0,0],\"alien\":[0,0,0,0],\"explosive\":[0,0,0,0]},\"perfect\":{},\"expeditions\":{\"war\":[0,0,0],\"ocean\":[0,0,0],\"alien\":[0,0,0],\"explosive\":[0,0,0]},\"questCycle\":0,\"quest\":null,\"companion\":{\"kind\":\"drone\",\"color\":0,\"accessory\":\"none\"}}",
+    "blastnexa_adrenaline_v10": "{\"v\":1,\"rushBest\":{\"war\":0,\"ocean\":0,\"alien\":0,\"explosive\":0},\"rushGames\":0,\"signalRead\":[],\"pendingRaid\":null}",
+    "blastnexa_lives_v13": "{\"balance\":10,\"anchor\":1792609523791,\"charged\":[],\"visualSerial\":0,\"wordSerial\":1,\"slot\":{\"total\":1,\"sinceAd\":1,\"seed\":84772570,\"last\":{\"prize\":5,\"symbols\":[\"♥\",\"♥\",\"♥\",\"♥\",\"♥\"],\"spin\":1,\"beforeBalance\":5,\"credited\":5},\"archive\":{\"first\":1,\"spins\":1,\"wins\":1,\"lives\":5,\"best\":5,\"history\":[{\"spin\":1,\"prize\":5,\"credited\":5,\"symbols\":[\"♥\",\"♥\",\"♥\",\"♥\",\"♥\"]}]}}}",
+    "blastnexa_scene_v1": "\"ocean\"",
+    "blastnexa_words_v13": "{\"progress\":{},\"active\":{\"id\":2,\"catalog\":\"v15\",\"roundId\":\"w1\",\"status\":\"playing\",\"solved\":[],\"errors\":0,\"selected\":0,\"draft\":[\"I\",\"\",\"\",\"\",\"\",\"\"],\"sources\":[0,-1,-1,-1,-1,-1],\"cursor\":1,\"hints\":0},\"catalogVersion\":15}"
+  },
+  "word": {
+    "id": 2,
+    "catalog": "v15",
+    "roundId": "w1",
+    "status": "playing",
+    "solved": [],
+    "errors": 0,
+    "selected": 0,
+    "draft": [
+      "I",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "sources": [
+      0,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+    ],
+    "cursor": 1,
+    "hints": 0
+  }
+}
