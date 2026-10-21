@@ -59,7 +59,7 @@ public class LaunchValidationTest {
    js("if(lifeData.slot.arcade.revealed&&!lifeData.slot.arcade.revealed.presented)dismissTempleScene();setArcadeMachine('"+world+"');slotRandomInt=max=>0;spinLifeSlot();true");waitFor("!slotBusy",10000);truth("document.querySelectorAll('.bn-temple-cell').length===15");
   }
   js("setArcadeMachine('crystal');window.__qaStartSpins=lifeData.slot.total;true");
-  for(int i=0;i<50;i++){js("if(lifeData.slot.sinceAd>=SLOT_AD_INTERVAL){openSlotBreak();document.getElementById('dialogPrimary').click();}true");waitFor("!bnPendingAd",15000);js("spinLifeSlot();true");waitFor("!slotBusy&&!bnPendingAd",15000);}
+  for(int i=0;i<50;i++){js("if(lifeData.slot.sinceAd>=SLOT_AD_INTERVAL){openSlotBreak();document.getElementById('dialogPrimary').click();}true");waitFor("!bnPendingAd",15000);js("spinLifeSlot();true");waitFor("!slotBusy&&!bnPendingAd",15000);if(i%10==9)android.util.Log.i("BlastNexa-QA","Slot spins completed: "+(i+1));}
   truth("lifeData.slot.total===window.__qaStartSpins+50");String expectedBalance=js("lifeData.balance"),expectedSpins=js("lifeData.slot.total");
   js("saveLives();true");scenario.recreate();bind();waitFor("typeof lifeData!=='undefined'",30000);
   assertEquals(expectedBalance,js("lifeData.balance"));assertEquals(expectedSpins,js("lifeData.slot.total"));
@@ -70,11 +70,17 @@ public class LaunchValidationTest {
   js("window.__BN_TEST_FAST__=true;for(const n of ['render','showPlacementFx','showBlastFx','showUniverseImpact','showAdrenalineMoveFX','showVictoryFinish','sPlace','sClear','haptic','adUnlockAudio','syncFlair','refreshUniverseMenu','refreshLivesUI','refreshWordMenu','saveUniverse','storeSession','refreshPlayerUI','saveRanking']){try{eval(n+'=()=>{}')}catch{}}storage.set=()=>{};unlocked=2000;lifeData.balance=999999;playerSettings.effects='lite';true");
   for(String scene:new String[]{"war","ocean","alien","explosive"})for(int start=1;start<=2000;start+=100){int end=start+100;
    truth("(()=>{setScene('"+scene+"');for(let n="+start+";n<"+end+";n++){if(start('adventure',n)!==true)return false;for(const p of LEVELS[n-1].proof){if(roundOutcome)break;if(!placePiece(p.slot,p.x,p.y))return false;}if(roundOutcome!=='win'||!roundFinalized||playing||!missionMet()||!hasMove())return false;}return true;})()");
+   if(start%500==401)android.util.Log.i("BlastNexa-QA","Adventure "+scene+" completed: "+(end-1));
   }
  }
  @Test public void d_pauseResumeBackAndNavigation()throws Exception{
   js("openUniverse('slot');slotRandomInt=max=>0;spinLifeSlot();true");String spins=js("lifeData.slot.total"),balance=js("lifeData.balance");
-  device.pressHome();scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED);scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);waitFor("!slotBusy",15000);
+  device.pressHome();
+  // Resume through Android's launcher/task manager, as a player does. Moving only
+  // ActivityScenario's lifecycle cannot foreground a task after the Home key.
+  String component=InstrumentationRegistry.getInstrumentation().getTargetContext().getPackageName()+"/com.blastnexa.blockpuzzle.OdysseyActivity";
+  device.executeShellCommand("am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n "+component);
+  scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);waitFor("!slotBusy",15000);
   assertEquals(spins,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));
   js("displayMenu();true");writeEvidence("meminfo_before_navigation.txt",device.executeShellCommand("dumpsys meminfo com.blastnexa.blockpuzzle.preview"));device.executeShellCommand("dumpsys gfxinfo com.blastnexa.blockpuzzle.preview reset");
   for(int i=0;i<50;i++)truth("(()=>{displayMenu();openPlayer('profile');openUniverse('slot');startWord("+(i%400)+");displayMenu();return document.documentElement.scrollWidth<=innerWidth;})()");
