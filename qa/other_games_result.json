@@ -1,0 +1,13 @@
+{
+  "passed": 5,
+  "tests": [
+    "All 400 crosswords can be completed using the actual rack, crossing and submit logic",
+    "All 36 Perfect Puzzles and their star awards complete within exactly three moves",
+    "All 60 expedition stages complete, including four kinds of boss shield",
+    "All 48 raid waves complete and the banked reward can be collected once",
+    "Boss cooldown survives saved-session restoration after its due move has passed"
+  ],
+  "perfectPuzzles": 36,
+  "expeditionStages": 60,
+  "raidWaves": 48
+}

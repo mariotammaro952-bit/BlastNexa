@@ -1,0 +1,39 @@
+{
+  "passed": 10,
+  "tests": [
+    "Menu, profile, ranking and slot fit 320×640",
+    "Menu, profile, ranking and slot fit 360×720",
+    "Menu, profile, ranking and slot fit 390×844",
+    "Menu, profile, ranking and slot fit 768×1024",
+    "Menu, profile, ranking and slot fit 1280×900",
+    "Every crossword renders square, gapless cells in the actual browser (400 palettes)",
+    "SALICE is completed through its visible rack buttons and submit button",
+    "A real animated slot spin locks input, credits once and cleans its animation",
+    "All three worlds, chest bonus, Crystal bonus and Forge holds respond in browser",
+    "Repeated navigation and repaint keep the DOM bounded and emit no JavaScript exceptions"
+  ],
+  "pageErrors": [],
+  "viewports": [
+    [
+      320,
+      640
+    ],
+    [
+      360,
+      720
+    ],
+    [
+      390,
+      844
+    ],
+    [
+      768,
+      1024
+    ],
+    [
+      1280,
+      900
+    ]
+  ],
+  "scope": "Real headless Chromium rendering and UI events. Network and Android ad overlays are separate checks."
+}

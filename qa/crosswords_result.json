@@ -1,0 +1,7 @@
+{
+  "puzzles": 400,
+  "words": 3322,
+  "letters": 18315,
+  "complete": 400,
+  "scope": "All actual production rack/letter/crossing/submit/reward logic; DOM presentation adapted."
+}

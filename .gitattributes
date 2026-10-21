@@ -1,0 +1,6 @@
+*.html text eol=lf
+*.java text eol=lf
+*.kts text eol=lf
+gradlew text eol=lf
+*.png binary
+*.jar binary
