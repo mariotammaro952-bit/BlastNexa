@@ -4276,13 +4276,18 @@ function applyWordPalette(host,p){
  host.style.setProperty('--words-shade',palette.shade);
  host.dataset.wordPalette=String(p.id);
 }
+function syncWordBoardSquare(){
+ const host=$('wordBoard');if(!host)return;const width=host.getBoundingClientRect().width;
+ if(width>0){host.style.boxSizing='border-box';host.style.height=width+'px';}
+}
+window.addEventListener('resize',()=>{if(wordsVisible())syncWordBoardSquare();});
 function renderWords(){
  const p=wordPuzzle(),r=wordData.active;if(!p||!r)return;
  $('wordsTitle').textContent=p.name.toUpperCase();$('wordsSubtitle').textContent='Livello '+(r.id+1)+' / '+WORD_CATALOG.length+' · '+r.solved.length+'/'+p.entries.length+' parole · '+Math.max(0,3-r.errors)+' tentativi';
  applyWordPalette($('wordsScreen'),p);
  const host=$('wordBoard');host.dataset.size=String(p.size);host.replaceChildren();
  host.style.gridTemplateColumns='repeat('+p.size+',minmax(0,1fr))';
- host.style.gridTemplateRows='repeat('+p.size+',minmax(0,1fr))';
+ host.style.gridTemplateRows='repeat('+p.size+',minmax(0,1fr))';syncWordBoardSquare();
  host.setAttribute('aria-rowcount',String(p.size));host.setAttribute('aria-colcount',String(p.size));
  const all=new Set(p.entries.flatMap(e=>wordKeys(e,p.size))),fixed=solvedWordCells(),entry=p.entries[r.selected],activeKeys=wordKeys(entry,p.size),draft={};
  if(r.status==='playing')activeKeys.forEach((key,i)=>draft[key]=r.draft[i]);
@@ -4415,7 +4420,7 @@ function renderPlayerRanking(host){
  const intro=uCard('CLASSIFICA AVVENTURA','Sali in classifica con i livelli completati: 100 punti + 25 per stella, contando il miglior risultato di ogni livello. I risultati vengono verificati dal server.','🏆');host.append(intro);
  intro.append(uNode('p','','Gioca senza annullamenti, Pulse, Trapano o suggerimenti per inviare una partita valida. I punti di cruciverba e slot contribuiscono al tuo livello personale.'));
  if(!onlineConfigured()){intro.append(rankingNote('Classifica online in preparazione. I tuoi punti personali e le partite idonee restano salvati sul dispositivo. Il servizio non è ancora attivo.'));return;}
- if(!playerNetwork.joined){intro.append(rankingNote('Partecipando rendi pubblici il soprannome, l’avatar e i punti Avventura verificati. La classifica usa un profilo anonimo salvato su questo dispositivo.'));
+ if(!playerNetwork.joined){intro.append(rankingNote('Partecipando rendi pubblici il soprannome, l’avatar e i punti Avventura verificati. La classifica usa un profilo senza email, salvato su questo dispositivo. Premendo PARTECIPA accetti le Regole della classifica, consultabili qui sotto.'));
  const join=uButton('PARTECIPA COME '+playerProfile.name,joinPlayerRanking);join.disabled=playerBusy;intro.append(join);intro.append(playerLegalLinks());renderRankingRecovery(intro);return;}
  if(playerRankingError)host.append(rankingNote(playerRankingError,'error'));
  if(playerRanking?.me){const me=playerRanking.me;host.append(rankingNote('La tua posizione: '+(me.rank?'#'+me.rank:'da qualificare')+' · '+Number(me.points||0).toLocaleString('it-IT')+' punti verificati'+(playerNetwork.pending.length?' · '+playerNetwork.pending.length+' risultati da sincronizzare':'')));}
