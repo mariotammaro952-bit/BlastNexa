@@ -26,7 +26,7 @@ function audioMock(r){
   const loaded=createRuntime(FILE,{initialStorage:r.stored});loaded.run("openUniverse('slot')");assert.equal(loaded.run('lifeData.slot.sinceAd'),50);assert.equal(loaded.run('spinLifeSlot()'),false);
  });
  await test('The former fifteen-spin threshold migrates as 15/50 without resetting lives or history',()=>{
-  const old=createRuntime('../blastnexa_v19/BlastNexa_Slot_Arcade_PC_v19.html');old.run("openUniverse('slot');playerSettings.effects='lite';slotRandomInt=()=>0");for(let i=0;i<15;i++){old.run('spinLifeSlot()');old.clock.advance(20);}
+  const old={stored:JSON.parse(fs.readFileSync('qa/fixtures/legacy-v19.json')).storage};
   const r=createRuntime(FILE,{initialStorage:old.stored});r.run("openUniverse('slot');playerSettings.effects='lite';slotRandomInt=()=>0");assert.equal(r.run('lifeData.slot.sinceAd'),15);assert.equal(r.run('lifeData.balance'),80);assert.equal(r.run('spinLifeSlot()'),true);r.clock.advance(20);assert.equal(r.run('lifeData.slot.sinceAd'),16);
  });
  await test('Crystal and Temple emit one supplied-audio cue per earned feature and never replay it on rerender',()=>{
