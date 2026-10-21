@@ -46,6 +46,7 @@ jobs:
       - name: Build both environments
         run: |
           python3 tools/prepare_assets.py
+          python3 tools/verify_release_inputs.py
           if ! git diff --quiet -- game/index.html app/src/main/assets/index.html; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
