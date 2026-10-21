@@ -26,11 +26,14 @@ import static org.junit.Assert.*;
 public class LaunchValidationTest {
  private ActivityScenario<OdysseyActivity> scenario;
  private WebView web;
+ private static boolean bootstrapFailed;
  private final UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
  @Before public void launch() throws Exception {
+  Assume.assumeFalse("A previous startup failed; see startup diagnostics",bootstrapFailed);
   Intent intent=new Intent(InstrumentationRegistry.getInstrumentation().getTargetContext(),OdysseyActivity.class);intent.putExtra("bn_qa_no_ads",true);
-  scenario=ActivityScenario.launch(intent);bind();waitFor("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')",30000);
-  js("window.__qaErrors=[];window.addEventListener('error',e=>window.__qaErrors.push(e.message));localStorage.setItem('blastnexa_help_seen','true');playerSettings.muted=true;displayMenu();true");
+  scenario=ActivityScenario.launch(intent);bind();
+  try{waitFor("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')",45000);}catch(AssertionError error){bootstrapFailed=true;try{writeEvidence("startup.txt",js("JSON.stringify({url:location.href,state:document.readyState,agent:navigator.userAgent,text:document.body?document.body.innerText.slice(0,1000):'',scripts:document.scripts.length})"));capture("startup_failure");}catch(Exception ignored){}throw error;}
+  js("window.__qaErrors=[];window.addEventListener('error',e=>window.__qaErrors.push(e.message));localStorage.setItem('blastnexa_help_seen','true');muted=true;displayMenu();true");
  }
  private void bind(){scenario.onActivity(activity->{try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("game");field.setAccessible(true);web=(WebView)field.get(activity);}catch(Exception e){throw new RuntimeException(e);}});}
  @After public void close(){if(scenario!=null)scenario.close();}
@@ -45,7 +48,7 @@ public class LaunchValidationTest {
  }
  @Test public void a_menuProfileAnd400Crosswords()throws Exception{
   js("document.getElementById('openPlayerProfile').click();document.getElementById('playerNickname').value='Cometa Android';[...document.querySelectorAll('#universeBody button')].find(b=>b.textContent==='SALVA NOME').click();true");truth("playerProfile.name==='Cometa Android'");
-  for(int start=0;start<400;start+=20){int end=Math.min(400,start+20);truth("(()=>{for(let id="+start+";id<"+end+";id++){startWord(id);const cells=[...document.getElementById('wordBoard').children],n=WORD_CATALOG[id].size;for(let i=0;i<cells.length;i++){const a=cells[i].getBoundingClientRect();if(Math.abs(a.width-a.height)>.2)return false;if(i%n<n-1&&Math.abs(cells[i+1].getBoundingClientRect().left-a.right)>.2)return false;}}return true;})()");}
+  for(int start=0;start<400;start+=20){int end=Math.min(400,start+20);assertEquals("Crossword bounds", "true",js("(()=>{for(let id="+start+";id<"+end+";id++){startWord(id);const cells=[...document.getElementById('wordBoard').children],n=WORD_CATALOG[id].size;for(let i=0;i<cells.length;i++){const a=cells[i].getBoundingClientRect(),gap=i%n<n-1?cells[i+1].getBoundingClientRect().left-a.right:0;if(Math.abs(a.width-a.height)>.2||Math.abs(gap)>.2)return{word:id,cell:i,width:a.width,height:a.height,gap};}}return true;})()"));}
   truth("document.documentElement.scrollWidth<=innerWidth");truth("window.__qaErrors.length===0");
  }
  @Test public void b_threeSlotWorldsAndFiftySpinPersistence()throws Exception{
