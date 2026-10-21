@@ -64,7 +64,7 @@ public class LaunchValidationTest {
  }
  @Test public void c_allAdventureLevelsAcrossFourScenes()throws Exception{
   // Exact placement/scoring/mission/result code. Expensive presentation/IO is adapted only in this test.
-  js("for(const n of ['render','showPlacementFx','showBlastFx','showUniverseImpact','showAdrenalineMoveFX','showVictoryFinish','sPlace','sClear','haptic','adUnlockAudio','syncFlair','refreshUniverseMenu','refreshLivesUI','refreshWordMenu','saveUniverse','storeSession','refreshPlayerUI','saveRanking']){try{eval(n+'=()=>{}')}catch{}}storage.set=()=>{};unlocked=2000;lifeData.balance=999999;playerSettings.effects='lite';true");
+  js("window.__BN_TEST_FAST__=true;for(const n of ['render','showPlacementFx','showBlastFx','showUniverseImpact','showAdrenalineMoveFX','showVictoryFinish','sPlace','sClear','haptic','adUnlockAudio','syncFlair','refreshUniverseMenu','refreshLivesUI','refreshWordMenu','saveUniverse','storeSession','refreshPlayerUI','saveRanking']){try{eval(n+'=()=>{}')}catch{}}storage.set=()=>{};unlocked=2000;lifeData.balance=999999;playerSettings.effects='lite';true");
   for(String scene:new String[]{"war","ocean","alien","explosive"})for(int start=1;start<=2000;start+=100){int end=start+100;
    truth("(()=>{setScene('"+scene+"');for(let n="+start+";n<"+end+";n++){if(start('adventure',n)!==true)return false;for(const p of LEVELS[n-1].proof){if(roundOutcome)break;if(!placePiece(p.slot,p.x,p.y))return false;}if(roundOutcome!=='win'||!roundFinalized||playing||!missionMet()||!hasMove())return false;}return true;})()");
   }
@@ -83,7 +83,7 @@ public class LaunchValidationTest {
  @Test public void e_nativeOnlineProfileVerificationAndDelete()throws Exception{
   js("playerProfile.name='Verifica Android QA';playerNetwork.token=null;playerNetwork.joined=false;playerNetwork.pending=[];joinPlayerRanking();true");waitFor("!playerBusy",30000);truth("playerNetwork.joined && !!playerNetwork.token");
   try{
-   js("unlocked=2000;lifeData.balance=99999;setScene('war');start('adventure',1);for(const p of LEVELS[0].proof){if(roundOutcome)break;placePiece(p.slot,p.x,p.y);}openPlayer('ranking');true");waitFor("!playerBusy",30000);truth("playerRanking.me.points>=125 && playerNetwork.pending.length===0");
+   js("window.__BN_TEST_FAST__=true;unlocked=2000;lifeData.balance=99999;setScene('war');start('adventure',1);for(const p of LEVELS[0].proof){if(roundOutcome)break;placePiece(p.slot,p.x,p.y);}openPlayer('ranking');true");waitFor("!playerBusy",30000);truth("playerRanking.me.points>=125 && playerNetwork.pending.length===0");
   }finally{js("deletePlayerRanking();true");waitFor("!playerBusy",20000);truth("!playerNetwork.joined && !playerNetwork.token");}
  }
  @Test public void z_rendererRecoveryReopensSavedGame()throws Exception{
