@@ -127,3 +127,20 @@ jobs:
           name: android-api-${{ matrix.api }}
           retention-days: 3
           path: android-evidence/
+  live-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: codex/launch-v23
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24'
+      - run: node qa/live_service.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: live-service-results
+          retention-days: 3
+          path: qa/live_service_result.json
