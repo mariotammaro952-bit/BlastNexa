@@ -75,11 +75,13 @@ public class LaunchValidationTest {
  }
  @Test public void d_pauseResumeBackAndNavigation()throws Exception{
   js("openUniverse('slot');slotRandomInt=max=>0;spinLifeSlot();true");String spins=js("lifeData.slot.total"),balance=js("lifeData.balance");
+  java.util.concurrent.atomic.AtomicInteger taskId=new java.util.concurrent.atomic.AtomicInteger();scenario.onActivity(activity->taskId.set(activity.getTaskId()));
   device.pressHome();
-  // Resume through Android's launcher/task manager, as a player does. Moving only
-  // ActivityScenario's lifecycle cannot foreground a task after the Home key.
-  String component=InstrumentationRegistry.getInstrumentation().getTargetContext().getPackageName()+"/com.blastnexa.blockpuzzle.OdysseyActivity";
-  device.executeShellCommand("am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n "+component);
+  // Re-select the existing task, as in Android Recents. A launcher Intent has
+  // different action/categories from ActivityScenario's explicit test Intent
+  // and may create another Activity that the scenario intentionally ignores.
+  String resumed=device.executeShellCommand("am task focus "+taskId.get());
+  assertFalse("Cannot restore the original task: "+resumed,resumed.contains("Error"));
   scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);waitFor("!slotBusy",15000);
   assertEquals(spins,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));
   js("displayMenu();true");writeEvidence("meminfo_before_navigation.txt",device.executeShellCommand("dumpsys meminfo com.blastnexa.blockpuzzle.preview"));device.executeShellCommand("dumpsys gfxinfo com.blastnexa.blockpuzzle.preview reset");
