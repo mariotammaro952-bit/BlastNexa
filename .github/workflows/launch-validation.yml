@@ -1,0 +1,129 @@
+name: BlastNexa release validation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: blastnexa-launch-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.ref == 'codex/launch-v23'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: codex/launch-v23
+      - name: Import reviewed v23 source
+        shell: bash
+        run: |
+          if [ ! -f .launch-source.json ]; then
+            curl --fail --location --retry 2 'https://blastnexa-online.mariotammaro952.chatgpt.site/source/BlastNexa_v23_Source.zip' -o /tmp/blastnexa-source.zip
+            echo '4812d11bb1b8367808bf0f336953d65059a1a0701306d383fc6f8a7080d4a875  /tmp/blastnexa-source.zip' | sha256sum --check
+            unzip -o -q /tmp/blastnexa-source.zip -d .
+            rm -f app/src/main/java/com/blastnexa/blockpuzzle/MainActivity.java
+            chmod +x gradlew
+            python3 - <<'PY'
+          import json
+          from pathlib import Path
+          Path('.launch-source.json').write_text(json.dumps({'version':23,'source_sha256':'4812d11bb1b8367808bf0f336953d65059a1a0701306d383fc6f8a7080d4a875'},indent=2)+'\n')
+          PY
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add -A
+            git commit -m 'Import complete v23 game, native Android host and ranking service'
+            git push origin HEAD:codex/launch-v23
+          fi
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build both environments
+        run: |
+          python3 tools/prepare_assets.py
+          ./gradlew --no-daemon --max-workers=2 assemblePreviewDebug assemblePreviewDebugAndroidTest assemblePreviewRelease bundleProductionRelease
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24'
+      - name: Replay game and server validation
+        run: |
+          node qa/all_levels.cjs game/index.html
+          node qa/qa_arcade.cjs
+          node qa/qa_spectra.cjs
+          node qa/qa_odyssey.cjs
+          node qa/other_games.cjs
+          node qa/unlimited_modes.cjs
+          node qa/soak.cjs
+          node --experimental-sqlite qa/d1.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: android-installables
+          retention-days: 3
+          path: app/build/outputs/apk/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: build-and-unit-results
+          retention-days: 3
+          path: |
+            app/build/outputs/apk/
+            app/build/outputs/bundle/
+            qa/*result.json
+            app/build/reports/
+  android:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [31, 36]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: codex/launch-v23
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: android-installables
+          path: imported-artifacts
+      - name: Enable hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -memory 3072
+          script: |
+            mkdir -p android-evidence
+            adb shell wm size 1080x1920
+            adb shell wm density 420
+            adb install -r imported-artifacts/preview/debug/app-preview-debug.apk
+            adb install -r imported-artifacts/androidTest/preview/debug/app-preview-debug-androidTest.apk
+            adb logcat -c
+            adb shell am instrument -w -r com.blastnexa.blockpuzzle.preview.test/androidx.test.runner.AndroidJUnitRunner | tee android-evidence/instrumentation.txt
+            adb logcat -d > android-evidence/logcat.txt
+            adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/store android-evidence/store || true
+            adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/metrics android-evidence/metrics || true
+            grep -Eq '^OK \(7 tests\)' android-evidence/instrumentation.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: android-api-${{ matrix.api }}
+          retention-days: 3
+          path: android-evidence/
