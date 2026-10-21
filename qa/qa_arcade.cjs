@@ -69,7 +69,7 @@ test('Mode and page switches are blocked during a spin, and result presentation 
  const r=fresh();r.run('slotRandomInt=()=>0;spinLifeSlot()');assert.equal(r.run("setArcadeMachine('forge')"),false);assert.equal(r.run("setArcadeView('missions')"),false);settle(r);const saved=snapshot(r,'lifeData');for(const view of ['missions','collection','rules','play'])assert.equal(r.run(`setArcadeView('${view}')`),true);assert.deepEqual(snapshot(r,'lifeData'),saved);
 });
 test('Legacy slot statistics, lives and in-progress crosswords migrate without replaying a prize',()=>{
- const old=createRuntime('../blastnexa_v18/BlastNexa_Cruciverba_Color_PC_v18.html');old.run("openUniverse('slot');slotRandomInt=()=>0;spinLifeSlot()");old.clock.advance(6000);old.run('startWord(2)');old.elements.get('wordRack').children.find(n=>!n.disabled).click();const word=snapshot(old,'wordData.active');
+ const fixture=JSON.parse(fs.readFileSync('qa/fixtures/legacy-v18.json')),old={stored:fixture.storage},word=fixture.word;
  const r=createRuntime(FILE,{initialStorage:old.stored});assert.equal(r.run('lifeData.balance'),10);assert.equal(r.run('lifeData.slot.total'),1);assert.equal(r.run('lifeData.slot.archive.lives'),5);assert.equal(r.run('lifeData.slot.last.prize'),5);assert.equal(r.run('lifeData.slot.arcade.spins'),0);assert.deepEqual(snapshot(r,'wordData.active'),word);r.run("openUniverse('slot')");assert.equal(r.run('lifeData.balance'),10);
 });
 test('New result matrices and all history entries survive a saved-session round trip',()=>{
