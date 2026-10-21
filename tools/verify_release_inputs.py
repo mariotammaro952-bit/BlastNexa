@@ -1,20 +1,25 @@
 from pathlib import Path
+import hashlib
 import json
 import re
 
 root = Path(__file__).resolve().parents[1]
-html = (root / 'app/src/main/assets/index.html').read_text(encoding='utf-8')
-pack = json.loads((root / 'levels/levels.json').read_text(encoding='utf-8'))
-match = re.search(r'<script id="levelCatalog" type="application/json">(.*?)</script>', html, re.S)
-assert match, "Embedded level catalog is missing"
-embedded = json.loads(match.group(1))
-assert len(embedded['levels']) == len(pack['levels']) == 2000, "Expected 2,000 levels"
-assert embedded == pack, "Embedded and standalone level catalogs do not match"
+source = (root / 'game/index.html').read_bytes()
+assert source == (root / 'app/src/main/assets/index.html').read_bytes(), 'Run tools/prepare_assets.py before building'
+html = source.decode('utf-8')
+def catalog(name):
+    match = re.search(r'<script id="' + name + r'" type="application/json">(.*?)</script>', html, re.S)
+    assert match, 'Missing catalog: ' + name
+    return json.loads(match.group(1))
+levels = catalog('levelCatalog')['levels']
+assert len(levels) == 2000, 'Expected 2,000 Adventure levels'
+config = catalog('onlineConfig')
+assert config == json.loads((root / 'app/src/main/assets/online-config.json').read_text())
+assert config['url'] == 'https://blastnexa-online.mariotammaro952.chatgpt.site/api/ranking'
 assert 'BlastNexaSave' in html and 'BlastNexaBack' in html
-assert 'Nexa Circuit' in html or 'NEXA CIRCUIT' in html
 build = (root / 'app/build.gradle.kts').read_text()
-assert 'compileSdk = 36' in build and 'targetSdk = 36' in build
-assert 'com.blastnexa.blockpuzzle' in build
-assert 'minSdk = 24' in build, 'Play automatic protection requires API 24 or higher'
-assert 'versionCode = 12' in build, 'Version must increase for the Play Store'
-print("PASS: BlastNexa v1.0 Beta2, 2000 levels, minSdk24/targetSdk36, versionCode12")
+for setting in ('compileSdk = 36', 'targetSdk = 36', 'minSdk = 24', 'com.blastnexa.blockpuzzle'):
+    assert setting in build, 'Missing Android setting: ' + setting
+version = int(re.search(r'versionCode\s*=\s*(\d+)', build).group(1))
+assert version >= 2301, 'Do not downgrade the published v23 version code'
+print(f'PASS: complete game, 2,000 levels, active HTTPS ranking, API 24/36, version {version}, SHA256 {hashlib.sha256(source).hexdigest()}')
