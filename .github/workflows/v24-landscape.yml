@@ -1,0 +1,36 @@
+name: BlastNexa v24 landscape build
+on:
+  push:
+    branches: [codex/landscape-slot-v24]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      BN_BANNER_AD_UNIT: ${{ vars.BN_BANNER_AD_UNIT }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24'
+      - name: Package and check landscape game
+        run: |
+          python3 tools/prepare_assets.py
+          python3 tools/verify_release_inputs.py
+          node --check game/landscape-v24.js
+          node qa/v24_layout.cjs
+      - name: Build Android installable APK
+        run: ./gradlew --no-daemon --max-workers=2 :app:assemblePreviewDebug
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: BlastNexa-v24-landscape-TEST-APK
+          path: app/build/outputs/apk/preview/debug/app-preview-debug.apk
+          retention-days: 7
+          if-no-files-found: error
