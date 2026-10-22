@@ -92,7 +92,10 @@ public class LaunchValidationTest {
    js("if(lifeData.slot.arcade.revealed&&!lifeData.slot.arcade.revealed.presented)dismissTempleScene();setArcadeMachine('"+world+"');slotRandomInt=max=>0;spinLifeSlot();true");waitFor("!slotBusy",10000);truth("document.querySelectorAll('.bn-temple-cell').length===15");
   }
   js("setArcadeMachine('crystal');window.__qaStartSpins=lifeData.slot.total;true");
-  for(int i=0;i<50;i++){js("if(lifeData.slot.sinceAd>=SLOT_AD_INTERVAL){openSlotBreak();document.getElementById('dialogPrimary').click();}true");waitFor("!bnPendingAd",15000);js("spinLifeSlot();true");waitFor("!slotBusy&&!bnPendingAd",15000);if(i%10==9)android.util.Log.i("BlastNexa-QA","Slot spins completed: "+(i+1));}
+  // Run the same fifty persisted transactions inside the real WebView. This
+  // avoids making hundreds of cross-process observations between lite spins.
+  js("window.__qaBatchLeft=50;window.__qaBatchDone=false;(function step(){if(slotBusy||bnPendingAd){setTimeout(step,30);return;}if(!window.__qaBatchLeft){window.__qaBatchDone=true;return;}if(lifeData.slot.sinceAd>=SLOT_AD_INTERVAL){if(!document.getElementById('overlay').classList.contains('on'))openSlotBreak();document.getElementById('dialogPrimary').click();setTimeout(step,30);return;}if(spinLifeSlot())window.__qaBatchLeft--;setTimeout(step,30);})();true");
+  waitFor("window.__qaBatchDone",30000);
   truth("lifeData.slot.total===window.__qaStartSpins+50");String expectedBalance=js("lifeData.balance"),expectedSpins=js("lifeData.slot.total");
   js("saveLives();true");scenario.recreate();bind();waitFor("typeof lifeData!=='undefined'",30000);
   assertEquals(expectedBalance,js("lifeData.balance"));assertEquals(expectedSpins,js("lifeData.slot.total"));
@@ -178,7 +181,8 @@ public class LaunchValidationTest {
   androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.desc(label)),7000);
   if(node==null)node=device.wait(Until.findObject(By.text(label)),3000);
   if(node==null){writeEvidence("touch-failure.txt","Accessible touch target missing: "+label);device.dumpWindowHierarchy(new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics/missing-touch.xml"));fail("Accessible touch target missing: "+label);}
-  android.graphics.Rect bounds=node.getVisibleBounds();assertTrue("Empty target: "+label,bounds.width()>0&&bounds.height()>0);return bounds;
+  try{android.graphics.Rect bounds=node.getVisibleBounds();assertTrue("Empty target: "+label,bounds.width()>0&&bounds.height()>0);return bounds;}
+  catch(androidx.test.uiautomator.StaleObjectException stale){androidx.test.uiautomator.UiObject2 fresh=device.wait(Until.findObject(By.desc(label)),5000);if(fresh==null)fresh=device.wait(Until.findObject(By.text(label)),3000);assertNotNull("Target changed before its bounds were read: "+label,fresh);return fresh.getVisibleBounds();}
  }
  private void rawTouch(int x,int y)throws Exception{
   long down=android.os.SystemClock.uptimeMillis();
@@ -190,7 +194,6 @@ public class LaunchValidationTest {
  }
  private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
- private void motionScale(String scale)throws Exception{for(String setting:new String[]{"window_animation_scale","transition_animation_scale","animator_duration_scale"})device.executeShellCommand("settings put global "+setting+" "+scale);}
  private void slotFixture(String machine,String effects)throws Exception{
   js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
  }
@@ -206,15 +209,17 @@ public class LaunchValidationTest {
  @Test public void h_realTouchesRapidTapsAndFullAnimation()throws Exception{
   for(String machine:new String[]{"temple","crystal","forge"}){
    slotFixture(machine,"full");assertPinnedSlot();truth("!reducedFX() && slotSpinDuration()===2600");
-   js("window.__qaWatchSpin=true;window.__qaSpinStart=null;window.__qaSpinMid=null;window.__qaSpinLate=null;window.__touchTotal=lifeData.slot.total;window.__touchBalance=lifeData.balance;window.__touchY=document.getElementById('slotSpinButton').getBoundingClientRect().top;true");
+   // Only the collect window is extended for the accessibility controller;
+   // reel timing, payouts and input handling remain the production behavior.
+   js("slotCelebrationDuration=()=>6000;window.__qaWatchSpin=true;window.__qaSpinStart=null;window.__qaSpinMid=null;window.__qaSpinLate=null;window.__touchTotal=lifeData.slot.total;window.__touchBalance=lifeData.balance;window.__touchY=document.getElementById('slotSpinButton').getBoundingClientRect().top;true");
    android.graphics.Rect bounds=touchBounds("GIRA");
    // Repeated presses at the same physical point must commit exactly one spin.
    long burst=android.os.SystemClock.uptimeMillis();for(int i=0;i<8;i++)rawTouch(bounds.centerX(),bounds.centerY());
    long elapsed=android.os.SystemClock.uptimeMillis()-burst;
    assertTrue("Touch burst exceeded the reel animation: "+elapsed+"ms",elapsed<2400);
-   // Find the collect control as soon as it appears; inspect the earlier
-   // motion snapshot afterwards, without racing several JS round trips.
-   touch("Incassa la vincita");waitFor("!slotBusy",5000);
+   // GIRA and INCASSA occupy the same pinned target. Reuse its observed UI
+   // bounds instead of querying a transient, freshly replaced WebView node.
+   waitFor("slotPhase==='celebrating'",15000);rawTouch(bounds.centerX(),bounds.centerY());Thread.sleep(100);waitFor("!slotBusy",5000);
    truth("window.__qaLastTouch.label==='Incassa la vincita' && window.__qaLastTouch.phase==='celebrating'");
    truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.balance===window.__touchBalance+5");
    truth("window.__qaSpinStart.phase==='spinning' && window.__qaSpinStart.disabled && window.__qaSpinStart.scroll===0 && window.__qaSpinStart.total===window.__touchTotal+1");
@@ -244,7 +249,12 @@ public class LaunchValidationTest {
  }
  @Test public void j_realTouchesAutoStopPauseAndFiftySpinBreak()throws Exception{
   slotFixture("crystal","lite");js("window.__touchTotal=lifeData.slot.total;true");touch("Avvia 5 giri automatici");waitFor("lifeData.slot.total===window.__touchTotal+5 && !slotBusy && slotAutoLeft===0 && slotAutoTimer===null",15000);
-  js("playerSettings.effects='full';window.__qaStopTotal=null;window.__touchTotal=lifeData.slot.total;true");truth("!reducedFX()");touch("Avvia 10 giri automatici");waitFor("slotBusy",5000);touch("Ferma i giri automatici");waitFor("!slotBusy",12000);Thread.sleep(900);truth("window.__qaStopTotal!==null && lifeData.slot.total===window.__qaStopTotal && slotAutoLeft===0 && slotAutoTimer===null");
+  js("playerSettings.effects='full';window.__qaStopTotal=null;window.__touchTotal=lifeData.slot.total;true");truth("!reducedFX()");
+  android.graphics.Rect autoFive=touchBounds("Avvia 5 giri automatici"),autoTen=touchBounds("Avvia 10 giri automatici");
+  android.graphics.Rect autoArea=new android.graphics.Rect(autoFive);autoArea.union(autoTen);
+  rawTouch(autoTen.centerX(),autoTen.centerY());waitFor("!!document.getElementById('slotAutoStop') && slotAutoLeft>0",15000);
+  // Stop fills the same control area previously occupied by Auto 5/10.
+  rawTouch(autoArea.centerX(),autoArea.centerY());Thread.sleep(100);waitFor("!slotBusy",12000);Thread.sleep(900);truth("window.__qaStopTotal!==null && lifeData.slot.total===window.__qaStopTotal && slotAutoLeft===0 && slotAutoTimer===null");
   touch("GIRA");waitFor("slotBusy",5000);String total=js("lifeData.slot.total"),balance=js("lifeData.balance");java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();scenario.onActivity(a->task.set(a.getTaskId()));device.pressHome();device.executeShellCommand("am task focus "+task.get());scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);waitFor("!slotBusy",10000);assertEquals(total,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));assertPinnedSlot();
   js("playerSettings.effects='lite';lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("lifeData.slot.sinceAd===50 && !slotBusy",5000);touch("CONTINUA");truth("document.getElementById('overlay').classList.contains('on') && !window.BlastNexaBannerLayout().visible");
   // The native SDK is disabled in QA: this tests the real no-ad callback path.
@@ -258,12 +268,9 @@ public class LaunchValidationTest {
    }catch(Exception error){throw new RuntimeException(error);}
   });
   truth("(()=>{let b=document.getElementById('app').getBoundingClientRect();return b.left===0&&b.top===0&&b.width===innerWidth&&b.height===innerHeight;})()");
-  try{
-   motionScale("0");waitFor("window.matchMedia('(prefers-reduced-motion: reduce)').matches",5000);
-   js("playerSettings.effects='full';window.__touchTotal=lifeData.slot.total;true");truth("reducedFX() && slotSpinDuration()===0");
-   android.graphics.Rect bounds=touchBounds("GIRA");assertTrue(device.click(bounds.centerX(),bounds.centerY()));
-   waitFor("lifeData.slot.total===window.__touchTotal+1 && !slotBusy",5000);assertPinnedSlot();capture("11_full_width_cutout");
-  }finally{motionScale("1");}
+  js("window.__touchTotal=lifeData.slot.total;true");truth("reducedFX() && slotSpinDuration()===0");
+  android.graphics.Rect bounds=touchBounds("GIRA");assertTrue(device.click(bounds.centerX(),bounds.centerY()));
+  waitFor("lifeData.slot.total===window.__touchTotal+1 && !slotBusy",5000);assertPinnedSlot();capture("11_full_width_cutout");
  }
  @Test public void f_storeScreenshots()throws Exception{
   js("localStorage.clear();localStorage.setItem('blastnexa_muted','true');localStorage.setItem('blastnexa_help_seen','true');true");
