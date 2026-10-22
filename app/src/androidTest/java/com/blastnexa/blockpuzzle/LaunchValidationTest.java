@@ -41,7 +41,7 @@ public class LaunchValidationTest {
   // Acknowledge the actual system UI before lifecycle/back/touch assertions.
   androidx.test.uiautomator.UiObject2 education=device.wait(Until.findObject(By.text("Got it")),3000);
   if(education!=null){education.click();assertTrue(device.wait(Until.gone(By.text("Got it")),5000));}
-  js("window.__qaErrors=[];window.__qaRealClicks=0;document.addEventListener('click',()=>window.__qaRealClicks++,true);window.addEventListener('error',e=>window.__qaErrors.push(e.message));localStorage.setItem('blastnexa_help_seen','true');muted=true;displayMenu();true");
+  js("window.__qaErrors=[];window.__qaRealClicks=0;window.__qaWatchSpin=false;window.__qaFilled=()=>document.querySelectorAll('#slotReels>.bn-temple-reel').length===5&&[...document.querySelectorAll('#slotReels>.bn-temple-reel')].every(reel=>{const r=reel.getBoundingClientRect();return [0,1,2].every(row=>document.elementFromPoint(r.left+r.width/2,r.top+r.height*(row+.5)/3)?.closest('.bn-temple-cell'));});document.addEventListener('click',e=>{window.__qaRealClicks++;const b=e.target.closest?.('button');window.__qaLastTouch={label:b?.getAttribute('aria-label')||b?.textContent,phase:typeof slotPhase!=='undefined'?slotPhase:null};if(b?.id==='slotAutoStop')window.__qaStopTotal=lifeData.slot.total;if(window.__qaWatchSpin&&b?.id==='slotSpinButton'&&b.getAttribute('aria-label')==='GIRA'){Promise.resolve().then(()=>window.__qaSpinStart={phase:slotPhase,disabled:document.getElementById('slotSpinButton').disabled,scroll:document.getElementById('app').scrollTop,total:lifeData.slot.total});setTimeout(()=>window.__qaSpinMid={phase:slotPhase,filled:window.__qaFilled()},400);setTimeout(()=>window.__qaSpinLate={phase:slotPhase,filled:window.__qaFilled()},1700);}},true);window.addEventListener('error',e=>window.__qaErrors.push(e.message));localStorage.setItem('blastnexa_help_seen','true');muted=true;displayMenu();true");
  }
  private void bind(){scenario.onActivity(activity->{try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("game");field.setAccessible(true);web=(WebView)field.get(activity);}catch(Exception e){throw new RuntimeException(e);}});}
  @After public void close(){if(scenario!=null)scenario.close();}
@@ -185,8 +185,9 @@ public class LaunchValidationTest {
   android.view.MotionEvent release=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,x,y,0);
   release.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(release,false));release.recycle();
  }
- private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);int clicks=Integer.parseInt(js("window.__qaRealClicks"));rawTouch(b.centerX(),b.centerY());waitFor("window.__qaRealClicks>"+clicks,5000);}
- private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();int clicks=Integer.parseInt(js("window.__qaRealClicks"));rawTouch(b.centerX(),b.centerY());waitFor("window.__qaRealClicks>"+clicks,5000);}
+ private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
+ private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
+ private void motionScale(String scale)throws Exception{for(String setting:new String[]{"window_animation_scale","transition_animation_scale","animator_duration_scale"})device.executeShellCommand("settings put global "+setting+" "+scale);}
  private void slotFixture(String machine,String effects)throws Exception{
   js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
  }
@@ -201,21 +202,21 @@ public class LaunchValidationTest {
  }
  @Test public void h_realTouchesRapidTapsAndFullAnimation()throws Exception{
   for(String machine:new String[]{"temple","crystal","forge"}){
-   slotFixture(machine,"full");assertPinnedSlot();
-   js("window.__touchTotal=lifeData.slot.total;window.__touchBalance=lifeData.balance;window.__touchY=document.getElementById('slotSpinButton').getBoundingClientRect().top;true");
+   slotFixture(machine,"full");assertPinnedSlot();truth("!reducedFX() && slotSpinDuration()===2600");
+   js("window.__qaWatchSpin=true;window.__qaSpinStart=null;window.__qaSpinMid=null;window.__qaSpinLate=null;window.__touchTotal=lifeData.slot.total;window.__touchBalance=lifeData.balance;window.__touchY=document.getElementById('slotSpinButton').getBoundingClientRect().top;true");
    android.graphics.Rect bounds=touchBounds("GIRA");
    // Repeated presses at the same physical point must commit exactly one spin.
    long burst=android.os.SystemClock.uptimeMillis();for(int i=0;i<8;i++)rawTouch(bounds.centerX(),bounds.centerY());
    long elapsed=android.os.SystemClock.uptimeMillis()-burst;
    assertTrue("Touch burst exceeded the reel animation: "+elapsed+"ms",elapsed<2400);
-   waitFor("lifeData.slot.total>window.__touchTotal",5000);
-   writeEvidence("touch-burst-"+machine+".json",js("JSON.stringify({machine:lifeData.slot.arcade.machine,previous:window.__touchTotal,total:lifeData.slot.total,phase:slotPhase,scroll:document.getElementById('app').scrollTop,burstMs:"+elapsed+"})"));
-   truth("lifeData.slot.total===window.__touchTotal+1");assertPinnedSlot();
-   truth("document.getElementById('slotSpinButton').disabled");assertFilledReels();
-   waitFor("slotPhase==='celebrating'",10000);
-   truth("!document.getElementById('slotSpinButton').disabled");assertPinnedSlot();assertFilledReels();
+   // Find the collect control as soon as it appears; inspect the earlier
+   // motion snapshot afterwards, without racing several JS round trips.
    touch("Incassa la vincita");waitFor("!slotBusy",5000);
+   truth("window.__qaLastTouch.label==='Incassa la vincita' && window.__qaLastTouch.phase==='celebrating'");
    truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.balance===window.__touchBalance+5");
+   truth("window.__qaSpinStart.phase==='spinning' && window.__qaSpinStart.disabled && window.__qaSpinStart.scroll===0 && window.__qaSpinStart.total===window.__touchTotal+1");
+   truth("window.__qaSpinMid.phase==='spinning' && window.__qaSpinMid.filled && window.__qaSpinLate.phase==='spinning' && window.__qaSpinLate.filled");assertPinnedSlot();assertFilledReels();
+   writeEvidence("touch-burst-"+machine+".json",js("JSON.stringify({machine:lifeData.slot.arcade.machine,previous:window.__touchTotal,total:lifeData.slot.total,start:window.__qaSpinStart,mid:window.__qaSpinMid,late:window.__qaSpinLate,burstMs:"+elapsed+"})"));js("window.__qaWatchSpin=false;true");
    truth("Math.abs(document.getElementById('slotSpinButton').getBoundingClientRect().top-window.__touchY)<1");
    // A touch away from the centre also works inside the round control.
    bounds=touchBounds("GIRA");rawTouch(bounds.left+bounds.width()/3,bounds.top+bounds.height()*2/3);
@@ -232,17 +233,17 @@ public class LaunchValidationTest {
   touch("TORNA AI RULLI");truth("!!document.getElementById('slotReels') && !lifeData.slot.arcade.bonus");assertPinnedSlot();
   slotFixture("crystal","lite");js("slotRandomInt=max=>max===100?98:0;true");touch("GIRA");waitFor("lifeData.slot.arcade.freeSpins===3&&!slotBusy",5000);
   js("slotRandomInt=max=>0;window.__touchTotal=lifeData.slot.total;true");
-  for(int i=0;i<3;i++){touch("GIRA NELLA CAVERNA");waitFor("!slotBusy",5000);}
+  for(int i=0;i<3;i++){touch("GIRA NELLA CAVERNA");waitFor("lifeData.slot.total===window.__touchTotal+"+(i+1)+" && !slotBusy",5000);}
   truth("lifeData.slot.total===window.__touchTotal+3 && lifeData.slot.arcade.crystalJourney.played===3");touch("TORNA AI RULLI");assertPinnedSlot();
   slotFixture("forge","lite");touch("GIRA");waitFor("!slotBusy",5000);js("lifeData.slot.arcade.reactor=6;renderLifeSlot(document.getElementById('universeBody'));window.__touchTotal=lifeData.slot.total;true");
   touch("Tieni il rullo 1");touch("Tieni il rullo 4");truth("slotHolds.size===2");assertPinnedSlot();capture("12_forge_ready_touch_targets");touch("Rilancia i rulli");waitFor("!slotBusy",5000);
   truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.slot.last.arcade.held.join(',')==='0,3' && lifeData.slot.arcade.reactor===0");assertPinnedSlot();capture("10_forge_after_touch_respin");
  }
  @Test public void j_realTouchesAutoStopPauseAndFiftySpinBreak()throws Exception{
-  slotFixture("crystal","lite");js("window.__touchTotal=lifeData.slot.total;true");touch("Avvia 5 giri automatici");waitFor("!slotBusy && slotAutoLeft===0 && slotAutoTimer===null",15000);truth("lifeData.slot.total===window.__touchTotal+5");
-  js("playerSettings.effects='full';window.__touchTotal=lifeData.slot.total;true");touch("Avvia 10 giri automatici");waitFor("slotBusy",5000);touch("Ferma i giri automatici");waitFor("!slotBusy",12000);truth("lifeData.slot.total===window.__touchTotal+1 && slotAutoLeft===0 && slotAutoTimer===null");
+  slotFixture("crystal","lite");js("window.__touchTotal=lifeData.slot.total;true");touch("Avvia 5 giri automatici");waitFor("lifeData.slot.total===window.__touchTotal+5 && !slotBusy && slotAutoLeft===0 && slotAutoTimer===null",15000);
+  js("playerSettings.effects='full';window.__qaStopTotal=null;window.__touchTotal=lifeData.slot.total;true");truth("!reducedFX()");touch("Avvia 10 giri automatici");waitFor("slotBusy",5000);touch("Ferma i giri automatici");waitFor("!slotBusy",12000);Thread.sleep(900);truth("window.__qaStopTotal!==null && lifeData.slot.total===window.__qaStopTotal && slotAutoLeft===0 && slotAutoTimer===null");
   touch("GIRA");waitFor("slotBusy",5000);String total=js("lifeData.slot.total"),balance=js("lifeData.balance");java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();scenario.onActivity(a->task.set(a.getTaskId()));device.pressHome();device.executeShellCommand("am task focus "+task.get());scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);waitFor("!slotBusy",10000);assertEquals(total,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));assertPinnedSlot();
-  js("playerSettings.effects='lite';lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.sinceAd===50");touch("CONTINUA");truth("document.getElementById('overlay').classList.contains('on') && !window.BlastNexaBannerLayout().visible");
+  js("playerSettings.effects='lite';lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("lifeData.slot.sinceAd===50 && !slotBusy",5000);touch("CONTINUA");truth("document.getElementById('overlay').classList.contains('on') && !window.BlastNexaBannerLayout().visible");
   // The native SDK is disabled in QA: this tests the real no-ad callback path.
   touchText("CONTINUA");waitFor("!bnPendingAd && !document.getElementById('overlay').classList.contains('on')",15000);truth("lifeData.slot.sinceAd===0 && lifeData.slot.total===window.__touchTotal+1");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.total===window.__touchTotal+2");assertPinnedSlot();
  }
@@ -254,7 +255,12 @@ public class LaunchValidationTest {
    }catch(Exception error){throw new RuntimeException(error);}
   });
   truth("(()=>{let b=document.getElementById('app').getBoundingClientRect();return b.left===0&&b.top===0&&b.width===innerWidth&&b.height===innerHeight;})()");
-  touch("GIRA");waitFor("!slotBusy",5000);assertPinnedSlot();capture("11_full_width_cutout");
+  try{
+   motionScale("0");waitFor("window.matchMedia('(prefers-reduced-motion: reduce)').matches",5000);
+   js("playerSettings.effects='full';window.__touchTotal=lifeData.slot.total;true");truth("reducedFX() && slotSpinDuration()===0");
+   android.graphics.Rect bounds=touchBounds("GIRA");assertTrue(device.click(bounds.centerX(),bounds.centerY()));
+   waitFor("lifeData.slot.total===window.__touchTotal+1 && !slotBusy",5000);assertPinnedSlot();capture("11_full_width_cutout");
+  }finally{motionScale("1");}
  }
  @Test public void f_storeScreenshots()throws Exception{
   js("window.__qaReloading=true;localStorage.clear();localStorage.setItem('blastnexa_muted','true');localStorage.setItem('blastnexa_help_seen','true');location.reload();true");waitFor("typeof window.__qaReloading==='undefined' && typeof playerTotals==='function'",30000);
