@@ -73,8 +73,8 @@ jobs:
             cutout: 0
           - api: 36
             screen: wide-cutout
-            size: 1080x2400
-            density: 480
+            size: 720x1600
+            density: 320
             cutout: 1
     env:
       BN_QA_SIZE: ${{ matrix.size }}
@@ -105,7 +105,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           emulator-boot-timeout: 600
-          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory 3072 -cores 2
+          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
           script: bash tools/run_android_validation.sh
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

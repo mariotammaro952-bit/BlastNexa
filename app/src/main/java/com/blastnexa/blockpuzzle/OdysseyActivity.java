@@ -3,6 +3,7 @@ package com.blastnexa.blockpuzzle;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.net.Uri;
@@ -159,6 +160,14 @@ public final class OdysseyActivity extends Activity {
     }
 
     @Override public void onBackPressed() { requestBack(); }
+    @Override public void onConfigurationChanged(Configuration configuration) {
+        super.onConfigurationChanged(configuration);
+        // The responsive game handles viewport changes in place. Recreating
+        // its WebView here would interrupt a spin or the return from an ad.
+        enterImmersiveMode();
+        if(root!=null)root.requestApplyInsets();
+        evaluate("window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
+    }
     @Override public void onWindowFocusChanged(boolean focused) {
         super.onWindowFocusChanged(focused);
         if (focused) enterImmersiveMode();
@@ -172,8 +181,10 @@ public final class OdysseyActivity extends Activity {
     private void enterImmersiveMode() {
         if(Build.VERSION.SDK_INT>=28){
             WindowManager.LayoutParams attributes=getWindow().getAttributes();
-            attributes.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-            getWindow().setAttributes(attributes);
+            if(attributes.layoutInDisplayCutoutMode!=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES){
+                attributes.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                getWindow().setAttributes(attributes);
+            }
         }
         if (Build.VERSION.SDK_INT >= 30) {
             getWindow().setDecorFitsSystemWindows(false);

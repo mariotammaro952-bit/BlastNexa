@@ -26,6 +26,7 @@ import static org.junit.Assert.*;
 public class LaunchValidationTest {
  private ActivityScenario<OdysseyActivity> scenario;
  private WebView web;
+ private WebView readyWeb;
  private static boolean bootstrapFailed;
  private final UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
  @Before public void launch() throws Exception {
@@ -44,7 +45,29 @@ public class LaunchValidationTest {
  }
  private void bind(){scenario.onActivity(activity->{try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("game");field.setAccessible(true);web=(WebView)field.get(activity);}catch(Exception e){throw new RuntimeException(e);}});}
  @After public void close(){if(scenario!=null)scenario.close();}
+ private void awaitCurrentPage()throws Exception{
+  // Landscape launch may recreate the Activity after ActivityScenario first
+  // reaches RESUMED. Never evaluate against the destroyed WebView retained by
+  // that first instance. Observe the current native page before dispatching JS.
+  long until=android.os.SystemClock.uptimeMillis()+45000,stableAt=0;WebView candidate=null;
+  AtomicReference<WebView> current=new AtomicReference<>();java.util.concurrent.atomic.AtomicBoolean loaded=new java.util.concurrent.atomic.AtomicBoolean();
+  while(android.os.SystemClock.uptimeMillis()<until){
+   loaded.set(false);scenario.onActivity(activity->{try{
+    java.lang.reflect.Field view=OdysseyActivity.class.getDeclaredField("game"),ready=OdysseyActivity.class.getDeclaredField("pageReady");view.setAccessible(true);ready.setAccessible(true);WebView target=(WebView)view.get(activity);current.set(target);
+    loaded.set(target!=null&&ready.getBoolean(activity)&&target.getProgress()==100&&target.getWidth()>target.getHeight());
+   }catch(Exception error){throw new RuntimeException(error);}});
+   WebView target=current.get();long now=android.os.SystemClock.uptimeMillis();
+   if(loaded.get()){
+    if(target==readyWeb){web=target;return;}
+    if(target!=candidate){candidate=target;stableAt=now;}
+    else if(now-stableAt>=350){web=target;readyWeb=target;return;}
+   }else{candidate=null;stableAt=0;}
+   Thread.sleep(100);
+  }
+  fail("Current landscape WebView did not finish loading");
+ }
  private String js(String code)throws Exception{
+  awaitCurrentPage();
   AtomicReference<String> value=new AtomicReference<>();CountDownLatch done=new CountDownLatch(1);
   InstrumentationRegistry.getInstrumentation().runOnMainSync(()->web.evaluateJavascript(code,r->{value.set(r);done.countDown();}));
   assertTrue("WebView JavaScript response timed out",done.await(45,TimeUnit.SECONDS));return value.get();
@@ -82,7 +105,7 @@ public class LaunchValidationTest {
  }
  @Test public void d_pauseResumeBackAndNavigation()throws Exception{
   js("openUniverse('slot');slotRandomInt=max=>0;spinLifeSlot();true");String spins=js("lifeData.slot.total"),balance=js("lifeData.balance");
-  java.util.concurrent.atomic.AtomicInteger taskId=new java.util.concurrent.atomic.AtomicInteger();scenario.onActivity(activity->taskId.set(activity.getTaskId()));
+  AtomicReference<OdysseyActivity> sameActivity=new AtomicReference<>();java.util.concurrent.atomic.AtomicInteger taskId=new java.util.concurrent.atomic.AtomicInteger();scenario.onActivity(activity->{taskId.set(activity.getTaskId());sameActivity.set(activity);});
   device.pressHome();
   // Re-select the existing task, as in Android Recents. A launcher Intent has
   // different action/categories from ActivityScenario's explicit test Intent
@@ -90,6 +113,7 @@ public class LaunchValidationTest {
   String resumed=device.executeShellCommand("am task focus "+taskId.get());
   assertFalse("Cannot restore the original task: "+resumed,resumed.contains("Error"));
   scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);waitFor("!slotBusy",15000);
+  scenario.onActivity(activity->assertSame("Window changes must retain the game Activity",sameActivity.get(),activity));
   assertEquals(spins,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));
   js("displayMenu();true");writeEvidence("meminfo_before_navigation.txt",device.executeShellCommand("dumpsys meminfo com.blastnexa.blockpuzzle.preview"));device.executeShellCommand("dumpsys gfxinfo com.blastnexa.blockpuzzle.preview reset");
   for(int i=0;i<50;i++)truth("(()=>{displayMenu();openPlayer('profile');openUniverse('slot');startWord("+(i%400)+");displayMenu();return document.documentElement.scrollWidth<=innerWidth;})()");
