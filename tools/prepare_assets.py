@@ -22,6 +22,7 @@ if js_link not in h:
     assert h.count('</body>')==1
     h=h.replace('</body>',js_link+'</body>',1)
 h=h.replace('ODYSSEY GIOCATORI v23','ODYSSEY LANDSCAPE v24').replace('ODYSSEY v23 · PROFILO & CLASSIFICA','ODYSSEY v24 · AVVENTURE ORIZZONTALI').replace('NEXA WORDS · v23','NEXA WORDS · v24')
+h=h.replace('ODYSSEY LANDSCAPE v24','ODYSSEY LANDSCAPE v25').replace('ODYSSEY v24 · AVVENTURE ORIZZONTALI','ODYSSEY v25 · AVVENTURE ORIZZONTALI').replace('NEXA WORDS · v24','NEXA WORDS · v25')
 # Some Android WebViews do not resolve aspect-ratio on an auto-height CSS grid.
 # A measured border-box height keeps the same square cells on those versions.
 if 'function syncWordBoardSquare()' not in h:

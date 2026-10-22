@@ -37,6 +37,7 @@ public final class OdysseyActivity extends Activity {
     private boolean pageReady;
     private boolean backPending;
     private boolean foreground;
+    private int safeLeft,safeRight;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -46,9 +47,15 @@ public final class OdysseyActivity extends Activity {
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(8,19,43));
         root.setOnApplyWindowInsetsListener((v,insets) -> {
-            v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),
-                insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
-            return insets.consumeSystemWindowInsets();
+            // Paint through the camera cutout instead of reserving an empty
+            // native strip. Only the game's controls need the safe inset.
+            safeLeft=0;safeRight=0;
+            if(Build.VERSION.SDK_INT>=28 && insets.getDisplayCutout()!=null){
+                safeLeft=insets.getDisplayCutout().getSafeInsetLeft();
+                safeRight=insets.getDisplayCutout().getSafeInsetRight();
+            }
+            v.setPadding(0,0,0,0);applySafeArea();
+            return insets;
         });
         game = new WebView(this);
         game.setBackgroundColor(Color.rgb(8,19,43));
@@ -102,6 +109,7 @@ public final class OdysseyActivity extends Activity {
             @Override public void onPageFinished(WebView view,String url) {
                 if(view!=game || ads==null || isDestroyed() || !GAME_URL.equals(url)) return;
                 pageReady=true;
+                applySafeArea();
                 evaluate("navigator.vibrate=function(p){window.BlastNexaNative.vibrate(JSON.stringify(p));return true;};"
                     +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
                 if(!(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false)))ads.start();
@@ -130,6 +138,13 @@ public final class OdysseyActivity extends Activity {
         runOnUiThread(() -> { if(game!=null && pageReady && !isDestroyed()) game.evaluateJavascript(script,null); });
     }
 
+    private void applySafeArea() {
+        float density=getResources().getDisplayMetrics().density;
+        evaluate("document.documentElement.style.setProperty('--bn-safe-left','"+(safeLeft/density)+"px');"
+            +"document.documentElement.style.setProperty('--bn-safe-right','"+(safeRight/density)+"px');"
+            +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
+    }
+
     private void requestBack() {
         if(backPending || game==null) return;
         if(!pageReady) { finish(); return; }
@@ -155,6 +170,11 @@ public final class OdysseyActivity extends Activity {
     /** The edge swipe still reveals Android controls; the game keeps its full landscape area. */
     @SuppressWarnings("deprecation")
     private void enterImmersiveMode() {
+        if(Build.VERSION.SDK_INT>=28){
+            WindowManager.LayoutParams attributes=getWindow().getAttributes();
+            attributes.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(attributes);
+        }
         if (Build.VERSION.SDK_INT >= 30) {
             getWindow().setDecorFitsSystemWindows(false);
             WindowInsetsController controller = getWindow().getInsetsController();

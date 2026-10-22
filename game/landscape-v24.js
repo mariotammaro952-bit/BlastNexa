@@ -2,6 +2,12 @@
 (()=>{
 'use strict';
 const $id=id=>document.getElementById(id);
+function pinCanvas(){
+ if(window.innerWidth<=window.innerHeight)return;
+ // Compatibility fallback for WebViews predating overflow:clip. Inner panels
+ // retain their own scroll positions; only the fixed outer canvas is pinned.
+ for(const node of [document.scrollingElement,document.body,$id('app')])if(node&&(node.scrollTop||node.scrollLeft)){node.scrollTop=0;node.scrollLeft=0;}
+}
 function rearrangeGame(){
  const game=$id('game');if(!game||game.querySelector('.bn-wide-game'))return;
  const top=game.querySelector(':scope > .top');if(!top)return;
@@ -55,8 +61,26 @@ function composeSlot(){
   const node=layout.querySelector(':scope > '+selector);if(node)sidebar.append(node);
  }
  const result=$id('slotResult'),auto=layout.querySelector(':scope > .bn-arcade-auto'),controls=layout.querySelector(':scope > .bn-world-controls');
- if(controls?.querySelector('.bn-world-respin'))controls.classList.add('has-respin');
  const spin=$id('slotSpinButton');
+ const respin=controls?.querySelector('.bn-world-respin');
+ if(respin&&auto){
+  // At reactor readiness the two auto buttons are unavailable. Use their
+  // space for a full-size relaunch instead of two tiny stacked spin targets.
+  auto.replaceChildren(respin);respin.setAttribute('aria-label','Rilancia i rulli');
+  if(spin){
+   spin.classList.remove('bn-world-normal-spin');
+   spin.textContent=spin.textContent.startsWith('CONTINUA')?'CONTINUA':'GIRA';
+   const detail=document.createElement('small');detail.textContent='GIRO NORMALE';spin.append(detail);
+  }
+ }
+ if(spin){
+  spin.setAttribute('aria-busy',String(typeof slotBusy!=='undefined'&&slotBusy));
+  if(typeof slotPhase!=='undefined'&&slotPhase==='celebrating'){
+   spin.disabled=false;spin.onclick=()=>finishSlotCelebration();spin.setAttribute('aria-label','Incassa la vincita');
+   const label=[...spin.childNodes].find(node=>node.nodeType===3);if(label)label.textContent='INCASSA';
+   const detail=spin.querySelector('small');if(detail)detail.textContent='VITE GIÀ SALVATE';
+  }
+ }
  if(spin&&!spin.classList.contains('bn-world-normal-spin')){
   const label=[...spin.childNodes].find(node=>node.nodeType===3);
   if(label){const short={'SCEGLI UN FORZIERE':'BONUS','TORNA AI RULLI':'TORNA','GIRA NELLA CAVERNA':'GIRA','CONTINUA':'AVANTI'};label.textContent=short[label.textContent]||label.textContent;if(label.textContent.length>6)spin.classList.add('bn-long-label');}
@@ -64,16 +88,28 @@ function composeSlot(){
  if(wallet)deck.append(wallet);
  if(result)deck.append(result);else{const notice=document.createElement('div');notice.className='bn-world-result';notice.setAttribute('role','status');notice.textContent='Il tuo bonus ti aspetta: scegli un forziere o continua il viaggio.';deck.append(notice);}
  if(auto)deck.append(auto);if(controls)deck.append(controls);
+ for(const [id,label] of [['slotAuto5','Avvia 5 giri automatici'],['slotAuto10','Avvia 10 giri automatici'],['slotAutoStop','Ferma i giri automatici']])$id(id)?.setAttribute('aria-label',label);
  hero?.remove();layout.prepend(panorama,sidebar);layout.append(character,deck);
  for(const node of [...layout.children])if(node!==panorama&&node!==sidebar&&node!==cabinet&&node!==character&&node!==deck&&!node.classList.contains('bn-slot-fx-layer'))sidebar.append(node);
 }
 function installLayout(){
+ if(typeof renderLifeSlot==='function'){
+  const original=renderLifeSlot;
+  renderLifeSlot=function(){
+   const side=$id('slotTemple')?.querySelector('.bn-slot-sidebar'),scroll=side?.scrollTop||0;
+   const result=original.apply(this,arguments);
+   const current=$id('slotTemple')?.querySelector('.bn-slot-sidebar');if(current)current.scrollTop=scroll;
+   pinCanvas();return result;
+  };
+ }
  if(typeof slotPostRender==='function'){const original=slotPostRender;slotPostRender=function(){composeSlot();return original.apply(this,arguments);};}
  if(typeof renderWords==='function'){const original=renderWords;renderWords=function(){const result=original.apply(this,arguments);fitPlayAreas();return result;};}
  const resize=new ResizeObserver(fitPlayAreas);
  for(const id of ['game','wordsScroll']){const el=$id(id);if(el)resize.observe(el);}
  const under=$id('game')?.querySelector('.under-board');if(under)resize.observe(under);
- window.addEventListener('resize',fitPlayAreas);fitPlayAreas();
+ window.addEventListener('resize',()=>{fitPlayAreas();pinCanvas();});
+ $id('app')?.addEventListener('scroll',pinCanvas,{passive:true});
+ document.addEventListener('focusin',pinCanvas);fitPlayAreas();pinCanvas();
 }
 function installBanner(){
  if(typeof gameBannerLayout!=='function'||typeof syncGameBanner!=='function')return;

@@ -1,7 +1,9 @@
 /* BlastNexa v24 — landscape composition, original art and a separate ad rail. */
 :root{--bn-ad-rail:60px}
-html,body{width:100%;height:100%;overflow:hidden}
-#app{width:100%;max-width:none;height:100vh;height:100dvh;min-height:0;max-height:100vh;max-height:100dvh;overflow:hidden;padding:6px max(12px,env(safe-area-inset-right)) calc(var(--bn-ad-rail) + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+html,body{width:100%;height:100%;overflow:hidden;overflow:clip}
+/* overflow:hidden remains a scroll container: focusing a replaced slot button
+   could scroll the entire canvas, clipping its top and leaving a blank bottom. */
+#app{position:fixed;inset:0;width:100%;max-width:none;height:100vh;height:100dvh;min-height:0;max-height:100vh;max-height:100dvh;overflow:hidden;overflow:clip;padding:6px max(12px,var(--bn-safe-right,0px),env(safe-area-inset-right)) calc(var(--bn-ad-rail) + env(safe-area-inset-bottom)) max(12px,var(--bn-safe-left,0px),env(safe-area-inset-left))}
 #app[data-banner="on"]{height:100vh;height:100dvh;min-height:0}
 #app .game-banner-dock{position:absolute;bottom:env(safe-area-inset-bottom);left:0;right:0;z-index:14;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:1px;height:59px;width:100%;padding:0 8px 1px;margin:0;background:#081226;border-top:1px solid #829dba33;pointer-events:none}
 #app .game-banner-frame{width:min(360px,calc(100% - 18px));height:50px;min-height:50px;max-height:50px;border:1px solid #51657b44}
@@ -152,7 +154,7 @@ html,body{width:100%;height:100%;overflow:hidden}
 #slotTemple.bn-slot-information>.bn-arcade-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;width:100%}
 #slotTemple.bn-slot-information>*{max-width:100%}
 @media(orientation:landscape) and (max-height:430px){
- #app{padding-top:3px;padding-left:max(7px,env(safe-area-inset-left));padding-right:max(7px,env(safe-area-inset-right))}
+ #app{padding-top:3px;padding-left:max(7px,var(--bn-safe-left,0px),env(safe-area-inset-left));padding-right:max(7px,var(--bn-safe-right,0px),env(safe-area-inset-right))}
  #menu .hero{display:none}#app #menu.menu{align-content:start;padding:4px;gap:8px 15px}
  #menu .bn-words-feature{height:75px;min-height:75px;padding:8px 14px}#menu .scene-mode{min-height:64px}
  #game>.top{height:29px;min-height:29px}#game .icon-btn{height:28px;min-height:28px;width:32px}
@@ -172,7 +174,7 @@ html,body{width:100%;height:100%;overflow:hidden}
  #slotTemple .bn-world-normal-spin{width:100%;height:22px;margin:0;font-size:8px}#slotTemple .bn-world-respin{min-height:25px}
 }
 @media(orientation:portrait){
- html,body{height:auto;overflow:auto}#app{height:auto;min-height:100vh;max-height:none;overflow:auto}
+ html,body{height:auto;overflow:auto}#app{position:relative;inset:auto;height:auto;min-height:100vh;max-height:none;overflow:auto}
  #app #menu.menu:not([style*="display: none"]){display:flex!important;flex-direction:column}#menu>.menu-buttons{display:flex;flex-direction:column;width:100%}#menu>.menu-buttons>.scene-modes{display:grid;grid-template-columns:repeat(2,1fr)}
  #app #game.game{overflow:auto}#game .bn-wide-game{display:flex;flex-direction:column;overflow:visible}#game .bn-wide-left,#game .bn-wide-right{height:auto;overflow:visible}#app #game .bn-wide-left .board-shell{width:min(100%,460px)!important;height:auto!important}#game .bn-wide-info{overflow:visible}
  #app #wordsScroll.bn-words-scroll{display:block;overflow:auto}#wordsScroll>#wordBoard{width:100%;height:auto!important}#wordsScroll>#wordClues{overflow:visible}

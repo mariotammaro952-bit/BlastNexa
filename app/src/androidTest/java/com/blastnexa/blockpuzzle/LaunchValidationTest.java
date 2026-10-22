@@ -142,6 +142,80 @@ public class LaunchValidationTest {
   js("window.__qaPaint=false;requestAnimationFrame(()=>requestAnimationFrame(()=>window.__qaPaint=true));true");waitFor("window.__qaPaint",5000);device.waitForIdle(1000);
   File folder=new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"store");assertTrue(folder.isDirectory()||folder.mkdirs());assertTrue(device.takeScreenshot(new File(folder,name+".png")));
  }
+ // These helpers inject actual Android touch events. JS is used only to set a
+ // reproducible fixture and observe the production state, never to click.
+ private android.graphics.Rect touchBounds(String label)throws Exception{
+  androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.desc(label)),7000);
+  if(node==null)node=device.wait(Until.findObject(By.text(label)),3000);
+  if(node==null){writeEvidence("touch-failure.txt","Accessible touch target missing: "+label);device.dumpWindowHierarchy(new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics/missing-touch.xml"));fail("Accessible touch target missing: "+label);}
+  android.graphics.Rect bounds=node.getVisibleBounds();assertTrue("Empty target: "+label,bounds.width()>0&&bounds.height()>0);return bounds;
+ }
+ private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);assertTrue(device.click(b.centerX(),b.centerY()));}
+ private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();assertTrue(device.click(b.centerX(),b.centerY()));}
+ private void slotFixture(String machine,String effects)throws Exception{
+  js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
+ }
+ private void assertPinnedSlot()throws Exception{
+  truth("document.getElementById('app').scrollTop===0 && document.scrollingElement.scrollTop===0");
+  truth("document.getElementById('universeScreen').getBoundingClientRect().top>=0");
+  truth("Math.abs(document.getElementById('gameBanner').getBoundingClientRect().bottom-innerHeight)<1");
+  truth("(()=>{let b=document.getElementById('slotSpinButton').getBoundingClientRect();return b.width>=48&&b.height>=48&&b.left>=0&&b.right<=innerWidth&&b.bottom<=document.getElementById('gameBanner').getBoundingClientRect().top;})()");
+ }
+ private void assertFilledReels()throws Exception{
+  truth("(()=>{for(const reel of document.querySelectorAll('#slotReels>.bn-temple-reel')){let r=reel.getBoundingClientRect();for(let row=0;row<3;row++){let hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height*(row+.5)/3);if(!hit?.closest('.bn-temple-cell'))return false;}}return document.querySelectorAll('#slotReels>.bn-temple-reel').length===5;})()");
+ }
+ @Test public void h_realTouchesRapidTapsAndFullAnimation()throws Exception{
+  for(String machine:new String[]{"temple","crystal","forge"}){
+   slotFixture(machine,"full");assertPinnedSlot();
+   js("window.__touchTotal=lifeData.slot.total;window.__touchBalance=lifeData.balance;window.__touchY=document.getElementById('slotSpinButton').getBoundingClientRect().top;true");
+   android.graphics.Rect bounds=touchBounds("GIRA");
+   // Repeated presses at the same physical point must commit exactly one spin.
+   for(int i=0;i<8;i++){device.click(bounds.centerX(),bounds.centerY());Thread.sleep(25);}
+   truth("lifeData.slot.total===window.__touchTotal+1");assertPinnedSlot();
+   truth("document.getElementById('slotSpinButton').disabled");assertFilledReels();
+   waitFor("slotPhase==='celebrating'",10000);
+   truth("!document.getElementById('slotSpinButton').disabled");assertPinnedSlot();assertFilledReels();
+   touch("Incassa la vincita");waitFor("!slotBusy",5000);
+   truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.balance===window.__touchBalance+5");
+   truth("Math.abs(document.getElementById('slotSpinButton').getBoundingClientRect().top-window.__touchY)<1");
+   // A touch away from the centre also works inside the round control.
+   bounds=touchBounds("GIRA");device.click(bounds.left+bounds.width()/3,bounds.top+bounds.height()*2/3);
+   waitFor("lifeData.slot.total===window.__touchTotal+2",5000);waitFor("!slotBusy",12000);assertPinnedSlot();
+  }
+  capture("09_slot_after_real_touches");truth("window.__qaErrors.length===0");
+ }
+ @Test public void i_realTouchesChestCrystalAndForge()throws Exception{
+  slotFixture("temple","lite");js("lifeData.slot.arcade.treasure=29;slotRandomInt=max=>max===100?31:0;true");touch("GIRA");waitFor("!!lifeData.slot.arcade.bonus&&!slotBusy",5000);
+  js("window.__touchBalance=lifeData.balance;window.__touchTotal=lifeData.slot.total;window.__chestPrize=lifeData.slot.arcade.bonus.choices[1];true");
+  android.graphics.Rect chest=touchBounds("Apri il forziere 2");for(int i=0;i<4;i++)device.click(chest.centerX(),chest.centerY());
+  truth("lifeData.balance===window.__touchBalance+window.__chestPrize && lifeData.slot.total===window.__touchTotal");
+  touch("TORNA AI RULLI");truth("!!document.getElementById('slotReels') && !lifeData.slot.arcade.bonus");assertPinnedSlot();
+  slotFixture("crystal","lite");js("slotRandomInt=max=>max===100?98:0;true");touch("GIRA");waitFor("lifeData.slot.arcade.freeSpins===3&&!slotBusy",5000);
+  js("slotRandomInt=max=>0;window.__touchTotal=lifeData.slot.total;true");
+  for(int i=0;i<3;i++){touch("GIRA NELLA CAVERNA");waitFor("!slotBusy",5000);}
+  truth("lifeData.slot.total===window.__touchTotal+3 && lifeData.slot.arcade.crystalJourney.played===3");touch("TORNA AI RULLI");assertPinnedSlot();
+  slotFixture("forge","lite");touch("GIRA");waitFor("!slotBusy",5000);js("lifeData.slot.arcade.reactor=6;renderLifeSlot(document.getElementById('universeBody'));window.__touchTotal=lifeData.slot.total;true");
+  touch("Tieni il rullo 1");touch("Tieni il rullo 4");truth("slotHolds.size===2");assertPinnedSlot();capture("12_forge_ready_touch_targets");touch("Rilancia i rulli");waitFor("!slotBusy",5000);
+  truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.slot.last.arcade.held.join(',')==='0,3' && lifeData.slot.arcade.reactor===0");assertPinnedSlot();capture("10_forge_after_touch_respin");
+ }
+ @Test public void j_realTouchesAutoStopPauseAndFiftySpinBreak()throws Exception{
+  slotFixture("crystal","lite");js("window.__touchTotal=lifeData.slot.total;true");touch("Avvia 5 giri automatici");waitFor("!slotBusy && slotAutoLeft===0 && slotAutoTimer===null",15000);truth("lifeData.slot.total===window.__touchTotal+5");
+  js("playerSettings.effects='full';window.__touchTotal=lifeData.slot.total;true");touch("Avvia 10 giri automatici");waitFor("slotBusy",5000);touch("Ferma i giri automatici");waitFor("!slotBusy",12000);truth("lifeData.slot.total===window.__touchTotal+1 && slotAutoLeft===0 && slotAutoTimer===null");
+  touch("GIRA");waitFor("slotBusy",5000);String total=js("lifeData.slot.total"),balance=js("lifeData.balance");java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();scenario.onActivity(a->task.set(a.getTaskId()));device.pressHome();device.executeShellCommand("am task focus "+task.get());scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);waitFor("!slotBusy",10000);assertEquals(total,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));assertPinnedSlot();
+  js("playerSettings.effects='lite';lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.sinceAd===50");touch("CONTINUA");truth("document.getElementById('overlay').classList.contains('on') && !window.BlastNexaBannerLayout().visible");
+  // The native SDK is disabled in QA: this tests the real no-ad callback path.
+  touchText("CONTINUA");waitFor("!bnPendingAd && !document.getElementById('overlay').classList.contains('on')",15000);truth("lifeData.slot.sinceAd===0 && lifeData.slot.total===window.__touchTotal+1");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.total===window.__touchTotal+2");assertPinnedSlot();
+ }
+ @Test public void k_fullWidthNativeCanvasAndCutout()throws Exception{
+  slotFixture("temple","lite");
+  scenario.onActivity(activity->{
+   try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("root");field.setAccessible(true);android.widget.FrameLayout root=(android.widget.FrameLayout)field.get(activity);assertEquals(0,root.getPaddingLeft());assertEquals(0,root.getPaddingRight());assertEquals(device.getDisplayWidth(),web.getWidth());int[] position=new int[2];web.getLocationOnScreen(position);assertEquals(0,position[0]);assertEquals(0,position[1]);
+    if("true".equals(InstrumentationRegistry.getArguments().getString("bn_qa_cutout"))){assertNotNull(root.getRootWindowInsets().getDisplayCutout());assertTrue(root.getRootWindowInsets().getDisplayCutout().getSafeInsetLeft()>0||root.getRootWindowInsets().getDisplayCutout().getSafeInsetRight()>0);}
+   }catch(Exception error){throw new RuntimeException(error);}
+  });
+  truth("(()=>{let b=document.getElementById('app').getBoundingClientRect();return b.left===0&&b.top===0&&b.width===innerWidth&&b.height===innerHeight;})()");
+  touch("GIRA");waitFor("!slotBusy",5000);assertPinnedSlot();capture("11_full_width_cutout");
+ }
  @Test public void f_storeScreenshots()throws Exception{
   js("window.__qaReloading=true;localStorage.clear();localStorage.setItem('blastnexa_muted','true');localStorage.setItem('blastnexa_help_seen','true');location.reload();true");waitFor("typeof window.__qaReloading==='undefined' && typeof playerTotals==='function'",30000);
   js("displayMenu();true");capture("01_menu");js("start('adventure',1);true");capture("02_avventura");
