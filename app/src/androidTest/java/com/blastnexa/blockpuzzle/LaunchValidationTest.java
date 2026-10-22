@@ -41,10 +41,25 @@ public class LaunchValidationTest {
   // Acknowledge the actual system UI before lifecycle/back/touch assertions.
   androidx.test.uiautomator.UiObject2 education=device.wait(Until.findObject(By.text("Got it")),3000);
   if(education!=null){education.click();assertTrue(device.wait(Until.gone(By.text("Got it")),5000));}
-  js("window.__qaErrors=[];window.__qaRealClicks=0;window.__qaWatchSpin=false;window.__qaFilled=()=>document.querySelectorAll('#slotReels>.bn-temple-reel').length===5&&[...document.querySelectorAll('#slotReels>.bn-temple-reel')].every(reel=>{const r=reel.getBoundingClientRect();return [0,1,2].every(row=>document.elementFromPoint(r.left+r.width/2,r.top+r.height*(row+.5)/3)?.closest('.bn-temple-cell'));});document.addEventListener('click',e=>{window.__qaRealClicks++;const b=e.target.closest?.('button');window.__qaLastTouch={label:b?.getAttribute('aria-label')||b?.textContent,phase:typeof slotPhase!=='undefined'?slotPhase:null};if(b?.id==='slotAutoStop')window.__qaStopTotal=lifeData.slot.total;if(window.__qaWatchSpin&&b?.id==='slotSpinButton'&&b.getAttribute('aria-label')==='GIRA'){Promise.resolve().then(()=>window.__qaSpinStart={phase:slotPhase,disabled:document.getElementById('slotSpinButton').disabled,scroll:document.getElementById('app').scrollTop,total:lifeData.slot.total});setTimeout(()=>window.__qaSpinMid={phase:slotPhase,filled:window.__qaFilled()},400);setTimeout(()=>window.__qaSpinLate={phase:slotPhase,filled:window.__qaFilled()},1700);}},true);window.addEventListener('error',e=>window.__qaErrors.push(e.message));localStorage.setItem('blastnexa_help_seen','true');muted=true;displayMenu();true");
+  js("window.__qaErrors=[];window.__qaRealClicks=0;window.__qaWatchSpin=false;window.__qaFilled=()=>document.querySelectorAll('#slotReels>.bn-temple-reel').length===5&&[...document.querySelectorAll('#slotReels>.bn-temple-reel')].every(reel=>{const r=reel.getBoundingClientRect();return [0,1,2].every(row=>document.elementFromPoint(r.left+r.width/2,r.top+r.height*(row+.5)/3)?.closest('.bn-temple-cell'));});document.addEventListener('click',e=>{window.__qaRealClicks++;const b=e.target.closest?.('button');window.__qaLastTouch={label:b?.getAttribute('aria-label')||b?.textContent,phase:typeof slotPhase!=='undefined'?slotPhase:null};if(b?.id==='slotAutoStop')window.__qaStopTotal=lifeData.slot.total;if(window.__qaWatchSpin&&b?.id==='slotSpinButton'&&b.getAttribute('aria-label')==='GIRA'){setTimeout(()=>window.__qaSpinStart={phase:slotPhase,disabled:document.getElementById('slotSpinButton').disabled,scroll:document.getElementById('app').scrollTop,total:lifeData.slot.total},0);setTimeout(()=>window.__qaSpinMid={phase:slotPhase,filled:window.__qaFilled()},400);setTimeout(()=>window.__qaSpinLate={phase:slotPhase,filled:window.__qaFilled()},1700);}},true);window.addEventListener('error',e=>window.__qaErrors.push(e.message));localStorage.setItem('blastnexa_help_seen','true');muted=true;displayMenu();true");
  }
- private void bind(){scenario.onActivity(activity->{try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("game");field.setAccessible(true);web=(WebView)field.get(activity);}catch(Exception e){throw new RuntimeException(e);}});}
- @After public void close(){if(scenario!=null)scenario.close();}
+ private void withActivity(ActivityScenario.ActivityAction<OdysseyActivity> action){Runnable observe=()->scenario.onActivity(action);if(android.os.Looper.myLooper()==android.os.Looper.getMainLooper())observe.run();else InstrumentationRegistry.getInstrumentation().runOnMainSync(observe);}
+ private void bind(){withActivity(activity->{try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("game");field.setAccessible(true);web=(WebView)field.get(activity);}catch(Exception e){throw new RuntimeException(e);}});}
+ private void recreateActivity()throws Exception{
+  WebView previous=web;withActivity(activity->activity.recreate());readyWeb=null;
+  long until=android.os.SystemClock.uptimeMillis()+30000;java.util.concurrent.atomic.AtomicBoolean changed=new java.util.concurrent.atomic.AtomicBoolean();
+  while(android.os.SystemClock.uptimeMillis()<until){
+   InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{try{scenario.onActivity(activity->{try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("game");field.setAccessible(true);changed.set(field.get(activity)!=null&&field.get(activity)!=previous);}catch(Exception error){throw new RuntimeException(error);}});}catch(IllegalStateException|NullPointerException transition){}});
+   if(changed.get()){awaitCurrentPage();return;}Thread.sleep(100);
+  }
+  fail("Native Activity was not recreated");
+ }
+ private void awaitForeground()throws Exception{
+  long until=android.os.SystemClock.uptimeMillis()+15000;java.util.concurrent.atomic.AtomicBoolean focused=new java.util.concurrent.atomic.AtomicBoolean();
+  while(android.os.SystemClock.uptimeMillis()<until){withActivity(activity->focused.set(activity.hasWindowFocus()));if(focused.get())return;Thread.sleep(100);}
+  fail("Original game task did not return to the foreground");
+ }
+ @After public void close(){if(scenario!=null){try{withActivity(activity->activity.finish());}finally{scenario.close();}}}
  private void awaitCurrentPage()throws Exception{
   // Landscape launch may recreate the Activity after ActivityScenario first
   // reaches RESUMED. Never evaluate against the destroyed WebView retained by
@@ -55,7 +70,7 @@ public class LaunchValidationTest {
    // ActivityScenario waits for global UI idle when called from the test
    // thread. Inspect the current page on the main thread instead: an animated
    // game need not become globally idle for an observation to be valid.
-   loaded.set(false);InstrumentationRegistry.getInstrumentation().runOnMainSync(()->scenario.onActivity(activity->{try{
+   loaded.set(false);InstrumentationRegistry.getInstrumentation().runOnMainSync(()->withActivity(activity->{try{
     java.lang.reflect.Field view=OdysseyActivity.class.getDeclaredField("game"),ready=OdysseyActivity.class.getDeclaredField("pageReady");view.setAccessible(true);ready.setAccessible(true);WebView target=(WebView)view.get(activity);current.set(target);
     loaded.set(target!=null&&ready.getBoolean(activity)&&target.getProgress()==100&&target.getWidth()>target.getHeight());
    }catch(Exception error){throw new RuntimeException(error);}}));
@@ -97,7 +112,7 @@ public class LaunchValidationTest {
   js("window.__qaBatchLeft=50;window.__qaBatchDone=false;(function step(){if(slotBusy||bnPendingAd){setTimeout(step,30);return;}if(!window.__qaBatchLeft){window.__qaBatchDone=true;return;}if(lifeData.slot.sinceAd>=SLOT_AD_INTERVAL){if(!document.getElementById('overlay').classList.contains('on'))openSlotBreak();document.getElementById('dialogPrimary').click();setTimeout(step,30);return;}if(spinLifeSlot())window.__qaBatchLeft--;setTimeout(step,30);})();true");
   waitFor("window.__qaBatchDone",30000);
   truth("lifeData.slot.total===window.__qaStartSpins+50");String expectedBalance=js("lifeData.balance"),expectedSpins=js("lifeData.slot.total");
-  js("saveLives();true");scenario.recreate();bind();waitFor("typeof lifeData!=='undefined'",30000);
+  js("saveLives();true");recreateActivity();waitFor("typeof lifeData!=='undefined'",30000);
   assertEquals(expectedBalance,js("lifeData.balance"));assertEquals(expectedSpins,js("lifeData.slot.total"));
   truth("window.__qaErrors===undefined || window.__qaErrors.length===0");
  }
@@ -111,15 +126,15 @@ public class LaunchValidationTest {
  }
  @Test public void d_pauseResumeBackAndNavigation()throws Exception{
   js("openUniverse('slot');slotRandomInt=max=>0;spinLifeSlot();true");String spins=js("lifeData.slot.total"),balance=js("lifeData.balance");
-  AtomicReference<OdysseyActivity> sameActivity=new AtomicReference<>();java.util.concurrent.atomic.AtomicInteger taskId=new java.util.concurrent.atomic.AtomicInteger();scenario.onActivity(activity->{taskId.set(activity.getTaskId());sameActivity.set(activity);});
+  AtomicReference<OdysseyActivity> sameActivity=new AtomicReference<>();java.util.concurrent.atomic.AtomicInteger taskId=new java.util.concurrent.atomic.AtomicInteger();withActivity(activity->{taskId.set(activity.getTaskId());sameActivity.set(activity);});
   device.pressHome();
   // Re-select the existing task, as in Android Recents. A launcher Intent has
   // different action/categories from ActivityScenario's explicit test Intent
   // and may create another Activity that the scenario intentionally ignores.
   String resumed=device.executeShellCommand("am task focus "+taskId.get());
   assertFalse("Cannot restore the original task: "+resumed,resumed.contains("Error"));
-  scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);waitFor("!slotBusy",15000);
-  scenario.onActivity(activity->assertSame("Window changes must retain the game Activity",sameActivity.get(),activity));
+  awaitForeground();waitFor("!slotBusy",15000);
+  withActivity(activity->assertSame("Window changes must retain the game Activity",sameActivity.get(),activity));
   assertEquals(spins,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));
   js("displayMenu();true");writeEvidence("meminfo_before_navigation.txt",device.executeShellCommand("dumpsys meminfo com.blastnexa.blockpuzzle.preview"));device.executeShellCommand("dumpsys gfxinfo com.blastnexa.blockpuzzle.preview reset");
   for(int i=0;i<50;i++)truth("(()=>{displayMenu();openPlayer('profile');openUniverse('slot');startWord("+(i%400)+");displayMenu();return document.documentElement.scrollWidth<=innerWidth;})()");
@@ -169,7 +184,7 @@ public class LaunchValidationTest {
   android.util.Log.i("BlastNexa-QA","EXPECTED_RENDERER_TERMINATION");
   InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{assertNotNull(web.getWebViewRenderProcess());assertTrue(web.getWebViewRenderProcess().terminate());});
   assertTrue("Native recovery dialog missing",device.wait(Until.hasObject(By.text("RIAPRI")),15000));device.findObject(By.text("RIAPRI")).click();
-  device.wait(Until.gone(By.text("RIAPRI")),10000);InstrumentationRegistry.getInstrumentation().waitForIdleSync();bind();waitFor("typeof playerProfile!=='undefined'",30000);truth("playerProfile.name==='Recupero Android'");
+  device.wait(Until.gone(By.text("RIAPRI")),10000);bind();waitFor("typeof playerProfile!=='undefined'",30000);truth("playerProfile.name==='Recupero Android'");
  }
  private void capture(String name)throws Exception{
   js("window.__qaPaint=false;requestAnimationFrame(()=>requestAnimationFrame(()=>window.__qaPaint=true));true");waitFor("window.__qaPaint",5000);device.waitForIdle(1000);
@@ -178,11 +193,13 @@ public class LaunchValidationTest {
  // These helpers inject actual Android touch events. JS is used only to set a
  // reproducible fixture and observe the production state, never to click.
  private android.graphics.Rect touchBounds(String label)throws Exception{
-  androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.desc(label)),7000);
-  if(node==null)node=device.wait(Until.findObject(By.text(label)),3000);
-  if(node==null){writeEvidence("touch-failure.txt","Accessible touch target missing: "+label);device.dumpWindowHierarchy(new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics/missing-touch.xml"));fail("Accessible touch target missing: "+label);}
-  try{android.graphics.Rect bounds=node.getVisibleBounds();assertTrue("Empty target: "+label,bounds.width()>0&&bounds.height()>0);return bounds;}
-  catch(androidx.test.uiautomator.StaleObjectException stale){androidx.test.uiautomator.UiObject2 fresh=device.wait(Until.findObject(By.desc(label)),5000);if(fresh==null)fresh=device.wait(Until.findObject(By.text(label)),3000);assertNotNull("Target changed before its bounds were read: "+label,fresh);return fresh.getVisibleBounds();}
+  long until=android.os.SystemClock.uptimeMillis()+7000;
+  while(android.os.SystemClock.uptimeMillis()<until){
+   androidx.test.uiautomator.UiObject2 node=device.findObject(By.text(label));if(node==null)node=device.findObject(By.desc(label));
+   if(node!=null)try{android.graphics.Rect bounds=node.getVisibleBounds();if(bounds.width()>0&&bounds.height()>0)return bounds;}catch(androidx.test.uiautomator.StaleObjectException changed){}
+   Thread.sleep(100);
+  }
+  writeEvidence("touch-failure.txt","Accessible touch target missing: "+label);device.dumpWindowHierarchy(new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics/missing-touch.xml"));throw new AssertionError("Accessible touch target missing: "+label);
  }
  private void rawTouch(int x,int y)throws Exception{
   long down=android.os.SystemClock.uptimeMillis();
@@ -194,6 +211,7 @@ public class LaunchValidationTest {
  }
  private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
+ private void touchId(String id)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.res(id)),7000);assertNotNull("Visible ID target missing: "+id,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void slotFixture(String machine,String effects)throws Exception{
   js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
  }
@@ -222,6 +240,7 @@ public class LaunchValidationTest {
    waitFor("slotPhase==='celebrating'",15000);rawTouch(bounds.centerX(),bounds.centerY());Thread.sleep(100);waitFor("!slotBusy",5000);
    truth("window.__qaLastTouch.label==='Incassa la vincita' && window.__qaLastTouch.phase==='celebrating'");
    truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.balance===window.__touchBalance+5");
+   writeEvidence("touch-observed-"+machine+".json",js("JSON.stringify({start:window.__qaSpinStart,mid:window.__qaSpinMid,late:window.__qaSpinLate,last:window.__qaLastTouch,total:lifeData.slot.total,previous:window.__touchTotal,burstMs:"+elapsed+"})"));
    truth("window.__qaSpinStart.phase==='spinning' && window.__qaSpinStart.disabled && window.__qaSpinStart.scroll===0 && window.__qaSpinStart.total===window.__touchTotal+1");
    truth("window.__qaSpinMid.phase==='spinning' && window.__qaSpinMid.filled && window.__qaSpinLate.phase==='spinning' && window.__qaSpinLate.filled");assertPinnedSlot();assertFilledReels();
    writeEvidence("touch-burst-"+machine+".json",js("JSON.stringify({machine:lifeData.slot.arcade.machine,previous:window.__touchTotal,total:lifeData.slot.total,start:window.__qaSpinStart,mid:window.__qaSpinMid,late:window.__qaSpinLate,burstMs:"+elapsed+"})"));js("window.__qaWatchSpin=false;true");
@@ -255,14 +274,17 @@ public class LaunchValidationTest {
   rawTouch(autoTen.centerX(),autoTen.centerY());waitFor("!!document.getElementById('slotAutoStop') && slotAutoLeft>0",15000);
   // Stop fills the same control area previously occupied by Auto 5/10.
   rawTouch(autoArea.centerX(),autoArea.centerY());Thread.sleep(100);waitFor("!slotBusy",12000);Thread.sleep(900);truth("window.__qaStopTotal!==null && lifeData.slot.total===window.__qaStopTotal && slotAutoLeft===0 && slotAutoTimer===null");
-  touch("GIRA");waitFor("slotBusy",5000);String total=js("lifeData.slot.total"),balance=js("lifeData.balance");java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();scenario.onActivity(a->task.set(a.getTaskId()));device.pressHome();device.executeShellCommand("am task focus "+task.get());scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);waitFor("!slotBusy",10000);assertEquals(total,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));assertPinnedSlot();
+  java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();withActivity(a->task.set(a.getTaskId()));touch("GIRA");waitFor("slotBusy",5000);String total=js("lifeData.slot.total"),balance=js("lifeData.balance");device.pressHome();device.executeShellCommand("am task focus "+task.get());awaitForeground();waitFor("!slotBusy",10000);assertEquals(total,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));assertPinnedSlot();
   js("playerSettings.effects='lite';lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("lifeData.slot.sinceAd===50 && !slotBusy",5000);touch("CONTINUA");truth("document.getElementById('overlay').classList.contains('on') && !window.BlastNexaBannerLayout().visible");
+  truth("document.getElementById('app').dataset.modal==='on' && document.getElementById('universeScreen').getAttribute('aria-hidden')==='true' && getComputedStyle(document.getElementById('gameBanner')).display==='none'");
+  assertTrue("Background spin must be absent from modal accessibility",device.wait(Until.gone(By.res("slotSpinButton")),3000));
+  truth("(()=>{let d=document.querySelector('#overlay>.dialog').getBoundingClientRect(),b=document.getElementById('dialogPrimary').getBoundingClientRect(),h=document.getElementById('dialogHome').getBoundingClientRect();return d.top>=0&&d.bottom<=innerHeight&&b.top>=d.top&&b.bottom<=d.bottom&&h.bottom<=d.bottom;})()");capture("13_fifty_spin_dialog");
   // The native SDK is disabled in QA: this tests the real no-ad callback path.
-  touchText("CONTINUA");waitFor("!bnPendingAd && !document.getElementById('overlay').classList.contains('on')",15000);truth("lifeData.slot.sinceAd===0 && lifeData.slot.total===window.__touchTotal+1");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.total===window.__touchTotal+2");assertPinnedSlot();
+  touchId("dialogPrimary");waitFor("!bnPendingAd && !document.getElementById('overlay').classList.contains('on')",15000);truth("lifeData.slot.sinceAd===0 && lifeData.slot.total===window.__touchTotal+1");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.total===window.__touchTotal+2");assertPinnedSlot();
  }
  @Test public void k_fullWidthNativeCanvasAndCutout()throws Exception{
   slotFixture("temple","lite");
-  scenario.onActivity(activity->{
+  withActivity(activity->{
    try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("root");field.setAccessible(true);android.widget.FrameLayout root=(android.widget.FrameLayout)field.get(activity);assertEquals(0,root.getPaddingLeft());assertEquals(0,root.getPaddingRight());assertEquals(device.getDisplayWidth(),web.getWidth());int[] position=new int[2];web.getLocationOnScreen(position);assertEquals(0,position[0]);assertEquals(0,position[1]);
     if("true".equals(InstrumentationRegistry.getArguments().getString("bn_qa_cutout"))){assertNotNull(root.getRootWindowInsets().getDisplayCutout());assertTrue(root.getRootWindowInsets().getDisplayCutout().getSafeInsetLeft()>0||root.getRootWindowInsets().getDisplayCutout().getSafeInsetRight()>0);}
    }catch(Exception error){throw new RuntimeException(error);}

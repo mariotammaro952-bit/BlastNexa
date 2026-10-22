@@ -43,6 +43,36 @@ function rearrangeWords(){
  for(const id of ['wordControls','wordClues']){const node=$id(id);if(node)details.append(node);}
  scroll.append(details);
 }
+function installModal(){
+ const app=$id('app'),overlay=$id('overlay'),dialog=overlay?.querySelector('.dialog');
+ if(!app||!overlay||!dialog)return;
+ const previous=new Map();let opened=false,lastFocus=null;
+ dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');
+ dialog.setAttribute('aria-labelledby','dialogTitle');dialog.setAttribute('aria-describedby','dialogDesc');dialog.tabIndex=-1;
+ const sync=()=>{
+  const active=overlay.classList.contains('on');app.dataset.modal=active?'on':'off';
+  if(active){
+   overlay.setAttribute('aria-hidden','false');
+   if(!opened){lastFocus=document.activeElement;dialog.scrollTop=0;dialog.focus({preventScroll:true});pinCanvas();}
+   for(const node of app.children){
+    if(node===overlay)continue;
+    if(!previous.has(node))previous.set(node,{hidden:node.getAttribute('aria-hidden'),inert:node.hasAttribute('inert')});
+    node.setAttribute('aria-hidden','true');node.setAttribute('inert','');
+   }
+  }else{
+   for(const [node,state] of previous){
+    if(state.hidden===null)node.removeAttribute('aria-hidden');else node.setAttribute('aria-hidden',state.hidden);
+    if(!state.inert)node.removeAttribute('inert');
+   }
+   previous.clear();
+   if(overlay.contains(document.activeElement))document.activeElement.blur();
+   if(opened&&lastFocus?.isConnected&&lastFocus.getClientRects().length)lastFocus.focus({preventScroll:true});
+   overlay.setAttribute('aria-hidden','true');
+  }
+  opened=active;
+ };
+ new MutationObserver(sync).observe(overlay,{attributes:true,attributeFilter:['class']});sync();
+}
 function composeSlot(){
  const layout=$id('slotTemple');if(!layout)return;
  const cabinet=$id('slotCabinet'),app=$id('app');
@@ -93,6 +123,7 @@ function composeSlot(){
  for(const node of [...layout.children])if(node!==panorama&&node!==sidebar&&node!==cabinet&&node!==character&&node!==deck&&!node.classList.contains('bn-slot-fx-layer'))sidebar.append(node);
 }
 function installLayout(){
+ installModal();
  if(typeof renderLifeSlot==='function'){
   const original=renderLifeSlot;
   renderLifeSlot=function(){

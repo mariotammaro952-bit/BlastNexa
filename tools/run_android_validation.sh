@@ -18,7 +18,7 @@ adb logcat -v threadtime > android-evidence/logcat.txt 2>&1 &
 logcat_pid=$!
 trap 'kill "$logcat_pid" 2>/dev/null || true' EXIT
 instrument_status=0
-timeout 1200 adb shell am instrument -w -r -e bn_qa_cutout "$cutout" com.blastnexa.blockpuzzle.preview.test/androidx.test.runner.AndroidJUnitRunner | tee android-evidence/instrumentation.txt || instrument_status=$?
+timeout 1800 adb shell am instrument -w -r -e bn_qa_cutout "$cutout" com.blastnexa.blockpuzzle.preview.test/androidx.test.runner.AndroidJUnitRunner | tee android-evidence/instrumentation.txt || instrument_status=$?
 timeout 20 adb shell uiautomator dump /sdcard/validation-ui.xml || true
 timeout 20 adb pull /sdcard/validation-ui.xml android-evidence/ui-final.xml || true
 timeout 20 adb shell screencap -p /sdcard/validation-screen.png || true
