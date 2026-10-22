@@ -106,3 +106,7 @@ html,body{width:100%;height:100%;overflow:hidden}
  #slotTemple .bn-world-reel-footer>strong{font-size:8px}
  #game .bn-wide-game{gap:8px}
 }
+
+/* JavaScript uses inline display:flex for the menu; override ONLY while visible. */
+#app #menu.menu:not([style*="display: none"]){display:grid!important}
+@media(orientation:portrait){#app #menu.menu:not([style*="display: none"]){display:flex!important}}
