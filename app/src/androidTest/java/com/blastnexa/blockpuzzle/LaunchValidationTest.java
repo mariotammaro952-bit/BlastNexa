@@ -109,6 +109,8 @@ public class LaunchValidationTest {
   js("lifeData.balance=Math.max(10,lifeData.balance);start('adventure',1);true");
   truth("!!document.querySelector('#game .bn-wide-left #boardShell')");
   truth("!!document.querySelector('#game .bn-wide-right #tray')");
+  truth("getComputedStyle(document.querySelector('#tray .mini-tile')).backgroundImage!=='none'");
+  truth("getComputedStyle(document.querySelector('#board .cell.tile')).backgroundImage!=='none'");
   truth("document.getElementById('boardShell').getBoundingClientRect().right<=document.getElementById('tray').getBoundingClientRect().left+16");
   truth("document.getElementById('boardShell').getBoundingClientRect().bottom<=document.getElementById('gameBannerFrame').getBoundingClientRect().top+2");
   truth("window.BlastNexaBannerLayout().visible");

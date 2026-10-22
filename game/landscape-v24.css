@@ -221,3 +221,12 @@ html,body{width:100%;height:100%;overflow:hidden}
 #wordsScreen .bn-words-header{flex:0 0 44px;height:44px;min-height:44px;padding:0;align-items:center}
 #wordsScreen .bn-words-header h1{font-size:19px;line-height:1.1;margin:1px 0}
 #wordsScreen .bn-words-header small{font-size:8px;line-height:1.2}
+/* Older supported WebViews lack color-mix(): retain the actual piece colors. */
+@supports not (color:color-mix(in srgb,red,blue)){
+ #app .board .cell.tile,#app .minigrid .mini-tile,.drag-ghost .mini-tile{
+  background-color:var(--tile,#66cfff)!important;
+  background-image:linear-gradient(145deg,#ffffff70,transparent 54%,#0a1c4240)!important;
+  border-bottom-color:#0a1c4266!important;
+  box-shadow:inset 0 2px 4px #ffffffb0,inset 0 -3px 5px #10254c66,0 0 5px #61cfff40!important;
+ }
+}
