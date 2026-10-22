@@ -11,6 +11,8 @@ import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
@@ -79,6 +81,7 @@ public final class OdysseyActivity extends Activity {
             }
         });
         setContentView(root);
+        enterImmersiveMode();
         root.requestApplyInsets();
         if(Build.VERSION.SDK_INT>=33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT,this::requestBack);
@@ -143,9 +146,28 @@ public final class OdysseyActivity extends Activity {
     @Override public void onBackPressed() { requestBack(); }
     @Override public void onWindowFocusChanged(boolean focused) {
         super.onWindowFocusChanged(focused);
+        if (focused) enterImmersiveMode();
         if(ads!=null) ads.setActive(focused && foreground);
         if(pageReady) evaluate(focused?"window.dispatchEvent(new Event('focus'));"
             :"if(typeof stopSlotAuto==='function')stopSlotAuto();window.dispatchEvent(new Event('blur'));");
+    }
+
+    /** The edge swipe still reveals Android controls; the game keeps its full landscape area. */
+    @SuppressWarnings("deprecation")
+    private void enterImmersiveMode() {
+        if (Build.VERSION.SDK_INT >= 30) {
+            getWindow().setDecorFitsSystemWindows(false);
+            WindowInsetsController controller = getWindow().getInsetsController();
+            if (controller != null) {
+                controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                controller.hide(WindowInsets.Type.systemBars());
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        }
     }
     @Override protected void onPause() {
         foreground=false;

@@ -16,6 +16,7 @@ if css_link not in h:
 if js_link not in h:
     assert h.count('</body>')==1
     h=h.replace('</body>',js_link+'</body>',1)
+h=h.replace('ODYSSEY GIOCATORI v23','ODYSSEY LANDSCAPE v24').replace('ODYSSEY v23 · PROFILO & CLASSIFICA','ODYSSEY v24 · AVVENTURE ORIZZONTALI').replace('NEXA WORDS · v23','NEXA WORDS · v24')
 # Some Android WebViews do not resolve aspect-ratio on an auto-height CSS grid.
 # A measured border-box height keeps the same square cells on those versions.
 if 'function syncWordBoardSquare()' not in h:
@@ -30,11 +31,14 @@ function renderWords(){"""
  old="host.style.gridTemplateRows='repeat('+p.size+',minmax(0,1fr))';";assert h.count(old)==1;h=h.replace(old,old+'syncWordBoardSquare();',1)
  old='La classifica usa un profilo anonimo salvato su questo dispositivo.'
  h=h.replace(old,'La classifica usa un profilo senza email, salvato su questo dispositivo. Premendo PARTECIPA accetti le Regole della classifica, consultabili qui sotto.')
- source.write_text(h)
+source.write_text(h,encoding='utf-8')
 config=json.loads(re.search(r'<script id="onlineConfig" type="application/json">(.*?)</script>',h,re.S)[1]);assert config['url']=='https://blastnexa-online.mariotammaro952.chatgpt.site/api/ranking'
 assets=root/'app/src/main/assets';assets.mkdir(parents=True,exist_ok=True)
 (assets/'index.html').write_text(h,encoding='utf-8')
 (assets/'online-config.json').write_text(json.dumps(config))
 for f in (landscape_css,landscape_js):
     (assets/f.name).write_bytes(f.read_bytes())
+import shutil
+if (root/'game/assets').exists():
+    shutil.copytree(root/'game/assets',assets/'assets',dirs_exist_ok=True)
 print('Game SHA256',hashlib.sha256(h.encode()).hexdigest())

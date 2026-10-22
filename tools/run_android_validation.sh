@@ -19,4 +19,4 @@ timeout 20 adb pull /sdcard/validation-screen.png android-evidence/screen-final.
 timeout 25 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/store android-evidence/store || true
 timeout 25 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/metrics android-evidence/metrics || true
 if [ "$instrument_status" -ne 0 ]; then exit "$instrument_status"; fi
-grep -Eq '^OK \(7 tests\)' android-evidence/instrumentation.txt
+grep -Eq '^OK \(8 tests\)' android-evidence/instrumentation.txt

@@ -18,4 +18,8 @@ assert.match(html,/const ARCADE_MACHINES=/);
 assert.match(html,/SLOT_AD_INTERVAL/);
 assert.equal(read('game/landscape-v24.css'),css);
 assert.equal(read('game/landscape-v24.js'),js);
+assert.match(js,/function composeSlot/);
+assert.match(js,/function fitPlayAreas/);
+assert.doesNotMatch(css,/:has\(/);
+assert.deepEqual(fs.readFileSync(path.join(root,'game/assets/nexa-guardian.webp')),fs.readFileSync(path.join(root,'app/src/main/assets/assets/nexa-guardian.webp')));
 console.log('PASS v24: Android landscape, wide game, slot cabinet, safe universal banners, existing slot payout engine');

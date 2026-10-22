@@ -8,12 +8,59 @@ function rearrangeGame(){
  const body=document.createElement('div');body.className='bn-wide-game';
  const left=document.createElement('div');left.className='bn-wide-left';
  const right=document.createElement('div');right.className='bn-wide-right';
+ const info=document.createElement('div');info.className='bn-wide-info';
+ const actions=document.createElement('div');actions.className='bn-wide-actions';right.append(info,actions);
  body.append(left,right);top.after(body);
  for(const id of ['boardShell']){const el=$id(id);if(el)left.append(el);}
  const under=game.querySelector(':scope > .under-board');if(under)left.append(under);
  for(const selector of ['.bn-play-strip','.scene-strip','#adStatus','#escapeScene','#universeGameStrip','.stats','#missionCard','#bossHud','#resultReview','.power-tools','#tray','#instruction']){
-   const el=game.querySelector(':scope > '+selector);if(el)right.append(el);
+   const el=game.querySelector(':scope > '+selector);if(el)(['.power-tools','#tray','#instruction'].includes(selector)?actions:info).append(el);
  }
+}
+function fitPlayAreas(){
+ const wide=window.innerWidth>window.innerHeight,body=$id('game')?.querySelector('.bn-wide-game');
+ if(wide&&body&&body.clientHeight){
+  const under=body.querySelector('.under-board');
+  const size=Math.floor(Math.min(body.clientHeight-(under?.getBoundingClientRect().height||24)-7,body.clientWidth*.52));
+  if(size>0&&body.style.getPropertyValue('--bn-board-size')!==size+'px')body.style.setProperty('--bn-board-size',size+'px');
+ }
+ const words=$id('wordsScroll');
+ if(wide&&words&&words.clientHeight){
+  const size=Math.floor(Math.min(words.clientHeight-6,words.clientWidth*.48));
+  if(size>0&&words.style.getPropertyValue('--bn-word-size')!==size+'px')words.style.setProperty('--bn-word-size',size+'px');
+ }
+}
+function composeSlot(){
+ const layout=$id('slotTemple');if(!layout)return;
+ const cabinet=$id('slotCabinet'),app=$id('app');
+ app.dataset.slotWide=cabinet?'play':'information';
+ if(!cabinet){layout.classList.add('bn-slot-information');return;}
+ layout.classList.add('bn-slot-wide');if(layout.querySelector('.bn-slot-sidebar'))return;
+ const hero=layout.querySelector('.bn-world-topbar'),brand=hero?.querySelector('.bn-world-brand'),wallet=$id('slotWallet');
+ const sidebar=document.createElement('aside');sidebar.className='bn-slot-sidebar';sidebar.setAttribute('aria-label','Opzioni della slot');
+ const deck=document.createElement('div');deck.className='bn-slot-deck';
+ const character=document.createElement('div');character.className='bn-slot-character';character.setAttribute('aria-hidden','true');
+ const guardian=document.createElement('img');guardian.src='assets/nexa-guardian.webp';guardian.alt='';guardian.width=1024;guardian.height=1536;guardian.draggable=false;
+ const caption=document.createElement('small');caption.textContent='NEXA ODYSSEY';character.append(guardian,caption);
+ const panorama=document.createElement('img');panorama.className='bn-slot-panorama';panorama.src=cabinet.querySelector('.bn-world-background').src;panorama.alt='';panorama.draggable=false;
+ if(brand)sidebar.append(brand);
+ for(const selector of ['.bn-world-machines','.bn-arcade-tabs','.bn-world-feature','.bn-world-xp','button.bn-arcade-auto-button','.bn-slot-audio-panel','.bn-slot-cadence','.bn-world-life-wait','.bn-temple-note']){
+  const node=layout.querySelector(':scope > '+selector);if(node)sidebar.append(node);
+ }
+ const result=$id('slotResult'),auto=layout.querySelector(':scope > .bn-arcade-auto'),controls=layout.querySelector(':scope > .bn-world-controls');
+ if(controls?.querySelector('.bn-world-respin'))controls.classList.add('has-respin');
+ if(wallet)deck.append(wallet);
+ if(result)deck.append(result);else{const notice=document.createElement('div');notice.className='bn-world-result';notice.setAttribute('role','status');notice.textContent='Il tuo bonus ti aspetta: scegli un forziere o continua il viaggio.';deck.append(notice);}
+ if(auto)deck.append(auto);if(controls)deck.append(controls);
+ hero?.remove();layout.prepend(panorama,sidebar);layout.append(character,deck);
+ for(const node of [...layout.children])if(node!==panorama&&node!==sidebar&&node!==cabinet&&node!==character&&node!==deck&&!node.classList.contains('bn-slot-fx-layer'))sidebar.append(node);
+}
+function installLayout(){
+ if(typeof slotPostRender==='function'){const original=slotPostRender;slotPostRender=function(){composeSlot();return original.apply(this,arguments);};}
+ if(typeof renderWords==='function'){const original=renderWords;renderWords=function(){const result=original.apply(this,arguments);fitPlayAreas();return result;};}
+ const resize=new ResizeObserver(fitPlayAreas);
+ for(const id of ['game','wordsScroll']){const el=$id(id);if(el)resize.observe(el);}
+ window.addEventListener('resize',fitPlayAreas);fitPlayAreas();
 }
 function installBanner(){
  if(typeof gameBannerLayout!=='function'||typeof syncGameBanner!=='function')return;
@@ -33,6 +80,7 @@ function installBanner(){
   const inSlot=typeof slotVisible==='function'&&slotVisible();
   const inWords=typeof wordsVisible==='function'&&wordsVisible();
   app.dataset.bannerContext=inSlot?'slot':inWords?'words':$id('game')?.style.display==='flex'?'blocks':'other';
+  if(!inSlot)delete app.dataset.slotWide;
   if(typeof bnBannerSession!=='undefined'&&bnBannerSession!==gameSession){bnBannerSession=gameSession;bnBannerState='preview';}
   const layout=gameBannerLayout();frame.style.visibility=layout.visible?'visible':'hidden';
   if(typeof bnBannerState!=='undefined'){frame.dataset.state=bnBannerState;$id('gameBannerPreview').hidden=bnBannerState==='loaded';}
@@ -54,6 +102,6 @@ function installBanner(){
  document.addEventListener('visibilitychange',schedule);
  schedule();
 }
-function init(){rearrangeGame();installBanner();}
+function init(){rearrangeGame();installLayout();installBanner();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
