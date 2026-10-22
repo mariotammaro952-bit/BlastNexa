@@ -1,0 +1,91 @@
+/* BlastNexa v24 landscape arcade • safe ad lane • original NEXA artwork */
+:root{--bn-ad-rail:67px}
+html,body{width:100%;height:100%;overflow:hidden}
+#app{width:100%;max-width:none;height:100dvh;min-height:100dvh;max-height:100dvh;overflow:hidden;padding:8px max(12px,env(safe-area-inset-right)) calc(var(--bn-ad-rail) + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+#app .game-banner-dock{position:absolute;bottom:env(safe-area-inset-bottom);left:0;right:0;z-index:14;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:2px;height:62px;width:100%;padding:0 8px 4px;margin:0;background:linear-gradient(0deg,#071021,#0c1832 90%,#0c183200);border-top:1px solid #83a0ca55;pointer-events:none}
+#app .game-banner-frame{width:min(360px,calc(100% - 18px));height:50px;min-height:50px;max-height:50px;border:1px solid #51657b66}
+#app .game-banner-label{height:9px;line-height:9px;font-size:8px;color:#c5d5e6}
+#app[data-banner="on"]{height:100dvh;min-height:100dvh}
+#app #menu.menu{display:grid;grid-template-columns:minmax(210px,36%) minmax(0,1fr);grid-auto-rows:min-content;align-content:start;align-items:start;gap:9px 18px;overflow:auto;padding:8px 12px 12px}
+#menu>.menu-buttons{grid-column:2;grid-row:1/span 7;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-self:start}
+#menu>.menu-buttons>button{min-height:52px;font-size:clamp(12px,1.55vw,17px)}
+#menu>.hero{grid-column:1;justify-self:center;width:clamp(105px,19vh,195px);margin:0}
+#menu .brand{font-size:clamp(24px,3.6vw,39px)}
+#menu>.bn-player-menu,#menu>.subtitle{width:100%;margin:0}
+#menu>.subtitle{font-size:12px}
+#app #game.game{display:flex;flex-direction:column;flex:1;gap:5px;padding:0 1px 4px;overflow:hidden;min-height:0}
+#game>.top{height:41px;min-height:41px;gap:12px}
+#game .game-title{font-size:clamp(18px,2.8vw,28px)}
+#game .bn-wide-game{display:grid;grid-template-columns:minmax(235px,min(51vw,calc(100dvh - 150px))) minmax(0,1fr);gap:clamp(9px,2vw,20px);flex:1;min-width:0;min-height:0;width:100%;overflow:hidden}
+#game .bn-wide-left{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;min-height:0;height:100%;overflow:hidden}
+#game .bn-wide-right{display:flex;flex-direction:column;gap:6px;min-height:0;min-width:0;height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;padding:1px 7px 10px 1px}
+#app[data-banner="on"] #game .bn-wide-left .board-shell,#app #game .bn-wide-left .board-shell{width:min(100%,calc(100dvh - 154px))!important;max-height:calc(100dvh - 154px)!important;aspect-ratio:1;flex:0 0 auto;margin:0;border:3px solid #83caff88;padding:6px;border-radius:18px;box-shadow:0 6px 0 #071938,0 12px 22px #0009,inset 0 0 12px #62e2ff3b}
+#game .bn-wide-left .under-board{width:100%;max-width:calc(100dvh - 148px);display:flex;align-items:center;gap:7px;margin:0}
+#game .bn-wide-right .bn-play-strip{margin:0;min-height:28px}
+#game .bn-wide-right .scene-strip{margin:0;min-height:26px}
+#game .bn-wide-right .universe-game-strip{margin:0;min-height:26px}
+#app #game .bn-wide-right .stats{margin:1px 0;gap:8px}
+#game .bn-wide-right .stat{padding:5px 4px;border-radius:10px}
+#game .bn-wide-right .stat label{font-size:clamp(8px,1.2vw,12px)}
+#game .bn-wide-right .stat strong{font-size:clamp(18px,2.8vw,28px)}
+#game .bn-wide-right .mission-card{margin:0;padding:6px 10px;min-height:0}
+#game .bn-wide-right .power-tools{margin:1px 0;gap:7px}
+#game .bn-wide-right .power-tool{min-height:41px;font-size:clamp(10px,1.4vw,15px)}
+#game .bn-wide-right .tray{margin:1px 0;gap:9px}
+#game .bn-wide-right .piece-slot{min-height:66px;height:clamp(66px,18vh,115px);max-height:115px;aspect-ratio:auto;border-radius:14px}
+#game .bn-wide-right .instruction{font-size:11px;line-height:1.3;margin:0}
+#app #wordsScreen.words-screen{flex:1;overflow:hidden;padding:0;gap:6px}
+#app #wordsScroll.bn-words-scroll{display:grid;grid-template-columns:minmax(230px,min(44vw,calc(100dvh - 155px))) minmax(0,1fr);grid-template-rows:min-content minmax(0,1fr);align-items:start;gap:10px 16px;overflow:auto;min-height:0;padding:2px 5px 12px}
+#wordsScroll>#wordBoard{grid-column:1;grid-row:1/span 2;width:100%;max-width:100%;height:auto!important;aspect-ratio:1;margin:0!important}
+#wordsScroll>#wordControls{grid-column:2;grid-row:1;width:100%;max-width:none;margin:0;padding:9px}
+#wordsScroll>#wordClues{grid-column:2;grid-row:2;max-width:none;min-width:0;margin:0}
+#wordControls>#wordRack{grid-auto-rows:40px}
+#wordControls>#wordRack>.bn-rack-letter{height:40px}
+#app #universeScreen.universe-screen{flex:1;overflow:hidden;gap:6px;padding:0}
+#universeScreen .u-header{margin:0;min-height:39px}
+#universeScreen>.u-tabs{padding-bottom:3px;min-height:42px}
+#universeScreen>.u-body{flex:1;overflow:auto;overscroll-behavior:contain;min-height:0;gap:9px;padding:3px 5px 12px}
+#app .map-screen,#app .settings-screen{min-height:0;overflow:auto}
+/* Large five-reel NEXA arcade, with three selectable original worlds. */
+#app[data-banner-context="slot"] #universeScreen .u-header{min-height:36px}
+#slotTemple.bn-slot-odyssey{display:grid;grid-template-columns:minmax(118px,19%) minmax(285px,1fr) minmax(135px,21%);grid-template-rows:auto auto auto auto auto auto auto;gap:7px 11px;align-items:start;padding:4px 8px 12px;border:2px solid #dbaa59;border-radius:19px;background:radial-gradient(ellipse at 65% 0%,#c69a3a29,transparent 50%),linear-gradient(160deg,#3e251e,#1a1f30 40%,#101528);box-shadow:inset 0 0 0 3px #f5cc6730,inset 0 0 35px #f8ac4030,0 10px 23px #0008;color:#fff3d3}
+#slotTemple>.bn-world-topbar{grid-column:1/-1;grid-row:1;min-height:36px;padding:2px 8px;border-bottom:1px solid #f7ca7655}
+#slotTemple .bn-world-brand>small{font-size:clamp(8px,1vw,13px);color:#ffdb8c}
+#slotTemple .bn-world-brand>strong{font-size:clamp(9px,1.1vw,13px)}
+#slotTemple .bn-world-wallet{background:linear-gradient(#664121,#322223);border-color:#e3bc70;box-shadow:0 0 12px #ffce6666}
+#slotTemple>.bn-world-machines{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:7px;width:100%}
+#slotTemple .bn-world-machines>.bn-arcade-machine{min-height:clamp(58px,10vh,91px);width:100%;border-radius:13px;border:2px solid #cf9e57;box-shadow:inset 0 0 9px #0008,0 4px 10px #0006;text-shadow:0 2px 4px #000;filter:saturate(1.2)}
+#slotTemple .bn-world-machines>.bn-arcade-machine.active{border-color:#fff0b1;box-shadow:0 0 0 1px #ffd16f,0 0 18px #f6c15b99,inset 0 0 15px #0007}
+#slotTemple>.bn-world-cabinet{grid-column:2;grid-row:2/span 4;min-width:0;width:100%;margin:0;min-height:0;padding:clamp(45px,9vh,75px) 9px 9px!important;border:4px solid #f0c474;border-bottom:7px solid #976129;border-radius:19px!important;box-shadow:inset 0 0 0 2px #5b371b,0 5px 0 #2b160e,0 13px 19px #0009,0 0 21px #f3bd4566;overflow:hidden}
+#slotTemple .bn-world-scene-heading{top:9px}
+#slotTemple .bn-world-scene-heading>h2{font-size:clamp(17px,2.5vw,27px);color:#fff0ba;text-shadow:0 1px #74451c,0 3px 9px #09070b}
+#slotTemple .bn-world-scene-heading>small{font-size:clamp(7px,1vw,10px)}
+#slotTemple .bn-temple-reels{width:100%;aspect-ratio:5/3;max-height:calc(100dvh - 233px);min-height:125px;border:3px solid #f6cf81;border-bottom-color:#a86f35;border-radius:8px;background:#2b1b22;box-shadow:inset 0 0 0 2px #421a17,0 0 0 2px #231216,0 3px 15px #000b}
+#slotTemple .bn-temple-reel{border-right:2px solid #c09065;background:linear-gradient(180deg,#241318f0,#5c3e37d6 22%,#4a3034c9 52%,#4e3331dd 78%,#1d1220f0)}
+#slotTemple .bn-temple-cell{box-shadow:inset 0 -1px #ffd99b36}
+#slotTemple .bn-temple-cell>.bn-world-symbol{filter:drop-shadow(0 0 6px #ffd08a60)}
+#slotTemple .bn-temple-cell.winning{animation:bn-wide-win-pulse .6s ease-in-out infinite alternate}
+@keyframes bn-wide-win-pulse{from{filter:brightness(1)}to{filter:brightness(1.3);box-shadow:inset 0 0 0 2px #ffe49c,0 0 15px #ffc65a88}}
+#slotTemple .bn-world-reel-footer{min-height:22px;padding-top:4px}
+#slotTemple>.bn-world-controls{grid-column:3;grid-row:2;display:flex;align-items:center;justify-content:center;min-height:clamp(125px,25vh,170px)}
+#slotTemple .bn-world-spin{display:flex;width:min(100%,160px);aspect-ratio:1;min-height:105px;max-height:166px;height:auto;flex:0 0 auto;border-radius:50%;border:4px solid #ffdf86;border-bottom:7px solid #8e451c;background:radial-gradient(circle at 29% 15%,#fff6be,#ffa83f 38%,#de5b18 75%,#a83a1b 100%);box-shadow:inset 0 0 0 4px #ffde99,inset 0 -13px 21px #bc4e20,0 8px 2px #4c210d,0 0 18px #fcbc5b8f;font-size:clamp(19px,3vw,30px);color:#fff9e7;text-shadow:0 2px 3px #713610;animation:bn-wide-breathe 2.1s ease-in-out infinite}
+#slotTemple .bn-world-spin:disabled{animation:none}
+#slotTemple .bn-world-spin>small{font-size:clamp(7px,.85vw,9px);color:#67301a;text-shadow:0 1px #fff7}
+#slotTemple .bn-world-normal-spin{font-size:12px;min-height:60px;border-radius:13px;aspect-ratio:auto}
+#slotTemple .bn-world-respin{min-height:52px}
+@keyframes bn-wide-breathe{50%{filter:brightness(1.1);transform:scale(1.025)}}
+#slotTemple>.bn-world-feature{grid-column:3;grid-row:3;min-width:0;padding:6px}
+#slotTemple>.bn-world-result{grid-column:3;grid-row:4;min-width:0;min-height:58px;padding:6px}
+#slotTemple>.bn-arcade-auto{grid-column:1;grid-row:3;display:flex;flex-direction:column;gap:6px}
+#slotTemple>.bn-arcade-tabs{grid-column:1;grid-row:4;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+#slotTemple .bn-arcade-tab{padding:8px 2px;min-height:32px;font-size:10px}
+#slotTemple>.bn-world-xp{grid-column:1;grid-row:5}
+#slotTemple>.bn-slot-audio-panel{grid-column:3;grid-row:5}
+#slotTemple>.bn-slot-cadence{grid-column:2;grid-row:6;min-height:0}
+#slotTemple>.bn-world-life-wait{grid-column:3;grid-row:6;align-self:center}
+#slotTemple>.bn-temple-note{grid-column:1;grid-row:7;font-size:9px}
+#slotTemple>button.bn-arcade-auto-button{grid-column:1;grid-row:6}
+#slotTemple>.bn-world-cabinet.is-celebrating{box-shadow:0 0 12px #fff2ad,0 0 32px #ffc7649a,inset 0 0 10px #fff5}
+@media(prefers-reduced-motion:reduce){#slotTemple .bn-world-spin,#slotTemple .bn-temple-cell.winning{animation:none}}
+@media(max-height:410px){#game>.top{height:35px;min-height:35px}#game .bn-wide-game{grid-template-columns:minmax(215px,min(51vw,calc(100dvh - 135px))) minmax(0,1fr)}#app #game .bn-wide-left .board-shell{width:min(100%,calc(100dvh - 141px))!important;max-height:calc(100dvh - 141px)!important}#slotTemple{gap:4px 7px!important;padding:3px 6px 8px!important}#slotTemple>.bn-world-cabinet{padding-top:43px!important}#slotTemple .bn-temple-reels{max-height:calc(100dvh - 198px);min-height:105px}#slotTemple .bn-world-spin{min-height:97px;max-height:114px}}
+@media(orientation:portrait){html,body{height:auto;overflow:auto}#app{height:auto;min-height:100dvh;max-height:none;overflow:auto}#app #menu.menu{display:flex;flex-direction:column}#menu>.menu-buttons{display:flex;width:100%}#app #game.game{overflow:auto}#game .bn-wide-game{grid-template-columns:minmax(0,1fr);overflow:visible}#game .bn-wide-left,#game .bn-wide-right{height:auto;overflow:visible}#app #game .bn-wide-left .board-shell{max-height:none!important;width:min(100%,460px)!important}#app #wordsScroll.bn-words-scroll{display:block}#slotTemple.bn-slot-odyssey{display:flex;flex-direction:column}#slotTemple>.bn-world-cabinet{width:100%;order:2}#slotTemple>.bn-world-controls{width:100%;order:3}#slotTemple .bn-world-spin{border-radius:22px;aspect-ratio:auto;width:100%;min-height:60px}#slotTemple>.bn-world-machines{width:100%;flex-direction:row;order:1}}
