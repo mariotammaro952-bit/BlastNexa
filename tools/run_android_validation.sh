@@ -6,7 +6,7 @@ timeout 20 adb shell wm density "${BN_QA_DENSITY:-320}"
 cutout=false
 if [ "${BN_QA_CUTOUT:-0}" = 1 ]; then
   timeout 20 adb shell cmd overlay list > android-evidence/available-overlays.txt
-  rg -q 'com.android.internal.display.cutout.emulation.tall' android-evidence/available-overlays.txt
+  grep -Fq 'com.android.internal.display.cutout.emulation.tall' android-evidence/available-overlays.txt
   timeout 20 adb shell cmd overlay enable --user 0 com.android.internal.display.cutout.emulation.tall
   cutout=true
 fi

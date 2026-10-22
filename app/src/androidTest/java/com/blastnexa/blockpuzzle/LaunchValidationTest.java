@@ -30,6 +30,9 @@ public class LaunchValidationTest {
  private final UiDevice device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
  @Before public void launch() throws Exception {
   Assume.assumeFalse("A previous startup failed; see startup diagnostics",bootstrapFailed);
+  // Continuously animated reels must not make accessibility wait ten seconds
+  // for an idle screen before each physical touch.
+  androidx.test.uiautomator.Configurator.getInstance().setWaitForIdleTimeout(250);
   Intent intent=new Intent(InstrumentationRegistry.getInstrumentation().getTargetContext(),OdysseyActivity.class);intent.putExtra("bn_qa_no_ads",true);
   scenario=ActivityScenario.launch(intent);bind();
   try{waitFor("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')",45000);}catch(AssertionError error){bootstrapFailed=true;try{writeEvidence("startup.txt",js("JSON.stringify({url:location.href,state:document.readyState,agent:navigator.userAgent,text:document.body?document.body.innerText.slice(0,1000):'',scripts:document.scripts.length})"));capture("startup_failure");}catch(Exception ignored){}throw error;}
@@ -150,8 +153,16 @@ public class LaunchValidationTest {
   if(node==null){writeEvidence("touch-failure.txt","Accessible touch target missing: "+label);device.dumpWindowHierarchy(new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics/missing-touch.xml"));fail("Accessible touch target missing: "+label);}
   android.graphics.Rect bounds=node.getVisibleBounds();assertTrue("Empty target: "+label,bounds.width()>0&&bounds.height()>0);return bounds;
  }
- private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);assertTrue(device.click(b.centerX(),b.centerY()));}
- private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();assertTrue(device.click(b.centerX(),b.centerY()));}
+ private void rawTouch(int x,int y)throws Exception{
+  long down=android.os.SystemClock.uptimeMillis();
+  android.view.MotionEvent press=android.view.MotionEvent.obtain(down,down,android.view.MotionEvent.ACTION_DOWN,x,y,0);
+  press.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(press,true));press.recycle();
+  Thread.sleep(20);
+  android.view.MotionEvent release=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,x,y,0);
+  release.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(release,true));release.recycle();
+ }
+ private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);rawTouch(b.centerX(),b.centerY());}
+ private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());}
  private void slotFixture(String machine,String effects)throws Exception{
   js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
  }
@@ -170,7 +181,9 @@ public class LaunchValidationTest {
    js("window.__touchTotal=lifeData.slot.total;window.__touchBalance=lifeData.balance;window.__touchY=document.getElementById('slotSpinButton').getBoundingClientRect().top;true");
    android.graphics.Rect bounds=touchBounds("GIRA");
    // Repeated presses at the same physical point must commit exactly one spin.
-   for(int i=0;i<8;i++){device.click(bounds.centerX(),bounds.centerY());Thread.sleep(25);}
+   long burst=android.os.SystemClock.uptimeMillis();for(int i=0;i<8;i++)rawTouch(bounds.centerX(),bounds.centerY());
+   writeEvidence("touch-burst-"+machine+".json",js("JSON.stringify({machine:lifeData.slot.arcade.machine,previous:window.__touchTotal,total:lifeData.slot.total,phase:slotPhase,scroll:document.getElementById('app').scrollTop})"));
+   assertTrue("Touch burst exceeded the reel animation",android.os.SystemClock.uptimeMillis()-burst<2400);
    truth("lifeData.slot.total===window.__touchTotal+1");assertPinnedSlot();
    truth("document.getElementById('slotSpinButton').disabled");assertFilledReels();
    waitFor("slotPhase==='celebrating'",10000);
@@ -179,7 +192,7 @@ public class LaunchValidationTest {
    truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.balance===window.__touchBalance+5");
    truth("Math.abs(document.getElementById('slotSpinButton').getBoundingClientRect().top-window.__touchY)<1");
    // A touch away from the centre also works inside the round control.
-   bounds=touchBounds("GIRA");device.click(bounds.left+bounds.width()/3,bounds.top+bounds.height()*2/3);
+   bounds=touchBounds("GIRA");rawTouch(bounds.left+bounds.width()/3,bounds.top+bounds.height()*2/3);
    waitFor("lifeData.slot.total===window.__touchTotal+2",5000);waitFor("!slotBusy",12000);assertPinnedSlot();
   }
   capture("09_slot_after_real_touches");truth("window.__qaErrors.length===0");
@@ -187,7 +200,7 @@ public class LaunchValidationTest {
  @Test public void i_realTouchesChestCrystalAndForge()throws Exception{
   slotFixture("temple","lite");js("lifeData.slot.arcade.treasure=29;slotRandomInt=max=>max===100?31:0;true");touch("GIRA");waitFor("!!lifeData.slot.arcade.bonus&&!slotBusy",5000);
   js("window.__touchBalance=lifeData.balance;window.__touchTotal=lifeData.slot.total;window.__chestPrize=lifeData.slot.arcade.bonus.choices[1];true");
-  android.graphics.Rect chest=touchBounds("Apri il forziere 2");for(int i=0;i<4;i++)device.click(chest.centerX(),chest.centerY());
+  android.graphics.Rect chest=touchBounds("Apri il forziere 2");for(int i=0;i<4;i++)rawTouch(chest.centerX(),chest.centerY());
   truth("lifeData.balance===window.__touchBalance+window.__chestPrize && lifeData.slot.total===window.__touchTotal");
   touch("TORNA AI RULLI");truth("!!document.getElementById('slotReels') && !lifeData.slot.arcade.bonus");assertPinnedSlot();
   slotFixture("crystal","lite");js("slotRandomInt=max=>max===100?98:0;true");touch("GIRA");waitFor("lifeData.slot.arcade.freeSpins===3&&!slotBusy",5000);
