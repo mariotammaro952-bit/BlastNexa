@@ -1,0 +1,47 @@
+{
+  "versionCode": 2401,
+  "gameCommit": "4e0258c074022ea6590696b68988ab232114abd8",
+  "workflowRun": "https://github.com/mariotammaro952-bit/BlastNexa/actions/runs/39805595727",
+  "android": [
+    {
+      "api": 31,
+      "webview": "91.0.4472.114",
+      "testsPassed": 8,
+      "freshEmulatorRetry": true
+    },
+    {
+      "api": 36,
+      "webview": "133.0.6943.137",
+      "testsPassed": 8
+    }
+  ],
+  "assetSha256": {
+    "index.html": "bca13075683fc15ef0902806eec38c34d5bcf711d48329bd0f5ea63631903100",
+    "landscape-v24.css": "c5cef5f99b535008d111321b5c15bfc186ef1e644b15a2d1c9cef261364d393a",
+    "landscape-v24.js": "4af21769f4c60bbfc79e3ff61ba408a928d34d96e8732cf0a09027c707911eaf",
+    "assets/nexa-guardian.webp": "8c71d6896d95649aa58986919015fefa6ca15660ca3b46971cfb5409d33ec774"
+  },
+  "signing": {
+    "certificate_sha256": "f9b0bf70d174565825a349b16840fead7574479ba12c5acde60abaef01e7992e",
+    "apk_signature": "v1/v2/v3 verified",
+    "apk_alignment": "4-byte and 16KB shared-library alignment verified",
+    "aab_signature": "JAR SHA256/RSA verified",
+    "files": [
+      {
+        "name": "BlastNexa_v24_TEST.apk",
+        "bytes": 15419073,
+        "sha256": "fc600febfd5ad8905111ca50e47329e2f2fd64ae3dc5f531a9316aa9a2dc63f4"
+      },
+      {
+        "name": "BlastNexa_v24_PlayStore.aab",
+        "bytes": 15287052,
+        "sha256": "388cc383023e1fbea916184a68d4a90a155849570962c51a75fe82d46545a837"
+      }
+    ]
+  },
+  "limitations": [
+    "Ads and audio are disabled in instrumentation.",
+    "The first Android 12 final attempt timed out on second-Activity startup under emulator memory pressure; the full fresh-emulator retry passed.",
+    "Emulator results do not measure physical-device battery, thermal behavior or frame rate."
+  ]
+}

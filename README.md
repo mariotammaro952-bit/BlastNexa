@@ -22,7 +22,7 @@ Richiede JDK 17 e Android SDK 36. Il wrapper fissa Gradle 8.11.1 e il suo SHA256
 ./gradlew connectedPreviewDebugAndroidTest
 ```
 
-`preview` usa solo unità pubblicitarie di test e pacchetto `com.blastnexa.blockpuzzle.preview`. `production` usa il pacchetto Play esistente `com.blastnexa.blockpuzzle`, codice versione 2301 e le unità interstitial/rewarded autorizzate. La frequenza slot resta 50 giri complessivi, inclusi giri bonus e respin.
+`preview` usa solo unità pubblicitarie di test e pacchetto `com.blastnexa.blockpuzzle.preview`. `production` usa il pacchetto Play esistente `com.blastnexa.blockpuzzle`, codice versione 2401 e le unità interstitial/rewarded autorizzate. La frequenza slot resta 50 giri complessivi, inclusi giri bonus e respin.
 
 Il banner di produzione è disattivato se manca `BN_BANNER_AD_UNIT`: non viene usato un ID di prova nella release. Impostare un’unità banner dell’account `ca-app-pub-7428534984744854` prima della compilazione per monetizzare lo spazio già presente.
 
@@ -54,3 +54,10 @@ node --experimental-sqlite qa/d1.mjs
 I test JavaScript usano il codice di produzione con adattatori DOM/clock. I test strumentali verificano Android WebView, ciclo di vita, richiesta HTTPS nativa e recupero del renderer. L’opzione Intent `bn_qa_no_ads` è accettata solo quando `BuildConfig.DEBUG` è vero. Nessun annuncio reale viene richiesto o cliccato durante i test.
 
 Il catalogo, le illustrazioni e la musica del gioco precedente sono conservati. Il breve effetto `faaah.mp3` è stato fornito dal titolare; i diritti di distribuzione devono essere confermati da lui prima della pubblicazione. Nessun asset o codice dell’APK di slot usato come riferimento è stato importato.
+
+
+## Anteprima e compatibilità v24
+
+`npm run dev -- --host 0.0.0.0 --port 4173 --strictPort` prepara i file generati e avvia l’anteprima; `/device` offre cinque dimensioni di controllo. Il CSS e il JS esterni sono copiati nella WebView da `prepare_assets.py`, insieme al personaggio originale in `game/assets/`. Il generatore applica i collegamenti e la versione al catalogo HTML, scrivendo soltanto file cambiati e tramite sostituzione atomica.
+
+La nuova composizione usa rulli centrali, opzioni scorrevoli laterali e comandi in basso. Puzzle e cruciverba sfruttano l’altezza disponibile; il rack delle parole e le definizioni scorrono nella colonna destra. La resa dei blocchi include un fallback per WebView senza `color-mix`, e i test nativi verificano che griglia e pezzi abbiano una superficie colorata. `design-qa.md` documenta il confronto visivo e i formati verificati.

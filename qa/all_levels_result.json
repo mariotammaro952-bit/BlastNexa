@@ -1,5 +1,5 @@
 {
-  "file": "/workspace/scratch/c617d61a5086/blastnexa_release/game/index.html",
+  "file": "game/index.html",
   "levelCount": 2000,
   "scenes": [
     "war",
@@ -11,6 +11,6 @@
   "successful": 8000,
   "placements": 143592,
   "failures": [],
-  "seconds": 17.012,
+  "seconds": 92.719,
   "scope": "Exact production placement/scoring/goal/result logic; rendering, audio and storage IO adapted. Authored solution replay proves a valid path, not fairness of arbitrary player choices."
 }
