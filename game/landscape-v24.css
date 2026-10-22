@@ -89,3 +89,20 @@ html,body{width:100%;height:100%;overflow:hidden}
 @media(prefers-reduced-motion:reduce){#slotTemple .bn-world-spin,#slotTemple .bn-temple-cell.winning{animation:none}}
 @media(max-height:410px){#game>.top{height:35px;min-height:35px}#game .bn-wide-game{grid-template-columns:minmax(215px,min(51vw,calc(100dvh - 135px))) minmax(0,1fr)}#app #game .bn-wide-left .board-shell{width:min(100%,calc(100dvh - 141px))!important;max-height:calc(100dvh - 141px)!important}#slotTemple{gap:4px 7px!important;padding:3px 6px 8px!important}#slotTemple>.bn-world-cabinet{padding-top:43px!important}#slotTemple .bn-temple-reels{max-height:calc(100dvh - 198px);min-height:105px}#slotTemple .bn-world-spin{min-height:97px;max-height:114px}}
 @media(orientation:portrait){html,body{height:auto;overflow:auto}#app{height:auto;min-height:100dvh;max-height:none;overflow:auto}#app #menu.menu{display:flex;flex-direction:column}#menu>.menu-buttons{display:flex;width:100%}#app #game.game{overflow:auto}#game .bn-wide-game{grid-template-columns:minmax(0,1fr);overflow:visible}#game .bn-wide-left,#game .bn-wide-right{height:auto;overflow:visible}#app #game .bn-wide-left .board-shell{max-height:none!important;width:min(100%,460px)!important}#app #wordsScroll.bn-words-scroll{display:block}#slotTemple.bn-slot-odyssey{display:flex;flex-direction:column}#slotTemple>.bn-world-cabinet{width:100%;order:2}#slotTemple>.bn-world-controls{width:100%;order:3}#slotTemple .bn-world-spin{border-radius:22px;aspect-ratio:auto;width:100%;min-height:60px}#slotTemple>.bn-world-machines{width:100%;flex-direction:row;order:1}}
+
+/* Non-playing slot pages (missions, album, rules) use a natural full-width flow. */
+#slotTemple.bn-slot-odyssey:not(:has(>.bn-world-cabinet)){display:flex;flex-direction:column;overflow:visible}
+#slotTemple.bn-slot-odyssey:not(:has(>.bn-world-cabinet))>.bn-arcade-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%}
+#slotTemple.bn-slot-odyssey:not(:has(>.bn-world-cabinet))>*{max-width:100%}
+/* Narrow landscape phones still fit all three arcade columns and keep scrollable content. */
+@media(orientation:landscape) and (max-width:720px){
+ #app{padding-left:7px;padding-right:7px}
+ #slotTemple.bn-slot-odyssey{grid-template-columns:minmax(88px,18%) minmax(200px,1fr) minmax(92px,20%);gap:5px 7px;padding:3px 5px 8px}
+ #slotTemple .bn-world-machines>.bn-arcade-machine{min-height:50px;padding:3px}
+ #slotTemple .bn-world-machines strong{font-size:9px}
+ #slotTemple>.bn-world-cabinet{padding:43px 5px 6px!important}
+ #slotTemple .bn-world-spin{min-height:86px;max-height:123px;font-size:19px}
+ #slotTemple .bn-world-feature-copy>strong{font-size:9px}
+ #slotTemple .bn-world-reel-footer>strong{font-size:8px}
+ #game .bn-wide-game{gap:8px}
+}
