@@ -1,6 +1,17 @@
-# BlastNexa: Block Puzzle — v23
+# BlastNexa: Block Puzzle — v24
 
 Android API 24–36. 2.000 livelli Avventura in quattro ambientazioni, 400 cruciverba, modalità extra, slot a tre mondi con premi virtuali e profilo giocatore. Classifica online facoltativa con replay delle mosse sul server, coda offline, codice di recupero, segnalazioni, blocchi ed eliminazione del profilo.
+
+## Novità v24 — widescreen e slot arcade (22 ottobre 2026)
+
+- Avvio Android **orizzontale** con `android:screenOrientation="landscape"` e WebView a tutta larghezza.
+- Puzzle a **due colonne**: griglia 8×8 più ampia a sinistra; punteggio, mosse, missione, poteri e pezzi a destra. Cruciverba con griglia e comandi affiancati.
+- Slot NEXA LUCK con **cabinet dorato**, rulli centrali più leggibili, tre ambientazioni originali e grande tasto GIRA. Il motore attuale resta da **5 rulli × 3 righe**: jackpot, bonus, 50 giri tra pause, salvataggi e premi non sono modificati.
+- Fascia banner nativa **separata in basso in ogni sezione**, fuori dal puzzle e dai controlli; il consenso UMP continua a essere rispettato. In produzione la fascia non mostra un annuncio reale finché non si configura `BN_BANNER_AD_UNIT` nel repository GitHub.
+- `tools/prepare_assets.py` inserisce `game/landscape-v24.css` e `game/landscape-v24.js` nel sorgente HTML e li copia nella WebView Android. **Eseguirlo prima di compilare**.
+- Versione Android: `1.0.0-v24`, `versionCode 2401`. La firma deve usare la chiave di caricamento già in uso.
+
+Nota: questa versione conserva la grafica e i simboli NEXA originali. Non riproduce personaggi o asset delle slot di terzi. Va collaudata su dispositivi fisici per verificare fluidità, spaziatura e annunci reali.
 
 ## Compilazione
 
