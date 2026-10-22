@@ -1,0 +1,344 @@
+{
+  "version_code": 2501,
+  "version_name": "1.0.0-v25",
+  "tested_commit": "10f801bf4960e40e84b5c5da313c03fc36b17b3c",
+  "workflow_run": 39834267906,
+  "workflow_url": "https://github.com/mariotammaro952-bit/BlastNexa/actions/runs/39834267906",
+  "status": "passed",
+  "build_artifact": {
+    "id": 12450401653,
+    "name": "BlastNexa-v25-touch-build",
+    "bytes": 68796340,
+    "digest": "sha256:8ef6c3fb0710bf0ac6a3c4182a490d8ef7816bf34b349005b3124789a7d6143a"
+  },
+  "native": [
+    {
+      "name": "v25-android-api-31-compact",
+      "job_id": 120019864359,
+      "artifact_id": 12449889531,
+      "artifact_bytes": 9453922,
+      "artifact_digest": "sha256:afc169b2c4cf4337de905fc4fcea5f416a6d16625f91f422f2cd17ae0e7567e3",
+      "passed": 12,
+      "failed": 0,
+      "webview": "91.0.4472.114",
+      "bursts": [
+        {
+          "machine": "temple",
+          "previous": 1,
+          "total": 2,
+          "start": {
+            "phase": "spinning",
+            "disabled": true,
+            "scroll": 0,
+            "total": 2
+          },
+          "mid": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "late": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "burstMs": 563
+        },
+        {
+          "machine": "crystal",
+          "previous": 3,
+          "total": 4,
+          "start": {
+            "phase": "spinning",
+            "disabled": true,
+            "scroll": 0,
+            "total": 4
+          },
+          "mid": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "late": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "burstMs": 665
+        },
+        {
+          "machine": "forge",
+          "previous": 5,
+          "total": 6,
+          "start": {
+            "phase": "spinning",
+            "disabled": true,
+            "scroll": 0,
+            "total": 6
+          },
+          "mid": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "late": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "burstMs": 698
+        }
+      ],
+      "native_pss": {
+        "before_kb": 151711,
+        "after_kb": 143112
+      },
+      "screenshots": [
+        "01_menu.png",
+        "02_avventura.png",
+        "03_cruciverba.png",
+        "04_slot_temple.png",
+        "05_slot_crystal.png",
+        "06_slot_forge.png",
+        "07_menu_finale.png",
+        "08_bonus_temple.png",
+        "09_slot_after_real_touches.png",
+        "10_forge_after_touch_respin.png",
+        "11_full_width_cutout.png",
+        "12_forge_ready_touch_targets.png",
+        "13_fifty_spin_dialog.png"
+      ],
+      "unexpected_app_fatal_or_anr": false
+    },
+    {
+      "name": "v25-android-api-36-compact",
+      "job_id": 120019865266,
+      "artifact_id": 12450938077,
+      "artifact_bytes": 10423789,
+      "artifact_digest": "sha256:b879a8a3fd6f7751f5cbb2553b7e0948c1641f77ac32fc6393f5119140f86b7e",
+      "passed": 12,
+      "failed": 0,
+      "webview": "133.0.6943.137",
+      "bursts": [
+        {
+          "machine": "temple",
+          "previous": 1,
+          "total": 2,
+          "start": {
+            "phase": "spinning",
+            "disabled": true,
+            "scroll": 0,
+            "total": 2
+          },
+          "mid": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "late": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "burstMs": 657
+        },
+        {
+          "machine": "crystal",
+          "previous": 3,
+          "total": 4,
+          "start": {
+            "phase": "spinning",
+            "disabled": true,
+            "scroll": 0,
+            "total": 4
+          },
+          "mid": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "late": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "burstMs": 814
+        },
+        {
+          "machine": "forge",
+          "previous": 5,
+          "total": 6,
+          "start": {
+            "phase": "spinning",
+            "disabled": true,
+            "scroll": 0,
+            "total": 6
+          },
+          "mid": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "late": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "burstMs": 847
+        }
+      ],
+      "native_pss": {
+        "before_kb": 132058,
+        "after_kb": 140811
+      },
+      "screenshots": [
+        "01_menu.png",
+        "02_avventura.png",
+        "03_cruciverba.png",
+        "04_slot_temple.png",
+        "05_slot_crystal.png",
+        "06_slot_forge.png",
+        "07_menu_finale.png",
+        "08_bonus_temple.png",
+        "09_slot_after_real_touches.png",
+        "10_forge_after_touch_respin.png",
+        "11_full_width_cutout.png",
+        "12_forge_ready_touch_targets.png",
+        "13_fifty_spin_dialog.png"
+      ],
+      "unexpected_app_fatal_or_anr": false
+    },
+    {
+      "name": "v25-android-api-36-wide-cutout",
+      "job_id": 120019864662,
+      "artifact_id": 12450792416,
+      "artifact_bytes": 11795498,
+      "artifact_digest": "sha256:e46c17ccc2322f81beafac807da8f5a5e3ad77506a6fc8ff21f9704e5fc078e1",
+      "passed": 12,
+      "failed": 0,
+      "webview": "133.0.6943.137",
+      "bursts": [
+        {
+          "machine": "temple",
+          "previous": 1,
+          "total": 2,
+          "start": {
+            "phase": "spinning",
+            "disabled": true,
+            "scroll": 0,
+            "total": 2
+          },
+          "mid": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "late": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "burstMs": 648
+        },
+        {
+          "machine": "crystal",
+          "previous": 3,
+          "total": 4,
+          "start": {
+            "phase": "spinning",
+            "disabled": true,
+            "scroll": 0,
+            "total": 4
+          },
+          "mid": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "late": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "burstMs": 864
+        },
+        {
+          "machine": "forge",
+          "previous": 5,
+          "total": 6,
+          "start": {
+            "phase": "spinning",
+            "disabled": true,
+            "scroll": 0,
+            "total": 6
+          },
+          "mid": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "late": {
+            "phase": "spinning",
+            "filled": true
+          },
+          "burstMs": 955
+        }
+      ],
+      "native_pss": {
+        "before_kb": 132939,
+        "after_kb": 145150
+      },
+      "screenshots": [
+        "01_menu.png",
+        "02_avventura.png",
+        "03_cruciverba.png",
+        "04_slot_temple.png",
+        "05_slot_crystal.png",
+        "06_slot_forge.png",
+        "07_menu_finale.png",
+        "08_bonus_temple.png",
+        "09_slot_after_real_touches.png",
+        "10_forge_after_touch_respin.png",
+        "11_full_width_cutout.png",
+        "12_forge_ready_touch_targets.png",
+        "13_fifty_spin_dialog.png"
+      ],
+      "unexpected_app_fatal_or_anr": false
+    }
+  ],
+  "assets_sha256": {
+    "game/index.html": "c876c3881a9322c4dc66d9a53908dea7572860b62db3484ac26071e32a28f1fa",
+    "game/landscape-v24.css": "ed0a45db7d058782ff002a3c9063d4476645f3834a503bb79d9eb6159ec4d4eb",
+    "game/landscape-v24.js": "bd58acd71f30c74291a362763542d8d64655c20c077f9bd356dd8e6d6afe5e61",
+    "game/assets/nexa-guardian.webp": "8c71d6896d95649aa58986919015fefa6ca15660ca3b46971cfb5409d33ec774"
+  },
+  "signing": {
+    "certificate_sha256": "f9b0bf70d174565825a349b16840fead7574479ba12c5acde60abaef01e7992e",
+    "apk_signature": "v1/v2/v3 verified",
+    "apk_alignment": "4-byte and 16KB shared-library alignment verified",
+    "aab_signature": "JAR SHA256/RSA verified",
+    "files": [
+      {
+        "name": "BlastNexa_v25_TEST.apk",
+        "bytes": 15423169,
+        "sha256": "f8f250ee21894b846b87ba0e324f4734611ff2a0ee29586d30bb10f69ae5c699"
+      },
+      {
+        "name": "BlastNexa_v25_PlayStore.aab",
+        "bytes": 15289460,
+        "sha256": "ebfb1c625b6f97f6b373e1ef4b888e09e15b854f59aaacf09c6674b9925f3995"
+      }
+    ]
+  },
+  "logic": {
+    "adventure_runs": 8000,
+    "placements": 143592,
+    "crosswords": 400,
+    "slot_oracle_matrices": 6000,
+    "slot_transactions": 10000,
+    "reloads_mid_spin": 104,
+    "malformed_saves": 42,
+    "arcade_scenarios": 16,
+    "odyssey_scenarios": 14,
+    "audio_ad_scenarios": 10
+  },
+  "adaptations": [
+    "Native touch tests use UI-tree bounds and physical Android input events; JS creates deterministic fixtures and observes state.",
+    "Only the collect presentation window is extended to 6000 ms in test h; production reel duration remains 2600 ms.",
+    "Fifty persistence transactions execute inside the actual WebView with lite effects.",
+    "Mass adventure replays adapt rendering, audio and storage IO; they prove valid authored solutions, not arbitrary move fairness.",
+    "Native SDK ad requests are disabled; the real native no-ad callback path and ad cadence are tested."
+  ],
+  "limits": [
+    "No exhaustive assurance for every device or possible bug.",
+    "Android 12 and 16 emulator coverage only; hardware audio, thermal and battery checks remain.",
+    "No live AdMob load/video/consent campaign verification; owner production banner ID is still missing.",
+    "In-app lite effects are tested; changing OS reduced-motion preference during a running session is not tested.",
+    "Debug instrumentation and signed release packages share verified bundled assets; native release/debug flags differ.",
+    "Native PSS snapshots exclude the separate WebView renderer and are not a memory leak proof.",
+    "Owner audio rights and Play Console publication remain to be completed."
+  ]
+}

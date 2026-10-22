@@ -11,6 +11,6 @@
   "successful": 8000,
   "placements": 143592,
   "failures": [],
-  "seconds": 92.719,
+  "seconds": 7.887,
   "scope": "Exact production placement/scoring/goal/result logic; rendering, audio and storage IO adapted. Authored solution replay proves a valid path, not fairness of arbitrary player choices."
 }

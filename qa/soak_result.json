@@ -4,14 +4,14 @@
     "spin": 9509,
     "free": 21,
     "respin": 470,
-    "chests": 270,
+    "chests": 273,
     "breaks": 199,
     "reloads": 104
   },
-  "exactExpectedBalance": 4681,
+  "exactExpectedBalance": 4630,
   "maxPendingTimers": 0,
   "malformedStorageCases": 42,
-  "seconds": 245.925,
+  "seconds": 23.099,
   "tests": [
     "10,000 actual slot commits: all modes, bonus/free/respin/hold, ad breaks and history conservation",
     "104 reloads during a committed spin preserve the exact balance and never repeat a reward",
