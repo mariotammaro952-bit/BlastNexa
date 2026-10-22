@@ -33,6 +33,10 @@ public class LaunchValidationTest {
   Intent intent=new Intent(InstrumentationRegistry.getInstrumentation().getTargetContext(),OdysseyActivity.class);intent.putExtra("bn_qa_no_ads",true);
   scenario=ActivityScenario.launch(intent);bind();
   try{waitFor("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')",45000);}catch(AssertionError error){bootstrapFailed=true;try{writeEvidence("startup.txt",js("JSON.stringify({url:location.href,state:document.readyState,agent:navigator.userAgent,text:document.body?document.body.innerText.slice(0,1000):'',scripts:document.scripts.length})"));capture("startup_failure");}catch(Exception ignored){}throw error;}
+  // Android shows its own one-time full-screen education above the WebView.
+  // Acknowledge the actual system UI before lifecycle/back/touch assertions.
+  androidx.test.uiautomator.UiObject2 education=device.wait(Until.findObject(By.text("Got it")),3000);
+  if(education!=null){education.click();assertTrue(device.wait(Until.gone(By.text("Got it")),5000));}
   js("window.__qaErrors=[];window.addEventListener('error',e=>window.__qaErrors.push(e.message));localStorage.setItem('blastnexa_help_seen','true');muted=true;displayMenu();true");
  }
  private void bind(){scenario.onActivity(activity->{try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("game");field.setAccessible(true);web=(WebView)field.get(activity);}catch(Exception e){throw new RuntimeException(e);}});}
@@ -117,6 +121,13 @@ public class LaunchValidationTest {
   truth("document.getElementById('wordBoard').getBoundingClientRect().right<=document.getElementById('wordControls').getBoundingClientRect().left+16");
   truth("window.BlastNexaBannerLayout().visible");
   truth("window.__qaErrors.length===0");
+  js("openUniverse('slot');setArcadeMachine('temple');lifeData.slot.arcade.treasure=29;playerSettings.effects='lite';slotRandomInt=max=>max===100?31:0;spinLifeSlot();true");
+  waitFor("!slotBusy",15000);
+  truth("!!lifeData.slot.arcade.bonus && document.querySelectorAll('.bn-world-chest').length===3");
+  truth("document.getElementById('slotSpinButton').getBoundingClientRect().bottom<=document.getElementById('gameBannerFrame').getBoundingClientRect().top");
+  capture("08_bonus_temple");
+  js("document.getElementById('slotChest1').click();document.getElementById('slotSpinButton').click();true");
+  truth("!lifeData.slot.arcade.bonus && !!document.getElementById('slotReels')");
  }
  @Test public void z_rendererRecoveryReopensSavedGame()throws Exception{
   js("playerProfile.name='Recupero Android';savePlayer();true");

@@ -1,6 +1,11 @@
 from pathlib import Path
 import json,hashlib,re
 root=Path(__file__).resolve().parents[1]
+def write_changed(path,data):
+    if path.exists() and path.read_bytes()==data:return
+    temporary=path.with_name(path.name+'.prepare-tmp')
+    temporary.write_bytes(data)
+    temporary.replace(path)
 source=root/'game/index.html';h=source.read_text(encoding='utf-8')
 # Append only declarative landscape assets. This keeps the 13MB embedded catalogs,
 # existing payout logic, profile/ranking and all v23 JavaScript unchanged.
@@ -31,11 +36,11 @@ function renderWords(){"""
  old="host.style.gridTemplateRows='repeat('+p.size+',minmax(0,1fr))';";assert h.count(old)==1;h=h.replace(old,old+'syncWordBoardSquare();',1)
  old='La classifica usa un profilo anonimo salvato su questo dispositivo.'
  h=h.replace(old,'La classifica usa un profilo senza email, salvato su questo dispositivo. Premendo PARTECIPA accetti le Regole della classifica, consultabili qui sotto.')
-source.write_text(h,encoding='utf-8')
+write_changed(source,h.encode('utf-8'))
 config=json.loads(re.search(r'<script id="onlineConfig" type="application/json">(.*?)</script>',h,re.S)[1]);assert config['url']=='https://blastnexa-online.mariotammaro952.chatgpt.site/api/ranking'
 assets=root/'app/src/main/assets';assets.mkdir(parents=True,exist_ok=True)
-(assets/'index.html').write_text(h,encoding='utf-8')
-(assets/'online-config.json').write_text(json.dumps(config))
+write_changed(assets/'index.html',h.encode('utf-8'))
+write_changed(assets/'online-config.json',json.dumps(config).encode())
 for f in (landscape_css,landscape_js):
     (assets/f.name).write_bytes(f.read_bytes())
 import shutil

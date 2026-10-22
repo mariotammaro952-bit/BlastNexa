@@ -16,6 +16,7 @@ function rearrangeGame(){
  for(const selector of ['.bn-play-strip','.scene-strip','#adStatus','#escapeScene','#universeGameStrip','.stats','#missionCard','#bossHud','#resultReview','.power-tools','#tray','#instruction']){
    const el=game.querySelector(':scope > '+selector);if(el)(['.power-tools','#tray','#instruction'].includes(selector)?actions:info).append(el);
  }
+ const lives=$id('gameLives');if(lives)top.insertBefore(lives,$id('soundBtn'));
 }
 function fitPlayAreas(){
  const wide=window.innerWidth>window.innerHeight,body=$id('game')?.querySelector('.bn-wide-game');
@@ -29,6 +30,12 @@ function fitPlayAreas(){
   const size=Math.floor(Math.min(words.clientHeight-6,words.clientWidth*.48));
   if(size>0&&words.style.getPropertyValue('--bn-word-size')!==size+'px')words.style.setProperty('--bn-word-size',size+'px');
  }
+}
+function rearrangeWords(){
+ const scroll=$id('wordsScroll');if(!scroll||scroll.querySelector('.bn-words-details'))return;
+ const details=document.createElement('div');details.className='bn-words-details';
+ for(const id of ['wordControls','wordClues']){const node=$id(id);if(node)details.append(node);}
+ scroll.append(details);
 }
 function composeSlot(){
  const layout=$id('slotTemple');if(!layout)return;
@@ -49,6 +56,11 @@ function composeSlot(){
  }
  const result=$id('slotResult'),auto=layout.querySelector(':scope > .bn-arcade-auto'),controls=layout.querySelector(':scope > .bn-world-controls');
  if(controls?.querySelector('.bn-world-respin'))controls.classList.add('has-respin');
+ const spin=$id('slotSpinButton');
+ if(spin&&!spin.classList.contains('bn-world-normal-spin')){
+  const label=[...spin.childNodes].find(node=>node.nodeType===3);
+  if(label){const short={'SCEGLI UN FORZIERE':'BONUS','TORNA AI RULLI':'TORNA','GIRA NELLA CAVERNA':'GIRA','CONTINUA':'AVANTI'};label.textContent=short[label.textContent]||label.textContent;if(label.textContent.length>6)spin.classList.add('bn-long-label');}
+ }
  if(wallet)deck.append(wallet);
  if(result)deck.append(result);else{const notice=document.createElement('div');notice.className='bn-world-result';notice.setAttribute('role','status');notice.textContent='Il tuo bonus ti aspetta: scegli un forziere o continua il viaggio.';deck.append(notice);}
  if(auto)deck.append(auto);if(controls)deck.append(controls);
@@ -60,6 +72,7 @@ function installLayout(){
  if(typeof renderWords==='function'){const original=renderWords;renderWords=function(){const result=original.apply(this,arguments);fitPlayAreas();return result;};}
  const resize=new ResizeObserver(fitPlayAreas);
  for(const id of ['game','wordsScroll']){const el=$id(id);if(el)resize.observe(el);}
+ const under=$id('game')?.querySelector('.under-board');if(under)resize.observe(under);
  window.addEventListener('resize',fitPlayAreas);fitPlayAreas();
 }
 function installBanner(){
@@ -102,6 +115,6 @@ function installBanner(){
  document.addEventListener('visibilitychange',schedule);
  schedule();
 }
-function init(){rearrangeGame();installLayout();installBanner();}
+function init(){rearrangeGame();rearrangeWords();installLayout();installBanner();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
