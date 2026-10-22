@@ -52,10 +52,13 @@ public class LaunchValidationTest {
   long until=android.os.SystemClock.uptimeMillis()+45000,stableAt=0;WebView candidate=null;
   AtomicReference<WebView> current=new AtomicReference<>();java.util.concurrent.atomic.AtomicBoolean loaded=new java.util.concurrent.atomic.AtomicBoolean();
   while(android.os.SystemClock.uptimeMillis()<until){
-   loaded.set(false);scenario.onActivity(activity->{try{
+   // ActivityScenario waits for global UI idle when called from the test
+   // thread. Inspect the current page on the main thread instead: an animated
+   // game need not become globally idle for an observation to be valid.
+   loaded.set(false);InstrumentationRegistry.getInstrumentation().runOnMainSync(()->scenario.onActivity(activity->{try{
     java.lang.reflect.Field view=OdysseyActivity.class.getDeclaredField("game"),ready=OdysseyActivity.class.getDeclaredField("pageReady");view.setAccessible(true);ready.setAccessible(true);WebView target=(WebView)view.get(activity);current.set(target);
     loaded.set(target!=null&&ready.getBoolean(activity)&&target.getProgress()==100&&target.getWidth()>target.getHeight());
-   }catch(Exception error){throw new RuntimeException(error);}});
+   }catch(Exception error){throw new RuntimeException(error);}}));
    WebView target=current.get();long now=android.os.SystemClock.uptimeMillis();
    if(loaded.get()){
     if(target==readyWeb){web=target;return;}
@@ -263,7 +266,8 @@ public class LaunchValidationTest {
   }finally{motionScale("1");}
  }
  @Test public void f_storeScreenshots()throws Exception{
-  js("window.__qaReloading=true;localStorage.clear();localStorage.setItem('blastnexa_muted','true');localStorage.setItem('blastnexa_help_seen','true');location.reload();true");waitFor("typeof window.__qaReloading==='undefined' && typeof playerTotals==='function'",30000);
+  js("localStorage.clear();localStorage.setItem('blastnexa_muted','true');localStorage.setItem('blastnexa_help_seen','true');true");
+  InstrumentationRegistry.getInstrumentation().runOnMainSync(()->web.reload());readyWeb=null;waitFor("typeof playerTotals==='function'",30000);
   js("displayMenu();true");capture("01_menu");js("start('adventure',1);true");capture("02_avventura");
   js("startWord(0);true");capture("03_cruciverba");js("openUniverse('slot');setArcadeMachine('temple');true");capture("04_slot_temple");
   js("setArcadeMachine('crystal');true");capture("05_slot_crystal");js("setArcadeMachine('forge');true");capture("06_slot_forge");
