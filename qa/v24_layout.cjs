@@ -1,0 +1,21 @@
+// v24 sanity checks run after tools/prepare_assets.py, without changing game data.
+const fs=require('node:fs'),assert=require('node:assert/strict'),path=require('node:path');
+const root=path.resolve(__dirname,'..'),read=p=>fs.readFileSync(path.join(root,p),'utf8');
+const manifest=read('app/src/main/AndroidManifest.xml'),gradle=read('app/build.gradle.kts');
+const html=read('app/src/main/assets/index.html'),css=read('app/src/main/assets/landscape-v24.css');
+const js=read('app/src/main/assets/landscape-v24.js');
+assert.match(manifest,/screenOrientation="landscape"/);
+assert.match(gradle,/versionCode\s*=\s*2401/);
+assert.match(html,/href="landscape-v24.css"/);
+assert.match(html,/src="landscape-v24.js"/);
+assert.match(css,/#game\s+\.bn-wide-game/);
+assert.match(css,/#slotTemple\.bn-slot-odyssey/);
+assert.match(css,/#app\s+\.game-banner-dock/);
+assert.match(js,/gameBannerLayout=function/);
+assert.match(js,/syncGameBanner=function/);
+assert.match(html,/const ARCADE_LINES=/);
+assert.match(html,/const ARCADE_MACHINES=/);
+assert.match(html,/SLOT_AD_INTERVAL/);
+assert.equal(read('game/landscape-v24.css'),css);
+assert.equal(read('game/landscape-v24.js'),js);
+console.log('PASS v24: Android landscape, wide game, slot cabinet, safe universal banners, existing slot payout engine');
