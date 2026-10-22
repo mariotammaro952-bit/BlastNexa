@@ -76,7 +76,7 @@ function composeSlot(){
  if(spin){
   spin.setAttribute('aria-busy',String(typeof slotBusy!=='undefined'&&slotBusy));
   if(typeof slotPhase!=='undefined'&&slotPhase==='celebrating'){
-   spin.disabled=false;spin.onclick=()=>finishSlotCelebration();spin.setAttribute('aria-label','Incassa la vincita');
+   spin.disabled=false;spin.onclick=()=>finishSlotCelebration();spin.setAttribute('aria-label','Incassa la vincita');spin.setAttribute('aria-busy','false');
    const label=[...spin.childNodes].find(node=>node.nodeType===3);if(label)label.textContent='INCASSA';
    const detail=spin.querySelector('small');if(detail)detail.textContent='VITE GIÀ SALVATE';
   }
@@ -88,7 +88,7 @@ function composeSlot(){
  if(wallet)deck.append(wallet);
  if(result)deck.append(result);else{const notice=document.createElement('div');notice.className='bn-world-result';notice.setAttribute('role','status');notice.textContent='Il tuo bonus ti aspetta: scegli un forziere o continua il viaggio.';deck.append(notice);}
  if(auto)deck.append(auto);if(controls)deck.append(controls);
- for(const [id,label] of [['slotAuto5','Avvia 5 giri automatici'],['slotAuto10','Avvia 10 giri automatici'],['slotAutoStop','Ferma i giri automatici']])$id(id)?.setAttribute('aria-label',label);
+ for(const [id,label] of [['slotAuto5','Avvia 5 giri automatici'],['slotAuto10','Avvia 10 giri automatici'],['slotAutoStop','Ferma i giri automatici']])auto?.querySelector('#'+id)?.setAttribute('aria-label',label);
  hero?.remove();layout.prepend(panorama,sidebar);layout.append(character,deck);
  for(const node of [...layout.children])if(node!==panorama&&node!==sidebar&&node!==cabinet&&node!==character&&node!==deck&&!node.classList.contains('bn-slot-fx-layer'))sidebar.append(node);
 }
