@@ -97,6 +97,27 @@ public class LaunchValidationTest {
    js("window.__BN_TEST_FAST__=true;unlocked=2000;lifeData.balance=99999;setScene('war');start('adventure',1);for(const p of LEVELS[0].proof){if(roundOutcome)break;placePiece(p.slot,p.x,p.y);}openPlayer('ranking');true");waitFor("!playerBusy",30000);truth("playerRanking.me.points>=125 && playerNetwork.pending.length===0");
   }finally{js("deletePlayerRanking();true");waitFor("!playerBusy",20000);truth("!playerNetwork.joined && !playerNetwork.token");}
  }
+ @Test public void g_landscapePuzzleSlotAndBanner()throws Exception{
+  truth("innerWidth>innerHeight");
+  js("displayMenu();window.BlastNexaBannerReady();true");
+  truth("window.BlastNexaBannerLayout().visible");
+  truth("document.getElementById('gameBannerFrame').getBoundingClientRect().height===50");
+  js("lifeData.balance=Math.max(10,lifeData.balance);start('adventure',1);true");
+  truth("!!document.querySelector('#game .bn-wide-left #boardShell')");
+  truth("!!document.querySelector('#game .bn-wide-right #tray')");
+  truth("document.getElementById('boardShell').getBoundingClientRect().right<=document.getElementById('tray').getBoundingClientRect().left+16");
+  truth("document.getElementById('boardShell').getBoundingClientRect().bottom<=document.getElementById('gameBannerFrame').getBoundingClientRect().top+2");
+  truth("window.BlastNexaBannerLayout().visible");
+  js("openUniverse('slot');setArcadeMachine('temple');true");
+  truth("document.querySelectorAll('#slotReels .bn-temple-reel').length===5");
+  truth("document.querySelectorAll('#slotReels .bn-temple-cell').length===15");
+  truth("document.getElementById('slotSpinButton').getBoundingClientRect().right<=innerWidth");
+  truth("window.BlastNexaBannerLayout().visible");
+  js("startWord(0);true");
+  truth("document.getElementById('wordBoard').getBoundingClientRect().right<=document.getElementById('wordControls').getBoundingClientRect().left+16");
+  truth("window.BlastNexaBannerLayout().visible");
+  truth("window.__qaErrors.length===0");
+ }
  @Test public void z_rendererRecoveryReopensSavedGame()throws Exception{
   js("playerProfile.name='Recupero Android';savePlayer();true");
   android.util.Log.i("BlastNexa-QA","EXPECTED_RENDERER_TERMINATION");
