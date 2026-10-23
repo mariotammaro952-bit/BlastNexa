@@ -128,11 +128,29 @@ function composeSlot(){
 function installLayout(){
  installModal();
  if(typeof renderLifeSlot==='function'){
+  let slotFocusId='',focusEpoch=0;
+  // Rebuilding a cabinet removes the focused native accessibility target.
+  // Keep the user's control selected across the replacement and publish the
+  // focus only after the new frame and modal inert state are ready.
+  document.addEventListener('pointerdown',event=>{
+   const slot=$id('slotTemple'),button=event.target.closest?.('button[id]');
+   slotFocusId=slot&&button&&slot.contains(button)?button.id:'';focusEpoch++;
+  },true);
   const original=renderLifeSlot;
   renderLifeSlot=function(){
-   const side=$id('slotTemple')?.querySelector('.bn-slot-sidebar'),scroll=side?.scrollTop||0;
+   const before=$id('slotTemple'),active=document.activeElement;
+   if(before?.contains(active)&&active.id)slotFocusId=active.id;
+   const side=before?.querySelector('.bn-slot-sidebar'),scroll=side?.scrollTop||0;
    const result=original.apply(this,arguments);
    const current=$id('slotTemple')?.querySelector('.bn-slot-sidebar');if(current)current.scrollTop=scroll;
+   if(['slotAuto5','slotAuto10'].includes(slotFocusId)&&$id('slotAutoStop'))slotFocusId='slotAutoStop';
+   else if(slotFocusId==='slotAutoStop'&&!$id('slotAutoStop'))slotFocusId='slotAuto5';
+   const epoch=++focusEpoch,id=slotFocusId;
+   if(id)requestAnimationFrame(()=>{
+    const control=$id(id);
+    if(epoch!==focusEpoch||!slotVisible()||$id('overlay')?.classList.contains('on')||!control||control.disabled||control.closest('[inert]')||!control.getClientRects().length)return;
+    control.focus({preventScroll:true});pinCanvas();
+   });
    pinCanvas();return result;
   };
  }
