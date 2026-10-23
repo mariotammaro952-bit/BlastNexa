@@ -41,7 +41,7 @@ public class AdsSdkValidationTest {
    waitJs("document.readyState==='complete' && typeof playerTotals==='function'",45000);
    UiObject2 education=device.wait(Until.findObject(By.text("Got it")),3000);if(education!=null)education.click();
    js("muted=true;localStorage.setItem('blastnexa_help_seen','true');openUniverse('slot');lifeData.slot.wallet.balance=0;lifeData.slot.sinceAd=0;saveLives();openSlotCoinRefill();true");
-   waitJs("!!document.querySelector('#slotTemple .bn-slot-sidebar')",10000);
+   waitJs("!!document.querySelector('#slotTemple .bn-slot-sidebar')",10000);android.util.Log.i("BlastNexa-SDKQA","STYLED_GAME_READY");
    // Only the consent dependency is adapted. Initialization, loading, full
    // screen display, playback, reward callback and dismiss all use the SDK.
    InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{try{
@@ -56,15 +56,15 @@ public class AdsSdkValidationTest {
    }catch(Exception error){throw new RuntimeException(error);}});
    java.lang.reflect.Field reward=OdysseyAds.class.getDeclaredField("reward");reward.setAccessible(true);long deadline=android.os.SystemClock.uptimeMillis()+90000;
    while(reward.get(ads)==null&&android.os.SystemClock.uptimeMillis()<deadline)Thread.sleep(250);
-   assertNotNull("Google demo rewarded creative must load",reward.get(ads));capture("01_test_reward_loaded");
+   assertNotNull("Google demo rewarded creative must load",reward.get(ads));android.util.Log.i("BlastNexa-SDKQA","DEMO_AD_LOADED");capture("01_test_reward_loaded");
    UiObject2 video=device.wait(Until.findObject(By.res("dialogPrimary")),7000);assertNotNull(video);video.click();
    waitJs("!!bnPendingAd",10000);int token=Integer.parseInt(js("bnAdToken"));
-   Thread.sleep(45000);capture("02_test_video_after_playback");
+   android.util.Log.i("BlastNexa-SDKQA","DEMO_AD_PLAYING");Thread.sleep(45000);capture("02_test_video_after_playback");
    if(android.os.Build.VERSION.SDK_INT>=34)InstrumentationRegistry.getInstrumentation().getUiAutomation().clearCache();
    UiObject2 close=device.findObject(By.desc(java.util.regex.Pattern.compile("(?i).*(close|chiudi).*")));if(close==null)close=device.findObject(By.text(java.util.regex.Pattern.compile("(?i)(close|chiudi|close ad)")));
    if(close!=null)close.click();else device.pressBack();
    waitJs("!bnPendingAd",20000);assertEquals("100",js("lifeData.slot.wallet.balance"));assertEquals("0",js("lifeData.slot.total"));
-   js("window.BlastNexaAdResult("+token+",true);true");assertEquals("100",js("lifeData.slot.wallet.balance"));capture("03_reward_credited_once");
+   js("window.BlastNexaAdResult("+token+",true);true");assertEquals("100",js("lifeData.slot.wallet.balance"));capture("03_reward_credited_once");android.util.Log.i("BlastNexa-SDKQA","EARNED_100_ONCE");
    File dir=new File(context.getExternalFilesDir(null),"sdk-smoke");java.nio.file.Files.write(new File(dir,"result.json").toPath(),"{\"googleDemoSdkPlayback\":true,\"realSdkEarnedCallback\":true,\"coinsGranted\":100,\"duplicateBlocked\":true,\"consentAdapter\":true,\"productionAdDelivery\":false}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
   }finally{capture("04_final_sdk_state");}
  }
