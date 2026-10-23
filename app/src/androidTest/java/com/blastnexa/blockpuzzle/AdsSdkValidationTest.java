@@ -60,7 +60,7 @@ public class AdsSdkValidationTest {
    waitJs("!!bnPendingAd",10000);int token=Integer.parseInt(js("bnAdToken"));
    Thread.sleep(45000);capture("02_test_video_after_playback");
    if(android.os.Build.VERSION.SDK_INT>=34)InstrumentationRegistry.getInstrumentation().getUiAutomation().clearCache();
-   UiObject2 close=device.findObject(By.descMatches("(?i).*(close|chiudi).*"));if(close==null)close=device.findObject(By.textMatches("(?i)(close|chiudi|close ad)"));
+   UiObject2 close=device.findObject(By.desc(java.util.regex.Pattern.compile("(?i).*(close|chiudi).*")));if(close==null)close=device.findObject(By.text(java.util.regex.Pattern.compile("(?i)(close|chiudi|close ad)")));
    if(close!=null)close.click();else device.pressBack();
    waitJs("!bnPendingAd",20000);assertEquals("100",js("lifeData.slot.wallet.balance"));assertEquals("0",js("lifeData.slot.total"));
    js("window.BlastNexaAdResult("+token+",true);true");assertEquals("100",js("lifeData.slot.wallet.balance"));capture("03_reward_credited_once");
