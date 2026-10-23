@@ -1,35 +1,38 @@
-# BlastNexa v24 — design QA
+# BlastNexa v27 — automatic invitations
+
+Native invitations are scheduled automatically at 09:00, 14:00 and 20:30 in the phone timezone. The invitation switch, slot button and invitation settings dialog have been removed. Only a read-only schedule note remains in settings. Android notification permission is requested by the native host. Native scheduling, recreation, clock/DST recovery, actual notification delivery, duplicate prevention and notification tapping are covered by the v27 Android validation job; results follow CI completion.
+
+The v27 slot keeps the reviewed full-screen scene, neon launcher and compact control deck. It uses 100 daily coins and x1 wagers of 1, 5 or 10 colored lines, with a +100 rewarded video at zero balance. JavaScript wallet validation passes 13 scenarios. The earlier visual review below describes the v26 baseline.
+
+# BlastNexa v26 — design QA
 
 final result: passed
 
-Reviewed 22 October 2026 against the user-supplied landscape slot screenshot and 29.75-second reference video. The requested relationship is “simile”: preserve BlastNexa’s original game and adopt the reference composition. This is an implementation in the existing Android game, not a new prototype.
+Reviewed 22 October 2026 using the supplied slot screenshot, the v25 screenshot showing the unwanted lower band, and the 29.75-second reference video. Comparison of reference, previous build and current implementation was performed in one combined input: `qa-internal/v26-reference-comparison.png` in the task workspace. User reference material remains outside the repository.
 
-## Grounding and comparison
+## Visual evidence and scope
 
-Reference: `01-1000103997.jpg` (1536 × 691). The idle slot reference was normalized to 1280 × 576 and compared together with the actual game capture in one stacked comparison image. Internal review files remain outside the repository: `reference-review/slot-reference-comparison.jpg`, `slot-v24-1280.jpg` and `slot-layout-checks.json` in the task workspace. The user’s screenshots and video were not copied into the public repository.
+Final browser evidence: `qa/evidence/v26-slot-800-final.jpg` and `qa/evidence/v26-slot-640-final.jpg`. Both captures were taken after the last spacing fix. The launcher artwork was inspected separately at 512×512, including its adaptive safe area. Original NEXA art, themes, Italian UI, five reels and three rows remain intentional game constraints; the requested composition is similar to the reference.
 
-The original NEXA Temple, Crystal and Forge backgrounds and symbol atlases are reused. A new, original ImageGen guardian is integrated as an optimized transparent WebP. There are no replacement CSS drawings or placeholder illustrations. UI remains in Italian.
-
-## Results
-
-| Area | Result |
+| Surface | Finding and verification |
 | --- | --- |
-| Composition | Dominant central cabinet, gold frames, left options, full-body character at right, balance/result/auto and round GIRA in the bottom deck. |
-| Responsive slot | Verified at 1280×576, 800×360, 640×360, 960×432 and 1024×600. Spin button stays within the viewport and above the banner at all five sizes. Reel height is 281, 131, 131, 144 and 310 CSS pixels respectively. |
-| Puzzle | Large square board at left; goals and score at right; pieces and tools remain visible. Placement and undo were exercised through the rendered UI. On 640×360, the board is 229×229; tray, Pulse and lives stay above the banner. |
-| Crosswords | Explicit measured square size and a scrollable right column for rack/actions/clues. On 640×360, board 242×242 and cell 24.875×24.875. Entering RICCIO and submitting changed progress to 1/6 without consuming an attempt. All 400 geometries also pass on both Android targets. |
-| Banner | Separate 50-pixel frame in a reserved bottom rail. Confirmed in menu, slot, words and player profile; hidden while the pause overlay is open. |
-| Navigation | Slot worlds, missions, return to menu, profile, crossword resume, puzzle resume, pause and undo exercised. Primary slot controls preserve original callbacks. |
-| Motion | Guardian idle motion, spin and winning-cell emphasis respect system reduced motion and the existing light-effects preference. |
-| Console | No application error observed. Browser extension metadata errors were excluded because their URL is the installed extension, not the game. |
-| Native Android | API 31 and 36 each pass 8/8 instrumentation tests for the final game commit 4e0258c, including all crosswords, 50-spin persistence, Home/Back, online bridge, landscape/banner geometry, treasure selection renderer recovery and visible colored tile surfaces. |
+| Scene and cabinet | Full-height warm panorama, dominant gold-framed reels, original character at right. No separate blue strip below the scene. |
+| Lower controls | Coin balance, banner seat, VITE VINTE and round GIRA share one deck. Normal spin costs 100 virtual coins; bonus spins clearly show free. Prize count explicitly shows lives. |
+| Sidebar | Lives total and AUTO precede secondary information. At 640×360 AUTO ends at y279 inside its sidebar ending at y283. Secondary controls scroll. |
+| Banner | Native banner uses the measured center seat, stays separate from GIRA and is hidden during dialogs. No-ad fallback shows the life paytable. Real ad delivery requires a physical-device check. |
+| Refill dialog | Coin wallet opens an Italian explanation with refill rules, optional rewarded video and return button. Compact display tested through rendered UI. |
+| Typography and color | Existing offline fonts; short readable primary labels; warm gold controls and emerald symbols. No new remote fonts. |
+| Icon | Original ImageGen lime/cyan block lightning with magenta accent on vivid violet; adaptive resources and legacy sizes. No text, launcher chrome or copied reference icon. |
+| Interaction | Rendered GIRA immediately reduced 5,000 to 4,900 and disabled while spinning. Existing callbacks retained. Ten production-runtime wallet tests pass, including migration, insufficient balance, paid/free spins, rewarded completion and recreation. |
+| Motion and accessibility | Existing light-effects and reduced-motion handling retained. Dialog keeps focus, background is inert and banner is hidden. Primary spin has an accessible name and busy state. |
+| Console | No application error in browser logs for terminal.local. Extension metadata errors are excluded. |
+| Android | Fourteen instrumentation cases configured on API31 compact, API36 compact and API36 wide/cutout. Their results are recorded in the release report after CI completion. |
 
 ## Iteration history
 
-Fixed missing asset links in packaging, an initially visible unstarted board, featured menu text clipping, compact-screen reel height, the crossword display/width cascade, bottom Pulse clipping, and the information-page wallet width. The Android test harness acknowledges Android’s own first-run full-screen education before testing touch, Back and recovery.
+- P1: unwanted blue banner band and unused lower space. Embedded banner seat into the control deck and extended the scene to the bottom edge.
+- P1: lives and AUTO initially fell below primary sidebar content. Moved them above feature metadata; removed tab padding and reduced sidebar gaps.
+- P2: AUTO 10 wrapped on narrow phones. Short labels with no wrapping and unchanged accessible names.
+- P2: previous icon lacked contrast. Replaced it with generated neon block artwork, packaged in adaptive and legacy launcher resources.
 
-Intentional differences: original NEXA themes and character; existing 5×3 reel engine and free spins for game lives; no copied Cinderella assets, real-money bets or invented controls. The separate ad rail is an additional user requirement. The three original bonus systems and 50-spin ad-break cadence remain in place.
-
-No open P0, P1 or P2 issue in the reviewed flows. P3: secondary metadata and side options remain small on compact landscape phones; side options and clue lists scroll independently. Physical-device audio, ad delivery, battery and thermal behavior are not established by browser or emulator tests.
-
-Final compatibility check: the original color-mix-only tile material was invisible in WebView 91 screenshots. The final build includes an @supports fallback that retains each tile’s --tile color. Both targets pass the added computed-paint assertions. One Android 12 startup timeout under emulator memory pressure was retained in the evidence; a complete fresh-emulator retry passes all eight tests.
+No open actionable P0, P1 or P2 in the browser-reviewed surfaces. P3: secondary sidebar metadata is intentionally compact and scrollable. Physical-device audio, real ads, battery and thermal behavior remain outside this visual review.

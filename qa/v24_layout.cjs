@@ -5,7 +5,7 @@ const manifest=read('app/src/main/AndroidManifest.xml'),gradle=read('app/build.g
 const html=read('app/src/main/assets/index.html'),css=read('app/src/main/assets/landscape-v24.css');
 const js=read('app/src/main/assets/landscape-v24.js');
 assert.match(manifest,/screenOrientation="landscape"/);
-assert.match(gradle,/versionCode\s*=\s*2501/);
+assert.match(gradle,/versionCode\s*=\s*2701/);
 assert.match(html,/href="landscape-v24.css"/);
 assert.match(html,/src="landscape-v24.js"/);
 assert.match(css,/#game\s+\.bn-wide-game/);
@@ -20,6 +20,9 @@ assert.equal(read('game/landscape-v24.css'),css);
 assert.equal(read('game/landscape-v24.js'),js);
 assert.match(js,/function composeSlot/);
 assert.match(js,/function fitPlayAreas/);
+assert.match(js,/slotBannerSeat/);
+assert.match(html,/SLOT_COIN_COST=1,/);
+assert.match(manifest,/@mipmap\/ic_launcher/);
 assert.doesNotMatch(css,/:has\(/);
 assert.deepEqual(fs.readFileSync(path.join(root,'game/assets/nexa-guardian.webp')),fs.readFileSync(path.join(root,'app/src/main/assets/assets/nexa-guardian.webp')));
 console.log('PASS v24: Android landscape, wide game, slot cabinet, safe universal banners, existing slot payout engine');

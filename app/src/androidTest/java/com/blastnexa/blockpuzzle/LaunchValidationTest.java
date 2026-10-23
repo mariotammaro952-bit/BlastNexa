@@ -100,6 +100,7 @@ public class LaunchValidationTest {
   truth("document.documentElement.scrollWidth<=innerWidth");truth("window.__qaErrors.length===0");
  }
  @Test public void b_threeSlotWorldsAndFiftySpinPersistence()throws Exception{
+  js("lifeData.slot.wallet.balance=500000;true");
   js("openUniverse('slot');setArcadeMachine('temple');slotRandomInt=max=>0;playerSettings.effects='full';document.getElementById('slotSpinButton').click();window.__qaCommitted=lifeData.slot.total;true");
   waitFor("!slotBusy",15000);truth("lifeData.slot.total===window.__qaCommitted");
   js("window.__BN_TEST_FAST__=true;playerSettings.effects='lite';true");
@@ -174,7 +175,7 @@ public class LaunchValidationTest {
   js("openUniverse('slot');setArcadeMachine('temple');lifeData.slot.arcade.treasure=29;playerSettings.effects='lite';slotRandomInt=max=>max===100?31:0;spinLifeSlot();true");
   waitFor("!slotBusy",15000);
   truth("!!lifeData.slot.arcade.bonus && document.querySelectorAll('.bn-world-chest').length===3");
-  truth("document.getElementById('slotSpinButton').getBoundingClientRect().bottom<=document.getElementById('gameBannerFrame').getBoundingClientRect().top");
+  assertPinnedSlot();
   capture("08_bonus_temple");
   js("document.getElementById('slotChest1').click();document.getElementById('slotSpinButton').click();true");
   truth("!lifeData.slot.arcade.bonus && !!document.getElementById('slotReels')");
@@ -213,13 +214,14 @@ public class LaunchValidationTest {
  private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void touchId(String id)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.res(id)),7000);assertNotNull("Visible ID target missing: "+id,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void slotFixture(String machine,String effects)throws Exception{
-  js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
+  js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.balance=50000;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
  }
  private void assertPinnedSlot()throws Exception{
   truth("document.getElementById('app').scrollTop===0 && document.scrollingElement.scrollTop===0");
   truth("document.getElementById('universeScreen').getBoundingClientRect().top>=0");
-  truth("Math.abs(document.getElementById('gameBanner').getBoundingClientRect().bottom-innerHeight)<1");
-  truth("(()=>{let b=document.getElementById('slotSpinButton').getBoundingClientRect();return b.width>=48&&b.height>=48&&b.left>=0&&b.right<=innerWidth&&b.bottom<=document.getElementById('gameBanner').getBoundingClientRect().top;})()");
+  truth("(()=>{let s=document.querySelector('.bn-slot-sidebar'),b=s.getBoundingClientRect();return s.scrollTop>0||Array.from(s.querySelectorAll('#slotAuto5,#slotAuto10')).every(e=>e.getBoundingClientRect().bottom<=b.bottom);})()");
+  truth("(()=>{let d=document.getElementById('gameBanner').getBoundingClientRect(),s=document.getElementById('slotBannerSeat').getBoundingClientRect();return d.bottom<=innerHeight+1&&Math.abs(d.top-s.top)<1&&Math.abs(d.bottom-s.bottom)<1;})()");
+  truth("(()=>{let b=document.getElementById('slotSpinButton').getBoundingClientRect(),a=document.getElementById('gameBannerFrame').getBoundingClientRect();return b.width>=48&&b.height>=48&&b.left>=0&&b.right<=innerWidth&&b.bottom<=innerHeight&&b.left-a.right>=8;})()");
  }
  private void assertFilledReels()throws Exception{
   truth("(()=>{for(const reel of document.querySelectorAll('#slotReels>.bn-temple-reel')){let r=reel.getBoundingClientRect();for(let row=0;row<3;row++){let hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height*(row+.5)/3);if(!hit?.closest('.bn-temple-cell'))return false;}}return document.querySelectorAll('#slotReels>.bn-temple-reel').length===5;})()");
@@ -294,6 +296,26 @@ public class LaunchValidationTest {
   android.graphics.Rect bounds=touchBounds("GIRA");assertTrue(device.click(bounds.centerX(),bounds.centerY()));
   waitFor("lifeData.slot.total===window.__touchTotal+1 && !slotBusy",5000);assertPinnedSlot();capture("11_full_width_cutout");
  }
+ @Test public void l_virtualCoinsUseRealTouchAndSurviveRecreation()throws Exception{
+  slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=2;lifeData.slot.wallet.spent=0;lifeData.slot.wallet.anchor=Date.now();window.__coinsStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");
+  touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===1&&lifeData.slot.wallet.spent===1");
+  touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
+  touch("GIRA");truth("lifeData.slot.total===window.__coinsStart+2&&document.getElementById('overlay').classList.contains('on')&&!window.BlastNexaBannerLayout().visible");
+  touchId("dialogPrimary");waitFor("!bnPendingAd",15000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
+  touchId("dialogSecondary");js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
+  js("openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.anchor=Date.now();lifeData.slot.arcade.freeSpins=1;slotRandomInt=()=>0;playerSettings.effects='lite';renderLifeSlot(document.getElementById('universeBody'));true");
+  touch("GIRA NELLA CAVERNA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2&&lifeData.slot.last.coinCost===0");
+  assertPinnedSlot();capture("14_coins_and_embedded_banner");
+ }
+ @Test public void m_neonAdaptiveLauncherIcon()throws Exception{
+  android.content.Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+  android.graphics.drawable.Drawable icon=context.getPackageManager().getApplicationIcon(context.getPackageName());
+  assertTrue("Launcher must use the new adaptive icon",icon instanceof android.graphics.drawable.AdaptiveIconDrawable);
+  android.graphics.Bitmap bitmap=android.graphics.Bitmap.createBitmap(216,216,android.graphics.Bitmap.Config.ARGB_8888);icon.setBounds(0,0,216,216);icon.draw(new android.graphics.Canvas(bitmap));
+  int neon=0;for(int y=0;y<216;y++)for(int x=0;x<216;x++){int color=bitmap.getPixel(x,y);if(android.graphics.Color.green(color)>170&&(android.graphics.Color.red(color)>140||android.graphics.Color.blue(color)>140))neon++;}
+  assertTrue("Icon should contain vivid lime/cyan block artwork",neon>200);
+  File dir=new File(context.getExternalFilesDir(null),"store");assertTrue(dir.exists()||dir.mkdirs());try(java.io.FileOutputStream stream=new java.io.FileOutputStream(new File(dir,"15_launcher_icon.png"))){bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG,100,stream);}
+ }
  @Test public void f_storeScreenshots()throws Exception{
   js("localStorage.clear();localStorage.setItem('blastnexa_muted','true');localStorage.setItem('blastnexa_help_seen','true');true");
   InstrumentationRegistry.getInstrumentation().runOnMainSync(()->web.reload());readyWeb=null;waitFor("typeof playerTotals==='function'",30000);
@@ -301,5 +323,45 @@ public class LaunchValidationTest {
   js("startWord(0);true");capture("03_cruciverba");js("openUniverse('slot');setArcadeMachine('temple');true");capture("04_slot_temple");
   js("setArcadeMachine('crystal');true");capture("05_slot_crystal");js("setArcadeMachine('forge');true");capture("06_slot_forge");
   js("displayMenu();true");capture("07_menu_finale");
+ } @Test public void n_automaticInviteScheduleSurvivesRecreationAndClockChanges()throws Exception{
+  android.content.Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+  OdysseyReminders.scheduleAll(context);long now=System.currentTimeMillis();
+  for(int slot=0;slot<3;slot++){
+   long time=OdysseyReminders.preferences(context).getLong("next_"+slot,0);assertTrue(time>now&&time<now+27*3600000L);
+   java.util.Calendar calendar=java.util.Calendar.getInstance();calendar.setTimeInMillis(time);assertEquals(OdysseyReminders.HOURS[slot],calendar.get(java.util.Calendar.HOUR_OF_DAY));assertEquals(OdysseyReminders.MINUTES[slot],calendar.get(java.util.Calendar.MINUTE));
+   Intent intent=new Intent(context,OdysseyReminderReceiver.class).setAction(OdysseyReminders.ACTION);
+   assertNotNull(android.app.PendingIntent.getBroadcast(context,OdysseyReminders.BASE_ID+slot,intent,android.app.PendingIntent.FLAG_NO_CREATE|android.app.PendingIntent.FLAG_IMMUTABLE));
+  }
+  java.util.Calendar before=java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Europe/Rome"));before.clear();before.set(2026,java.util.Calendar.OCTOBER,24,22,0);
+  java.util.Calendar after=(java.util.Calendar)before.clone();after.setTimeInMillis(OdysseyReminders.nextTrigger(before,0));assertEquals(25,after.get(java.util.Calendar.DAY_OF_MONTH));assertEquals(9,after.get(java.util.Calendar.HOUR_OF_DAY));assertEquals(0,after.get(java.util.Calendar.MINUTE));
+  for(String action:new String[]{Intent.ACTION_BOOT_COMPLETED,Intent.ACTION_MY_PACKAGE_REPLACED,Intent.ACTION_TIME_CHANGED,Intent.ACTION_TIMEZONE_CHANGED})new OdysseyReminderReceiver().onReceive(context,new Intent(action));
+  recreateActivity();
+  for(int slot=0;slot<3;slot++)assertTrue(OdysseyReminders.preferences(context).getLong("next_"+slot,0)>System.currentTimeMillis());
+  js("openUniverse('slot');true");truth("!document.getElementById('slotReminderOpen')&&!document.getElementById('playInvitesToggle')&&!document.getElementById('settingReminders')&&typeof openPlayReminders==='undefined'");
+  android.content.pm.ActivityInfo receiver=context.getPackageManager().getReceiverInfo(new android.content.ComponentName(context,OdysseyReminderReceiver.class),0);assertTrue(receiver.enabled);assertFalse(receiver.exported);
+  writeEvidence("automatic-invites-schedule.json","{\"automatic\":true,\"localTimes\":[\"09:00\",\"14:00\",\"20:30\"],\"rebootAndClockRecovery\":true,\"toggle\":false}");
  }
+ @Test public void o_nativeInviteDeliveryPermissionDeduplicationAndTouch()throws Exception{
+  android.content.Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+  if(android.os.Build.VERSION.SDK_INT>=33){device.executeShellCommand("pm grant "+context.getPackageName()+" android.permission.POST_NOTIFICATIONS");assertEquals(android.content.pm.PackageManager.PERMISSION_GRANTED,context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS));}
+  android.app.NotificationManager manager=context.getSystemService(android.app.NotificationManager.class);assertTrue(manager.areNotificationsEnabled());
+  OdysseyReminders.preferences(context).edit().remove("last_0").commit();manager.cancel(OdysseyReminders.BASE_ID);
+  java.util.Calendar due=java.util.Calendar.getInstance();due.set(java.util.Calendar.HOUR_OF_DAY,9);due.set(java.util.Calendar.MINUTE,5);due.set(java.util.Calendar.SECOND,0);due.set(java.util.Calendar.MILLISECOND,0);long timestamp=due.getTimeInMillis();String day=OdysseyReminders.dayKey(timestamp);
+  assertFalse(OdysseyReminders.deliver(context,-1,day,timestamp));
+  assertFalse(OdysseyReminders.deliver(context,0,"2000-01-01",timestamp));
+  assertFalse(OdysseyReminders.deliver(context,1,day,timestamp));
+  assertTrue(OdysseyReminders.deliver(context,0,day,timestamp));assertFalse(OdysseyReminders.deliver(context,0,day,timestamp));
+  android.service.notification.StatusBarNotification shown=null;
+  for(int n=0;n<40&&shown==null;n++){for(android.service.notification.StatusBarNotification item:manager.getActiveNotifications())if(item.getId()==OdysseyReminders.BASE_ID)shown=item;if(shown==null)Thread.sleep(100);}
+  assertNotNull("Native invitation must appear in NotificationManager",shown);assertEquals(OdysseyReminders.TITLES[0],shown.getNotification().extras.getString(android.app.Notification.EXTRA_TITLE));assertNotNull(shown.getNotification().contentIntent);
+  assertTrue(device.openNotification());androidx.test.uiautomator.UiObject2 notification=device.wait(Until.findObject(By.text(OdysseyReminders.TITLES[0])),7000);assertNotNull("Actual notification must be tappable",notification);capture("16_automatic_native_invitation");android.graphics.Rect bounds=notification.getVisibleBounds();rawTouch(bounds.centerX(),bounds.centerY());awaitForeground();awaitCurrentPage();
+  truth("typeof playerTotals==='function'&&!document.getElementById('playInvitesToggle')");
+  if(android.os.Build.VERSION.SDK_INT>=33){
+   android.content.Context denied=new android.content.ContextWrapper(context){@Override public int checkSelfPermission(String permission){return android.content.pm.PackageManager.PERMISSION_DENIED;}};
+   OdysseyReminders.preferences(context).edit().remove("last_0").commit();assertFalse(OdysseyReminders.deliver(denied,0,day,timestamp));
+  }
+  manager.cancel(OdysseyReminders.BASE_ID);OdysseyReminders.scheduleAll(context);
+  writeEvidence("automatic-invites-delivery.json","{\"nativeNotification\":true,\"duplicateBlocked\":true,\"tappedIntoGame\":true,\"permissionGuard\":true}");
+ }
+
 }

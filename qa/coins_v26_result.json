@@ -1,0 +1,20 @@
+{
+  "passed": 10,
+  "tests": [
+    "New and v25 saves receive 5,000 coins while lives and recorded prizes are preserved",
+    "Eight repeated requests commit one 100-coin debit and one life prize, including a reload mid-spin",
+    "Insufficient coins cannot draw symbols, create a spin or change lives",
+    "A rewarded video credits 1,000 coins only after earned=true and cannot be credited twice",
+    "Coin refill is bounded at 5,000 and handles invalid or backward timestamps",
+    "Three Crystal bonus spins work with zero coins and never spend a life or a coin",
+    "Forge relaunch costs 100 coins once and preserves the selected reels",
+    "AUTO stops after the last affordable spin without a negative balance or a third transaction",
+    "Navigation and chest collection cannot debit coins",
+    "Malformed wallet numbers restore finite non-negative balances and bounded counters"
+  ],
+  "cost": 100,
+  "initialCoins": 5000,
+  "refillPerMinute": 100,
+  "rewardedCoins": 1000,
+  "scope": "Production wallet and spin transactions; deterministic DOM/clock and rewarded bridge adapters."
+}

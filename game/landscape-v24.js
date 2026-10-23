@@ -79,14 +79,14 @@ function composeSlot(){
  app.dataset.slotWide=cabinet?'play':'information';
  if(!cabinet){layout.classList.add('bn-slot-information');return;}
  layout.classList.add('bn-slot-wide');if(layout.querySelector('.bn-slot-sidebar'))return;
- const hero=layout.querySelector('.bn-world-topbar'),brand=hero?.querySelector('.bn-world-brand'),wallet=$id('slotWallet');
+ const hero=layout.querySelector('.bn-world-topbar'),brand=hero?.querySelector('.bn-world-brand'),wallet=$id('slotWallet'),coins=$id('slotCoinWallet');
  const sidebar=document.createElement('aside');sidebar.className='bn-slot-sidebar';sidebar.setAttribute('aria-label','Opzioni della slot');
  const deck=document.createElement('div');deck.className='bn-slot-deck';
  const character=document.createElement('div');character.className='bn-slot-character';character.setAttribute('aria-hidden','true');
  const guardian=document.createElement('img');guardian.src='assets/nexa-guardian.webp';guardian.alt='';guardian.width=1024;guardian.height=1536;guardian.draggable=false;
  const caption=document.createElement('small');caption.textContent='NEXA ODYSSEY';character.append(guardian,caption);
  const panorama=document.createElement('img');panorama.className='bn-slot-panorama';panorama.src=cabinet.querySelector('.bn-world-background').src;panorama.alt='';panorama.draggable=false;
- if(brand)sidebar.append(brand);
+ if(brand){brand.querySelector('small').textContent='NEXA LUCK';brand.querySelector('strong').textContent='SLOT AVVENTURA';sidebar.append(brand);}
  for(const selector of ['.bn-world-machines','.bn-arcade-tabs','.bn-world-feature','.bn-world-xp','button.bn-arcade-auto-button','.bn-slot-audio-panel','.bn-slot-cadence','.bn-world-life-wait','.bn-temple-note']){
   const node=layout.querySelector(':scope > '+selector);if(node)sidebar.append(node);
  }
@@ -100,7 +100,7 @@ function composeSlot(){
   if(spin){
    spin.classList.remove('bn-world-normal-spin');
    spin.textContent=spin.textContent.startsWith('CONTINUA')?'CONTINUA':'GIRA';
-   const detail=document.createElement('small');detail.textContent='GIRO NORMALE';spin.append(detail);
+   const detail=document.createElement('small');detail.textContent=slotSpinCoinCost()+' '+(slotSpinCoinCost()===1?'MONETA':'MONETE');spin.append(detail);
   }
  }
  if(spin){
@@ -115,10 +115,13 @@ function composeSlot(){
   const label=[...spin.childNodes].find(node=>node.nodeType===3);
   if(label){const short={'SCEGLI UN FORZIERE':'BONUS','TORNA AI RULLI':'TORNA','GIRA NELLA CAVERNA':'GIRA','CONTINUA':'AVANTI'};label.textContent=short[label.textContent]||label.textContent;if(label.textContent.length>6)spin.classList.add('bn-long-label');}
  }
- if(wallet)deck.append(wallet);
- if(result)deck.append(result);else{const notice=document.createElement('div');notice.className='bn-world-result';notice.setAttribute('role','status');notice.textContent='Il tuo bonus ti aspetta: scegli un forziere o continua il viaggio.';deck.append(notice);}
- if(auto)deck.append(auto);if(controls)deck.append(controls);
- for(const [id,label] of [['slotAuto5','Avvia 5 giri automatici'],['slotAuto10','Avvia 10 giri automatici'],['slotAutoStop','Ferma i giri automatici']])auto?.querySelector('#'+id)?.setAttribute('aria-label',label);
+ const primaryAnchor=sidebar.querySelector('.bn-world-feature')||sidebar.querySelector('.bn-world-xp');
+ if(wallet)sidebar.insertBefore(wallet,primaryAnchor);
+ if(coins)deck.append(coins);
+ const adSeat=document.createElement('div');adSeat.id='slotBannerSeat';adSeat.className='bn-slot-ad-seat';adSeat.setAttribute('aria-hidden','true');deck.append(adSeat);
+ if(result){result.querySelector('#slotCollectButton')?.remove();deck.append(result);}else{const notice=document.createElement('div');notice.className='bn-world-result';notice.setAttribute('role','status');notice.textContent='BONUS IN VITE';deck.append(notice);}
+ if(auto)sidebar.insertBefore(auto,primaryAnchor);if(controls)deck.append(controls);
+ for(const [id,label,text] of [['slotAuto5','Avvia 5 giri automatici','AUTO 5'],['slotAuto10','Avvia 10 giri automatici','AUTO 10'],['slotAutoStop','Ferma i giri automatici','STOP AUTO']]){const node=auto?.querySelector('#'+id);if(node){node.setAttribute('aria-label',label);node.textContent=text;}}
  hero?.remove();layout.prepend(panorama,sidebar);layout.append(character,deck);
  for(const node of [...layout.children])if(node!==panorama&&node!==sidebar&&node!==cabinet&&node!==character&&node!==deck&&!node.classList.contains('bn-slot-fx-layer'))sidebar.append(node);
 }
@@ -146,13 +149,13 @@ function installBanner(){
  if(typeof gameBannerLayout!=='function'||typeof syncGameBanner!=='function')return;
  gameBannerLayout=function(){
   const r=$id('gameBannerFrame').getBoundingClientRect();
-  const width=Math.max(0,Math.min(360,Math.floor(r.width)));
+  const width=Math.max(0,Math.min(320,Math.floor(r.width)));
   const inSlot=typeof slotVisible==='function'&&slotVisible();
   const inWords=typeof wordsVisible==='function'&&wordsVisible();
   const inGame=$id('game')?.style.display==='flex';
   const pending=typeof bnPendingAd!=='undefined'&&!!bnPendingAd;
   const valid=n=>Number.isFinite(n)?Math.round(n*10)/10:0;
-  return {slot:'landscape_bottom',context:inSlot?'slot':inWords?'words':inGame?'blocks':'other',session:typeof gameSession==='number'?gameSession:0,visible:!document.hidden&&!$id('overlay')?.classList.contains('on')&&!pending&&width>=200,x:valid(r.left),y:valid(r.top),width,height:50,coordinateSpace:'css-pixels',maxHeight:50};
+  return {slot:inSlot&&$id('slotBannerSeat')?'slot_control_deck':'landscape_bottom',context:inSlot?'slot':inWords?'words':inGame?'blocks':'other',session:typeof gameSession==='number'?gameSession:0,visible:!document.hidden&&!$id('overlay')?.classList.contains('on')&&!pending&&width>=200,x:valid(r.left),y:valid(r.top),width,height:50,coordinateSpace:'css-pixels',maxHeight:50};
  };
  syncGameBanner=function(force=false){
   const dock=$id('gameBanner'),frame=$id('gameBannerFrame'),app=$id('app');if(!dock||!frame||!app)return;
@@ -161,9 +164,14 @@ function installBanner(){
   const inWords=typeof wordsVisible==='function'&&wordsVisible();
   app.dataset.bannerContext=inSlot?'slot':inWords?'words':$id('game')?.style.display==='flex'?'blocks':'other';
   if(!inSlot)delete app.dataset.slotWide;
+  const seat=inSlot?$id('slotBannerSeat'):null;
+  if(seat){const r=seat.getBoundingClientRect(),parent=app.getBoundingClientRect();Object.assign(dock.style,{top:(r.top-parent.top)+'px',left:(r.left-parent.left)+'px',right:'auto',bottom:'auto',width:r.width+'px',height:r.height+'px'});}
+  else for(const prop of ['top','left','right','bottom','width','height'])dock.style.removeProperty(prop);
   if(typeof bnBannerSession!=='undefined'&&bnBannerSession!==gameSession){bnBannerSession=gameSession;bnBannerState='preview';}
   const layout=gameBannerLayout();frame.style.visibility=layout.visible?'visible':'hidden';
-  if(typeof bnBannerState!=='undefined'){frame.dataset.state=bnBannerState;$id('gameBannerPreview').hidden=bnBannerState==='loaded';}
+  if(typeof bnBannerState!=='undefined'){frame.dataset.state=bnBannerState;dock.dataset.state=bnBannerState;$id('gameBannerPreview').hidden=bnBannerState==='loaded';}
+  const preview=$id('gameBannerPreview');
+  if(preview){const labels=preview.querySelectorAll('strong,small,span');if(labels.length>=2){labels[0].textContent=seat?'PREMI IN VITE':'Spazio pubblicitario';labels[1].textContent=seat?'3 UGUALI: 1 VITA · 4: 2 · 5: 5':'ANTEPRIMA BANNER';}}
   if(typeof bnExpansionReady!=='undefined'&&bnExpansionReady&&typeof slotMediaSync==='function')slotMediaSync();
   const payload=JSON.stringify(layout);
   if(!force&&typeof bnBannerLastPayload!=='undefined'&&payload===bnBannerLastPayload)return;

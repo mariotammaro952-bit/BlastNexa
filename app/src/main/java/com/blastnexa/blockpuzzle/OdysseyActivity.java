@@ -42,6 +42,7 @@ public final class OdysseyActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        OdysseyReminders.scheduleAll(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().setStatusBarColor(Color.rgb(8,19,43));
         getWindow().setNavigationBarColor(Color.rgb(8,19,43));
@@ -98,6 +99,20 @@ public final class OdysseyActivity extends Activity {
     }
 
 
+    private void requestInviteNotificationPermission() {
+        if(Build.VERSION.SDK_INT<33 || !foreground || isFinishing() || isDestroyed())return;
+        if(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false))return;
+        if(checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)==android.content.pm.PackageManager.PERMISSION_GRANTED)return;
+        android.content.SharedPreferences prefs=OdysseyReminders.preferences(this);
+        if(prefs.getBoolean("permission_asked",false))return;
+        prefs.edit().putBoolean("permission_asked",true).apply();
+        requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},7907);
+    }
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+        if(requestCode==7907)OdysseyReminders.scheduleAll(this);
+    }
+
     private class GameClient extends WebViewClient {
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest request) {
                 Uri uri=request.getUrl();
@@ -110,6 +125,7 @@ public final class OdysseyActivity extends Activity {
             @Override public void onPageFinished(WebView view,String url) {
                 if(view!=game || ads==null || isDestroyed() || !GAME_URL.equals(url)) return;
                 pageReady=true;
+                requestInviteNotificationPermission();
                 applySafeArea();
                 evaluate("navigator.vibrate=function(p){window.BlastNexaNative.vibrate(JSON.stringify(p));return true;};"
                     +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
@@ -210,8 +226,10 @@ public final class OdysseyActivity extends Activity {
     }
     @Override protected void onResume() {
         super.onResume();foreground=true;
+        OdysseyReminders.scheduleAll(this);
         if(game!=null) game.onResume();
         if(ads!=null) ads.setActive(hasWindowFocus());
+        if(pageReady)requestInviteNotificationPermission();
         if(pageReady) evaluate("window.dispatchEvent(new Event('focus'));"
             +"if(typeof slotVisible==='function'&&slotVisible()&&!bnPendingAd)renderLifeSlot(document.getElementById('universeBody'));"
             +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");

@@ -1,4 +1,4 @@
-name: BlastNexa v25 touch and viewport validation
+name: BlastNexa v27 daily coins and automatic native invitations
 on:
   push:
     branches: [codex/landscape-slot-v24]
@@ -28,6 +28,7 @@ jobs:
           node qa/v24_layout.cjs
       - name: Validate game regressions
         run: |
+          node qa/coins.cjs
           node qa/all_levels.cjs game/index.html
           node qa/qa_arcade.cjs
           node qa/qa_odyssey.cjs
@@ -44,7 +45,7 @@ jobs:
           cp -a "$ANDROID_HOME/build-tools/36.0.0/lib64/." signing-tools/lib64/
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: BlastNexa-v25-touch-build
+          name: BlastNexa-v27-invites-build
           path: |
             app/build/outputs/apk/
             app/build/outputs/bundle/
@@ -88,7 +89,7 @@ jobs:
           java-version: '17'
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: BlastNexa-v25-touch-build
+          name: BlastNexa-v27-invites-build
           path: imported-build
       - name: Stage emulator APKs and enable acceleration
         run: |
@@ -110,6 +111,6 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: v25-android-api-${{ matrix.api }}-${{ matrix.screen }}
+          name: v27-android-api-${{ matrix.api }}-${{ matrix.screen }}
           path: android-evidence/
           retention-days: 7

@@ -22,4 +22,9 @@ for setting in ('compileSdk = 36', 'targetSdk = 36', 'minSdk = 24', 'com.blastne
     assert setting in build, 'Missing Android setting: ' + setting
 version = int(re.search(r'versionCode\s*=\s*(\d+)', build).group(1))
 assert version >= 2301, 'Do not downgrade the published v23 version code'
+icons = json.loads((root / 'artwork/launcher-v26.json').read_text())
+assert hashlib.sha256((root/icons['source']).read_bytes()).hexdigest() == icons['source_sha256']
+for item in icons['files']:
+    assert hashlib.sha256((root/item['path']).read_bytes()).hexdigest() == item['sha256'], 'Stale launcher artwork: '+item['path']
+assert 'android:icon="@mipmap/ic_launcher"' in (root/'app/src/main/AndroidManifest.xml').read_text()
 print(f'PASS: complete game, 2,000 levels, active HTTPS ranking, API 24/36, version {version}, SHA256 {hashlib.sha256(source).hexdigest()}')

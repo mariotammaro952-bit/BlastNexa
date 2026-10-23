@@ -1,6 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
 const {createRuntime}=require('./runtime.cjs');
 const FILE='game/index.html',tests=[];
+process.on('exit',()=>{if(tests.length!==10)process.exitCode=1;});
 const fresh=()=>{const r=createRuntime(FILE);r.run("openUniverse('slot')");return r};
 async function test(name,fn){await fn();tests.push(name);console.log('PASS',name)}
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
