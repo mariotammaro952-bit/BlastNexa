@@ -1,4 +1,4 @@
-name: BlastNexa v27 daily coins and automatic native invitations
+name: BlastNexa v27 Play readiness validation
 on:
   push:
     branches: [codex/landscape-slot-v24]
@@ -36,6 +36,7 @@ jobs:
           node qa/other_games.cjs
           node qa/unlimited_modes.cjs
           node qa/soak.cjs
+          node --experimental-sqlite qa/d1.mjs
       - name: Build Android installables and emulator tests
         run: |
           ./gradlew --no-daemon --max-workers=2 assemblePreviewDebug assemblePreviewDebugAndroidTest assemblePreviewRelease bundleProductionRelease
@@ -77,6 +78,11 @@ jobs:
             size: 720x1600
             density: 320
             cutout: 1
+          - api: 35
+            screen: tablet
+            size: 1600x2560
+            density: 320
+            cutout: 0
     env:
       BN_QA_SIZE: ${{ matrix.size }}
       BN_QA_DENSITY: ${{ matrix.density }}
@@ -113,4 +119,24 @@ jobs:
         with:
           name: v27-android-api-${{ matrix.api }}-${{ matrix.screen }}
           path: android-evidence/
+          retention-days: 7
+
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      BN_BANNER_AD_UNIT: ${{ vars.BN_BANNER_AD_UNIT }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android production release lint
+        run: ./gradlew --no-daemon --max-workers=2 lintProductionRelease
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: v27-production-lint
+          path: app/build/reports/
           retention-days: 7

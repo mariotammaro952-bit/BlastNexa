@@ -92,7 +92,13 @@ public class LaunchValidationTest {
  }
  private void truth(String expression)throws Exception{assertEquals("Assertion failed: "+expression,"true",js("Boolean("+expression+")"));}
  private void waitFor(String expression,long timeout)throws Exception{
-  long until=System.currentTimeMillis()+timeout;while(System.currentTimeMillis()<until){if("true".equals(js("Boolean("+expression+")")))return;Thread.sleep(150);}fail("Timed out waiting for "+expression);
+  long until=android.os.SystemClock.uptimeMillis()+timeout;while(android.os.SystemClock.uptimeMillis()<until){if("true".equals(js("Boolean("+expression+")")))return;Thread.sleep(150);}recordFailure("wait-"+expression);fail("Timed out waiting for "+expression);
+ }
+ private void recordFailure(String reason){
+  try{String name=reason.replaceAll("[^a-zA-Z0-9_-]","_");if(name.length()>65)name=name.substring(0,65);
+   writeEvidence(name+".json",js("JSON.stringify({phase:typeof slotPhase==='undefined'?null:slotPhase,busy:typeof slotBusy==='undefined'?null:slotBusy,total:lifeData.slot.total,sinceAd:lifeData.slot.sinceAd,coins:lifeData.slot.wallet.balance,autoLeft:slotAutoLeft,autoTimer:slotAutoTimer,batchLeft:window.__qaBatchLeft,batchTrace:window.__qaBatchTrace,pending:bnPendingAd?{token:bnPendingAd.token,session:bnPendingAd.session}:null,session:gameSession,hidden:document.hidden,focused:document.hasFocus(),overlay:document.getElementById('overlay').className,spin:document.getElementById('slotSpinButton')?.outerHTML,errors:window.__qaErrors})"));
+   File folder=new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics");device.takeScreenshot(new File(folder,name+".png"));
+  }catch(Exception ignored){}
  }
  @Test public void a_menuProfileAnd400Crosswords()throws Exception{
   js("document.getElementById('openPlayerProfile').click();document.getElementById('playerNickname').value='Cometa Android';[...document.querySelectorAll('#universeBody button')].find(b=>b.textContent==='SALVA NOME').click();true");truth("playerProfile.name==='Cometa Android'");
@@ -110,8 +116,11 @@ public class LaunchValidationTest {
   js("setArcadeMachine('crystal');window.__qaStartSpins=lifeData.slot.total;true");
   // Run the same fifty persisted transactions inside the real WebView. This
   // avoids making hundreds of cross-process observations between lite spins.
-  js("window.__qaBatchLeft=50;window.__qaBatchDone=false;(function step(){if(slotBusy||bnPendingAd){setTimeout(step,30);return;}if(!window.__qaBatchLeft){window.__qaBatchDone=true;return;}if(lifeData.slot.sinceAd>=SLOT_AD_INTERVAL){if(!document.getElementById('overlay').classList.contains('on'))openSlotBreak();document.getElementById('dialogPrimary').click();setTimeout(step,30);return;}if(spinLifeSlot())window.__qaBatchLeft--;setTimeout(step,30);})();true");
-  waitFor("window.__qaBatchDone",30000);
+  js("window.__qaBatchLeft=50;window.__qaBatchDone=false;window.__qaBatchTrace=[];window.__qaBatchStarted=performance.now();(function step(){if(slotBusy||bnPendingAd){setTimeout(step,30);return;}if(!window.__qaBatchLeft){window.__qaBatchDone=true;return;}if(lifeData.slot.sinceAd>=SLOT_AD_INTERVAL){if(!document.getElementById('overlay').classList.contains('on'))openSlotBreak();document.getElementById('dialogPrimary').click();setTimeout(step,30);return;}if(spinLifeSlot()){window.__qaBatchLeft--;if(window.__qaBatchLeft%5===0)window.__qaBatchTrace.push({left:window.__qaBatchLeft,total:lifeData.slot.total,elapsed:performance.now()-window.__qaBatchStarted});}setTimeout(step,30);})();true");
+  // Fifty actual DOM rebuilds, native saves and the ad bridge can exceed 30 s
+  // on the software-rendered API 31 runner. Record progress; retain every debit.
+  waitFor("window.__qaBatchDone",120000);
+  writeEvidence("fifty-persisted-spins.json",js("JSON.stringify({start:window.__qaStartSpins,total:lifeData.slot.total,trace:window.__qaBatchTrace,elapsed:performance.now()-window.__qaBatchStarted})"));
   truth("lifeData.slot.total===window.__qaStartSpins+50");String expectedBalance=js("lifeData.balance"),expectedSpins=js("lifeData.slot.total");
   js("saveLives();true");recreateActivity();waitFor("typeof lifeData!=='undefined'",30000);
   assertEquals(expectedBalance,js("lifeData.balance"));assertEquals(expectedSpins,js("lifeData.slot.total"));
@@ -200,7 +209,19 @@ public class LaunchValidationTest {
    if(node!=null)try{android.graphics.Rect bounds=node.getVisibleBounds();if(bounds.width()>0&&bounds.height()>0)return bounds;}catch(androidx.test.uiautomator.StaleObjectException changed){}
    Thread.sleep(100);
   }
-  writeEvidence("touch-failure.txt","Accessible touch target missing: "+label);device.dumpWindowHierarchy(new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics/missing-touch.xml"));throw new AssertionError("Accessible touch target missing: "+label);
+  // Some WebView accessibility providers invalidate a UiObject2 while a whole
+  // cabinet is replaced. A fresh UI-tree snapshot is authoritative: use only
+  // the matching enabled accessibility node's bounds, never DOM coordinates.
+  File snapshot=new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics/missing-touch.xml");snapshot.getParentFile().mkdirs();device.dumpWindowHierarchy(snapshot);
+  org.xmlpull.v1.XmlPullParser parser=android.util.Xml.newPullParser();
+  try(java.io.FileInputStream stream=new java.io.FileInputStream(snapshot)){parser.setInput(stream,"UTF-8");for(int event=parser.getEventType();event!=org.xmlpull.v1.XmlPullParser.END_DOCUMENT;event=parser.next()){
+   if(event!=org.xmlpull.v1.XmlPullParser.START_TAG||!"node".equals(parser.getName()))continue;
+   if(!label.equals(parser.getAttributeValue(null,"text"))&&!label.equals(parser.getAttributeValue(null,"content-desc")))continue;
+   if(!"true".equals(parser.getAttributeValue(null,"enabled")))continue;
+   java.util.regex.Matcher match=java.util.regex.Pattern.compile("\\[(-?\\d+),(-?\\d+)\\]\\[(-?\\d+),(-?\\d+)\\]").matcher(parser.getAttributeValue(null,"bounds"));
+   if(match.matches()){android.graphics.Rect bounds=new android.graphics.Rect(Integer.parseInt(match.group(1)),Integer.parseInt(match.group(2)),Integer.parseInt(match.group(3)),Integer.parseInt(match.group(4)));if(bounds.width()>0&&bounds.height()>0){writeEvidence("accessibility-snapshot-fallback.txt",label+" "+bounds);return bounds;}}
+  }}
+  writeEvidence("touch-failure.txt","Accessible touch target missing: "+label);recordFailure("touch-"+label);throw new AssertionError("Accessible touch target missing: "+label);
  }
  private void rawTouch(int x,int y)throws Exception{
   long down=android.os.SystemClock.uptimeMillis();
@@ -323,7 +344,26 @@ public class LaunchValidationTest {
   js("startWord(0);true");capture("03_cruciverba");js("openUniverse('slot');setArcadeMachine('temple');true");capture("04_slot_temple");
   js("setArcadeMachine('crystal');true");capture("05_slot_crystal");js("setArcadeMachine('forge');true");capture("06_slot_forge");
   js("displayMenu();true");capture("07_menu_finale");
- } @Test public void n_automaticInviteScheduleSurvivesRecreationAndClockChanges()throws Exception{
+ }
+ @Test public void n0_actualAndroidNotificationPermission()throws Exception{
+  if(android.os.Build.VERSION.SDK_INT<33)return;
+  android.content.Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+  assertEquals(android.content.pm.PackageManager.PERMISSION_DENIED,context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS));
+  withActivity(activity->{try{
+   activity.getIntent().putExtra("bn_qa_no_ads",false);
+   OdysseyReminders.preferences(activity).edit().remove("permission_asked").commit();
+   java.lang.reflect.Method ask=OdysseyActivity.class.getDeclaredMethod("requestInviteNotificationPermission");ask.setAccessible(true);ask.invoke(activity);
+  }catch(Exception error){throw new RuntimeException(error);}});
+  try{
+   androidx.test.uiautomator.UiObject2 allow=device.wait(Until.findObject(By.res("com.android.permissioncontroller:id/permission_allow_button")),10000);
+   assertNotNull("Android notification permission dialog must appear automatically",allow);android.graphics.Rect bounds=allow.getVisibleBounds();rawTouch(bounds.centerX(),bounds.centerY());
+   long until=android.os.SystemClock.uptimeMillis()+5000;while(context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED&&android.os.SystemClock.uptimeMillis()<until)Thread.sleep(100);
+   assertEquals(android.content.pm.PackageManager.PERMISSION_GRANTED,context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS));
+   assertTrue(OdysseyReminders.preferences(context).getBoolean("permission_asked",false));
+   writeEvidence("notification-system-permission.json","{\"automaticSystemPrompt\":true,\"physicalAllowTap\":true,\"permissionGranted\":true}");
+  }finally{withActivity(activity->activity.getIntent().putExtra("bn_qa_no_ads",true));}
+ }
+ @Test public void n_automaticInviteScheduleSurvivesRecreationAndClockChanges()throws Exception{
   android.content.Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
   OdysseyReminders.scheduleAll(context);long now=System.currentTimeMillis();
   for(int slot=0;slot<3;slot++){
@@ -362,6 +402,28 @@ public class LaunchValidationTest {
   }
   manager.cancel(OdysseyReminders.BASE_ID);OdysseyReminders.scheduleAll(context);
   writeEvidence("automatic-invites-delivery.json","{\"nativeNotification\":true,\"duplicateBlocked\":true,\"tappedIntoGame\":true,\"permissionGuard\":true}");
+ }
+ @Test public void p_coloredLineChoicesChargeTheDisplayedCoins()throws Exception{
+  for(String machine:new String[]{"temple","crystal","forge"}){
+   slotFixture(machine,"lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=100;window.__lineStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");
+   for(int lines:new int[]{1,5,10}){
+    touch(lines==1?"1 linea, 1 moneta per giro":lines+" linee, "+lines+" monete per giro");truth("slotLineCount()==="+lines+" && document.getElementById('slotLines"+lines+"').getAttribute('aria-pressed')==='true'");
+    js("window.__lineBefore=lifeData.slot.wallet.balance;window.__lineLives=lifeData.balance;true");touch("GIRA");waitFor("!slotBusy",5000);
+    truth("lifeData.slot.wallet.balance===window.__lineBefore-"+lines+" && lifeData.slot.last.coinCost==="+lines+" && lifeData.slot.last.arcade.lineCount==="+lines+" && lifeData.balance===window.__lineLives+5");
+   }
+   truth("lifeData.slot.wallet.balance===84 && lifeData.slot.total===window.__lineStart+3");assertPinnedSlot();
+  }
+  js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===84 && slotLineCount()===10");
+  writeEvidence("native-line-wagers.json","{\"worlds\":3,\"lineChoices\":[1,5,10],\"physicalTaps\":true,\"exactDebitsAndLives\":true,\"reloadPreserved\":true}");
+ }
+ @Test public void q_offlinePuzzleAndSlotKeepCommittedProgress()throws Exception{
+  device.executeShellCommand("svc wifi disable");device.executeShellCommand("svc data disable");
+  try{
+   slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=100;window.__offlineStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===99 && lifeData.slot.total===window.__offlineStart+1");
+   js("unlocked=2000;lifeData.balance=1000;playerSettings.effects='lite';setScene('war');start('adventure',1);for(const p of LEVELS[0].proof){if(roundOutcome)break;placePiece(p.slot,p.x,p.y);}true");truth("roundOutcome==='win' && roundFinalized && !playing");
+   js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===99 && stars[1]>0");
+   writeEvidence("offline-gameplay.json","{\"networkDisabled\":true,\"slotDebit\":1,\"puzzleWon\":true,\"reloadPreserved\":true}");
+  }finally{device.executeShellCommand("svc wifi enable");device.executeShellCommand("svc data enable");}
  }
 
 }
