@@ -1,0 +1,210 @@
+{
+  "applicationCommit": "e59609b87ffd910110b1cbbc409f985754ab20b0",
+  "versionCode": 2702,
+  "scope": "Internal Play test readiness; native tablet validation remains incomplete. No Play upload or merge performed.",
+  "primaryRun": 40006019755,
+  "primaryPhoneSuites": {
+    "api31_640x360": {
+      "passed": 19,
+      "failed": 0
+    },
+    "api36_640x360": {
+      "passed": 19,
+      "failed": 0
+    },
+    "api36_cutout_800x360": {
+      "passed": 19,
+      "failed": 0
+    }
+  },
+  "additionalRun": 40009830363,
+  "additionalPhoneSuites": {
+    "api31_640x360": "19/19",
+    "api36_cutout_800x360": "19/19",
+    "api36_640x360": "interrupted: emulator offline during offline test"
+  },
+  "tabletNative": "incomplete: emulator offline during fifty-spin persistence, including isolated fresh-process retries on API35/36",
+  "tabletDiagnosticRun": 40011248145,
+  "googleDemoReward": {
+    "run": 40008999266,
+    "passed": true,
+    "realSdkEarnedCallback": true,
+    "coinsGranted": 100,
+    "duplicateBlocked": true,
+    "consentAdapter": true,
+    "productionAdDelivery": false
+  },
+  "legacyProvider": {
+    "run": 40006220498,
+    "api": 24,
+    "providerVersion": 69,
+    "nativeUpgradeFlowPassed": true,
+    "retryKeepsLocalStorage": true,
+    "updatedProviderGameplayTested": false
+  },
+  "browser": {
+    "browser": "Chrome for Testing 156.0.8078.47",
+    "results": [
+      {
+        "width": 640,
+        "height": 360,
+        "passed": true,
+        "lineDebits": [
+          1,
+          5,
+          10
+        ],
+        "touchAndKeyboardFocus": true,
+        "heldRespin": true,
+        "autoStop": true,
+        "geometry": {
+          "noOverflow": true,
+          "pinned": true,
+          "spinInside": true
+        }
+      },
+      {
+        "width": 740,
+        "height": 360,
+        "passed": true,
+        "lineDebits": [
+          1,
+          5,
+          10
+        ],
+        "touchAndKeyboardFocus": true,
+        "heldRespin": true,
+        "autoStop": true,
+        "geometry": {
+          "noOverflow": true,
+          "pinned": true,
+          "spinInside": true
+        }
+      },
+      {
+        "width": 800,
+        "height": 360,
+        "passed": true,
+        "lineDebits": [
+          1,
+          5,
+          10
+        ],
+        "touchAndKeyboardFocus": true,
+        "heldRespin": true,
+        "autoStop": true,
+        "geometry": {
+          "noOverflow": true,
+          "pinned": true,
+          "spinInside": true
+        }
+      },
+      {
+        "width": 1024,
+        "height": 600,
+        "passed": true,
+        "lineDebits": [
+          1,
+          5,
+          10
+        ],
+        "touchAndKeyboardFocus": true,
+        "heldRespin": true,
+        "autoStop": true,
+        "geometry": {
+          "noOverflow": true,
+          "pinned": true,
+          "spinInside": true
+        }
+      },
+      {
+        "width": 1280,
+        "height": 800,
+        "passed": true,
+        "lineDebits": [
+          1,
+          5,
+          10
+        ],
+        "touchAndKeyboardFocus": true,
+        "heldRespin": true,
+        "autoStop": true,
+        "geometry": {
+          "noOverflow": true,
+          "pinned": true,
+          "spinInside": true
+        }
+      }
+    ],
+    "scope": "Desktop Chromium with touch emulation and keyboard; no Android, native notifications, real ads or device performance inferred."
+  },
+  "liveService": {
+    "passed": 6,
+    "tests": [
+      "Public HTTPS health and policy/support/deletion pages are reachable",
+      "Two temporary real profiles can register and recover with private credentials",
+      "Production server validates exact game traces and ignores forged client totals and replays",
+      "Rename, report, block and reset operate on the live database",
+      "Private support creation, status and deletion work; anonymous moderation is refused",
+      "A deleted live profile loses access and disappears from the ranking"
+    ],
+    "liveService": true,
+    "origin": "https://blastnexa-online.mariotammaro952.chatgpt.site",
+    "health": {
+      "status": "ok",
+      "version": 23,
+      "clientAddressAvailable": true
+    },
+    "completedAt": "2026-10-23T17:16:27.315Z",
+    "testProfilesCleaned": true
+  },
+  "catalogUniqueness": {
+    "levels": 2000,
+    "uniquePlayableConfigurations": 2000,
+    "duplicateConfigurations": []
+  },
+  "audioDecoded": 7,
+  "lint": {
+    "errors": 0,
+    "warnings": 16
+  },
+  "packages": {
+    "sourceCommit": "e59609b87ffd910110b1cbbc409f985754ab20b0",
+    "versionCode": 2702,
+    "versionName": "1.0.0-v27.1",
+    "certificateSha256": "f9b0bf70d174565825a349b16840fead7574479ba12c5acde60abaef01e7992e",
+    "packagePlay": "com.blastnexa.blockpuzzle",
+    "packageTest": "com.blastnexa.blockpuzzle.preview",
+    "minSdk": 24,
+    "targetSdk": 36,
+    "debuggableProduction": false,
+    "testOnlyProduction": false,
+    "nativeLibraries": 0,
+    "bundleAlignment": "PAGE_ALIGNMENT_16K",
+    "bundletoolValidated": true,
+    "universalApkGeneratedAndVerified": true,
+    "allFivePackagedAssetsMatchSource": true,
+    "bannerProductionConfigured": false,
+    "productionInterstitialAndRewardedConfigured": true,
+    "files": [
+      {
+        "name": "BlastNexa_v27_1_TEST.apk",
+        "bytes": 15669769,
+        "sha256": "3457749f9829a0f5634a61349d9c4df61f0864730ba51b01bd08d7dab8f30b24"
+      },
+      {
+        "name": "BlastNexa_v27_1_PlayStore.aab",
+        "bytes": 15535134,
+        "sha256": "d72001d7bc3ad88b1d40e533f0437312ab4ca14331700fc133129b7b95000751"
+      }
+    ]
+  },
+  "launchFollowups": [
+    "native tablet / physical device and Play prelaunch validation",
+    "production banner unit missing",
+    "real account UMP and ad availability",
+    "public privacy text still v23",
+    "owner confirmation of distribution rights for provided faaah sample",
+    "Play Data safety and content rating declarations"
+  ]
+}

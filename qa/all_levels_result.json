@@ -1,5 +1,5 @@
 {
-  "file": "/workspace/scratch/e6774355cd23/BlastNexa/game/index.html",
+  "file": "/home/runner/work/BlastNexa/BlastNexa/game/index.html",
   "levelCount": 2000,
   "scenes": [
     "war",
@@ -11,6 +11,6 @@
   "successful": 8000,
   "placements": 143592,
   "failures": [],
-  "seconds": 12.984,
+  "seconds": 14.558,
   "scope": "Exact production placement/scoring/goal/result logic; rendering, audio and storage IO adapted. Authored solution replay proves a valid path, not fairness of arbitrary player choices."
 }

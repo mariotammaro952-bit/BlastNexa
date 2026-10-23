@@ -1,6 +1,6 @@
-# BlastNexa: Block Puzzle — v27
+# BlastNexa: Block Puzzle — v27.1
 
-Android API 24–36. 2.000 livelli Avventura in quattro ambientazioni, 400 cruciverba, modalità extra, slot a tre mondi con premi virtuali e profilo giocatore. Classifica online facoltativa con replay delle mosse sul server, coda offline, codice di recupero, segnalazioni, blocchi ed eliminazione del profilo.
+Android API 24–36, con Android System WebView / Chrome aggiornato. 2.000 livelli Avventura in quattro ambientazioni, 400 cruciverba, modalità extra, slot a tre mondi con premi virtuali e profilo giocatore. Classifica online facoltativa con replay delle mosse sul server, coda offline, codice di recupero, segnalazioni, blocchi ed eliminazione del profilo.
 
 ## Novità v27 — monete giornaliere e inviti automatici (23 ottobre 2026)
 
@@ -12,6 +12,12 @@ Android API 24–36. 2.000 livelli Avventura in quattro ambientazioni, 400 cruci
 - GIRA, monete, VITE VINTE, vite totali e AUTO sono visibili sui telefoni compatti. Le opzioni secondarie scorrono nella colonna sinistra.
 - Avvio orizzontale, tre mondi e motore **5 rulli × 3 righe**, bonus e pausa ogni 50 giri; puzzle e cruciverba conservano la disposizione orizzontale.
 - Versione Android **1.0.0-v27.1 / 2702**. Eseguire `python3 tools/prepare_assets.py` prima della compilazione. La firma usa la chiave di caricamento già in uso.
+
+## Verifica prima del caricamento Play
+
+`qa/play_readiness_v27_1.json` conserva esiti e hash della consegna: 19/19 controlli nativi sui tre formati telefono, regressioni dei 2.000 livelli in quattro scene, 10.000 transazioni e video rewarded Google di prova con +100 monete una sola volta. Il test SDK usa un adattatore del servizio di consenso e non verifica UMP o disponibilità commerciale dell’account. Le prove native tablet restano incomplete per disconnessione dell’emulatore, anche nei tentativi isolati. Per la pubblicazione servono ancora verifica fisica/pre-lancio, configurazioni AdMob e aggiornamento della privacy pubblica.
+
+La v27.1 mantiene il focus sui controlli della slot ricreati, separa il permesso notifiche dal consenso UMP, dichiara la categoria Android game ed esclude backup/trasferimento dati. Con provider WebView obsoleto mostra una guida nativa ad aggiornare e riprovare, conservando i dati locali.
 
 ## Compilazione
 
@@ -52,7 +58,7 @@ node qa/soak.cjs
 node --experimental-sqlite qa/d1.mjs
 ```
 
-I test JavaScript usano il codice di produzione con adattatori DOM/clock. I test strumentali verificano Android WebView, ciclo di vita, richiesta HTTPS nativa e recupero del renderer. L’opzione Intent `bn_qa_no_ads` è accettata solo quando `BuildConfig.DEBUG` è vero. Nessun annuncio reale viene richiesto o cliccato durante i test.
+I test JavaScript usano il codice di produzione con adattatori DOM/clock. I test strumentali verificano Android WebView, ciclo di vita, richiesta HTTPS nativa e recupero del renderer. L’opzione Intent `bn_qa_no_ads` è accettata solo quando `BuildConfig.DEBUG` è vero. La suite generale non richiede annunci commerciali; il collaudo SDK dedicato riproduce la creatività dimostrativa Google.
 
 Il catalogo, le illustrazioni e la musica del gioco precedente sono conservati. Il breve effetto `faaah.mp3` è stato fornito dal titolare; i diritti di distribuzione devono essere confermati da lui prima della pubblicazione. Nessun asset o codice dell’APK di slot usato come riferimento è stato importato.
 

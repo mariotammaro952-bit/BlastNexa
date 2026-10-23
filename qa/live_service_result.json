@@ -1,0 +1,20 @@
+{
+  "passed": 6,
+  "tests": [
+    "Public HTTPS health and policy/support/deletion pages are reachable",
+    "Two temporary real profiles can register and recover with private credentials",
+    "Production server validates exact game traces and ignores forged client totals and replays",
+    "Rename, report, block and reset operate on the live database",
+    "Private support creation, status and deletion work; anonymous moderation is refused",
+    "A deleted live profile loses access and disappears from the ranking"
+  ],
+  "liveService": true,
+  "origin": "https://blastnexa-online.mariotammaro952.chatgpt.site",
+  "health": {
+    "status": "ok",
+    "version": 23,
+    "clientAddressAvailable": true
+  },
+  "completedAt": "2026-10-23T17:16:27.315Z",
+  "testProfilesCleaned": true
+}
