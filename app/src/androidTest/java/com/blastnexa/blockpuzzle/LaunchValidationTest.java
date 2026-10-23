@@ -90,7 +90,7 @@ public class LaunchValidationTest {
   InstrumentationRegistry.getInstrumentation().runOnMainSync(()->web.evaluateJavascript(code,r->{value.set(r);done.countDown();}));
   assertTrue("WebView JavaScript response timed out",done.await(45,TimeUnit.SECONDS));return value.get();
  }
- private void truth(String expression)throws Exception{assertEquals("Assertion failed: "+expression,"true",js("Boolean("+expression+")"));}
+ private void truth(String expression)throws Exception{String result=js("Boolean("+expression+")");if(!"true".equals(result))recordFailure("assert-"+expression);assertEquals("Assertion failed: "+expression,"true",result);}
  private void waitFor(String expression,long timeout)throws Exception{
   long until=android.os.SystemClock.uptimeMillis()+timeout;while(android.os.SystemClock.uptimeMillis()<until){if("true".equals(js("Boolean("+expression+")")))return;Thread.sleep(150);}recordFailure("wait-"+expression);fail("Timed out waiting for "+expression);
  }
@@ -202,13 +202,20 @@ public class LaunchValidationTest {
  }
  // These helpers inject actual Android touch events. JS is used only to set a
  // reproducible fixture and observe the production state, never to click.
+ private void awaitTouchFrame()throws Exception{
+  js("window.__qaTouchPaint=false;requestAnimationFrame(()=>requestAnimationFrame(()=>window.__qaTouchPaint=true));true");waitFor("window.__qaTouchPaint",10000);device.waitForIdle(250);
+ }
  private android.graphics.Rect touchBounds(String label)throws Exception{
+  return touchBounds(label,false);
+ }
+ private android.graphics.Rect touchBounds(String label,boolean byId)throws Exception{
+  awaitTouchFrame();
   long until=android.os.SystemClock.uptimeMillis()+7000;
   while(android.os.SystemClock.uptimeMillis()<until){
    // Refresh UiAutomation's own cached nodes after a WebView cabinet update.
    // The coordinates still come from the current Android accessibility tree.
    if(android.os.Build.VERSION.SDK_INT>=34)InstrumentationRegistry.getInstrumentation().getUiAutomation().clearCache();
-   androidx.test.uiautomator.UiObject2 node=device.findObject(By.text(label));if(node==null)node=device.findObject(By.desc(label));
+   androidx.test.uiautomator.UiObject2 node=device.findObject(byId?By.res(label):By.text(label));if(node==null&&!byId)node=device.findObject(By.desc(label));
    if(node!=null)try{android.graphics.Rect bounds=node.getVisibleBounds();if(bounds.width()>0&&bounds.height()>0)return bounds;}catch(androidx.test.uiautomator.StaleObjectException changed){}
    Thread.sleep(100);
   }
@@ -219,7 +226,7 @@ public class LaunchValidationTest {
   org.xmlpull.v1.XmlPullParser parser=android.util.Xml.newPullParser();
   try(java.io.FileInputStream stream=new java.io.FileInputStream(snapshot)){parser.setInput(stream,"UTF-8");for(int event=parser.getEventType();event!=org.xmlpull.v1.XmlPullParser.END_DOCUMENT;event=parser.next()){
    if(event!=org.xmlpull.v1.XmlPullParser.START_TAG||!"node".equals(parser.getName()))continue;
-   if(!label.equals(parser.getAttributeValue(null,"text"))&&!label.equals(parser.getAttributeValue(null,"content-desc")))continue;
+   if(byId?!label.equals(parser.getAttributeValue(null,"resource-id")):!label.equals(parser.getAttributeValue(null,"text"))&&!label.equals(parser.getAttributeValue(null,"content-desc")))continue;
    if(!"true".equals(parser.getAttributeValue(null,"enabled")))continue;
    java.util.regex.Matcher match=java.util.regex.Pattern.compile("\\[(-?\\d+),(-?\\d+)\\]\\[(-?\\d+),(-?\\d+)\\]").matcher(parser.getAttributeValue(null,"bounds"));
    if(match.matches()){android.graphics.Rect bounds=new android.graphics.Rect(Integer.parseInt(match.group(1)),Integer.parseInt(match.group(2)),Integer.parseInt(match.group(3)),Integer.parseInt(match.group(4)));if(bounds.width()>0&&bounds.height()>0){writeEvidence("accessibility-snapshot-fallback.txt",label+" "+bounds);return bounds;}}
@@ -236,7 +243,7 @@ public class LaunchValidationTest {
  }
  private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
- private void touchId(String id)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.res(id)),7000);assertNotNull("Visible ID target missing: "+id,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
+ private void touchId(String id)throws Exception{android.graphics.Rect b=touchBounds(id,true);rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void slotFixture(String machine,String effects)throws Exception{
   js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.balance=50000;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
  }
@@ -263,7 +270,7 @@ public class LaunchValidationTest {
    assertTrue("Touch burst exceeded the reel animation: "+elapsed+"ms",elapsed<2400);
    // GIRA and INCASSA occupy the same pinned target. Reuse its observed UI
    // bounds instead of querying a transient, freshly replaced WebView node.
-   waitFor("slotPhase==='celebrating'",15000);rawTouch(bounds.centerX(),bounds.centerY());Thread.sleep(100);waitFor("!slotBusy",5000);
+   waitFor("slotPhase==='celebrating'",15000);awaitTouchFrame();rawTouch(bounds.centerX(),bounds.centerY());Thread.sleep(100);waitFor("!slotBusy",5000);
    truth("window.__qaLastTouch.label==='Incassa la vincita' && window.__qaLastTouch.phase==='celebrating'");
    truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.balance===window.__touchBalance+5");
    writeEvidence("touch-observed-"+machine+".json",js("JSON.stringify({start:window.__qaSpinStart,mid:window.__qaSpinMid,late:window.__qaSpinLate,last:window.__qaLastTouch,total:lifeData.slot.total,previous:window.__touchTotal,burstMs:"+elapsed+"})"));
@@ -289,7 +296,7 @@ public class LaunchValidationTest {
   for(int i=0;i<3;i++){touch("GIRA NELLA CAVERNA");waitFor("lifeData.slot.total===window.__touchTotal+"+(i+1)+" && !slotBusy",5000);}
   truth("lifeData.slot.total===window.__touchTotal+3 && lifeData.slot.arcade.crystalJourney.played===3");touch("TORNA AI RULLI");assertPinnedSlot();
   slotFixture("forge","lite");touch("GIRA");waitFor("!slotBusy",5000);js("lifeData.slot.arcade.reactor=6;renderLifeSlot(document.getElementById('universeBody'));window.__touchTotal=lifeData.slot.total;true");
-  touch("Tieni il rullo 1");touch("Tieni il rullo 4");truth("slotHolds.size===2");assertPinnedSlot();capture("12_forge_ready_touch_targets");touch("Rilancia i rulli");waitFor("!slotBusy",5000);
+  touch("Tieni il rullo 1");waitFor("document.activeElement.id==='slotHold0'",5000);touch("Tieni il rullo 4");waitFor("document.activeElement.id==='slotHold3'",5000);truth("slotHolds.size===2");assertPinnedSlot();capture("12_forge_ready_touch_targets");touch("Rilancia i rulli");waitFor("!slotBusy",5000);
   truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.slot.last.arcade.held.join(',')==='0,3' && lifeData.slot.arcade.reactor===0");assertPinnedSlot();capture("10_forge_after_touch_respin");
  }
  @Test public void j_realTouchesAutoStopPauseAndFiftySpinBreak()throws Exception{
@@ -299,7 +306,7 @@ public class LaunchValidationTest {
   android.graphics.Rect autoArea=new android.graphics.Rect(autoFive);autoArea.union(autoTen);
   rawTouch(autoTen.centerX(),autoTen.centerY());waitFor("!!document.getElementById('slotAutoStop') && slotAutoLeft>0",15000);
   // Stop fills the same control area previously occupied by Auto 5/10.
-  rawTouch(autoArea.centerX(),autoArea.centerY());Thread.sleep(100);waitFor("!slotBusy",12000);Thread.sleep(900);truth("window.__qaStopTotal!==null && lifeData.slot.total===window.__qaStopTotal && slotAutoLeft===0 && slotAutoTimer===null");
+  touch("Ferma i giri automatici");waitFor("!slotBusy",12000);Thread.sleep(900);truth("window.__qaStopTotal!==null && lifeData.slot.total===window.__qaStopTotal && slotAutoLeft===0 && slotAutoTimer===null");
   java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();withActivity(a->task.set(a.getTaskId()));touch("GIRA");waitFor("slotBusy",5000);String total=js("lifeData.slot.total"),balance=js("lifeData.balance");device.pressHome();device.executeShellCommand("am task focus "+task.get());awaitForeground();waitFor("!slotBusy",10000);assertEquals(total,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));assertPinnedSlot();
   js("playerSettings.effects='lite';lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("lifeData.slot.sinceAd===50 && !slotBusy",5000);touch("CONTINUA");truth("document.getElementById('overlay').classList.contains('on') && !window.BlastNexaBannerLayout().visible");
   truth("document.getElementById('app').dataset.modal==='on' && document.getElementById('universeScreen').getAttribute('aria-hidden')==='true' && getComputedStyle(document.getElementById('gameBanner')).display==='none'");
@@ -311,6 +318,7 @@ public class LaunchValidationTest {
  @Test public void k_fullWidthNativeCanvasAndCutout()throws Exception{
   slotFixture("temple","lite");
   withActivity(activity->{
+   assertEquals(android.content.pm.ApplicationInfo.CATEGORY_GAME,activity.getApplicationInfo().category);
    try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("root");field.setAccessible(true);android.widget.FrameLayout root=(android.widget.FrameLayout)field.get(activity);assertEquals(0,root.getPaddingLeft());assertEquals(0,root.getPaddingRight());assertEquals(device.getDisplayWidth(),web.getWidth());int[] position=new int[2];web.getLocationOnScreen(position);assertEquals(0,position[0]);assertEquals(0,position[1]);
     if("true".equals(InstrumentationRegistry.getArguments().getString("bn_qa_cutout"))){assertNotNull(root.getRootWindowInsets().getDisplayCutout());assertTrue(root.getRootWindowInsets().getDisplayCutout().getSafeInsetLeft()>0||root.getRootWindowInsets().getDisplayCutout().getSafeInsetRight()>0);}
    }catch(Exception error){throw new RuntimeException(error);}
@@ -362,8 +370,10 @@ public class LaunchValidationTest {
   }catch(Exception error){throw new RuntimeException(error);}finally{activity.getIntent().putExtra("bn_qa_no_ads",true);}});
   try{
    androidx.test.uiautomator.UiObject2 allow=device.wait(Until.findObject(By.res("com.android.permissioncontroller:id/permission_allow_button")),10000);
-   assertNotNull("Android notification permission dialog must appear automatically",allow);android.graphics.Rect bounds=allow.getVisibleBounds();rawTouch(bounds.centerX(),bounds.centerY());
-   long until=android.os.SystemClock.uptimeMillis()+5000;while(context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED&&android.os.SystemClock.uptimeMillis()<until)Thread.sleep(100);
+   assertNotNull("Android notification permission dialog must appear automatically",allow);device.waitForIdle(500);
+   if(android.os.Build.VERSION.SDK_INT>=34)InstrumentationRegistry.getInstrumentation().getUiAutomation().clearCache();
+   allow=device.wait(Until.findObject(By.res("com.android.permissioncontroller:id/permission_allow_button")),5000);assertNotNull(allow);allow.click();assertTrue(device.wait(Until.gone(By.res("com.android.permissioncontroller:id/permission_allow_button")),10000));
+   long until=android.os.SystemClock.uptimeMillis()+10000;while(context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED&&android.os.SystemClock.uptimeMillis()<until)Thread.sleep(100);
    assertEquals(android.content.pm.PackageManager.PERMISSION_GRANTED,context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS));
    assertTrue(OdysseyReminders.preferences(context).getBoolean("permission_asked",false));
    writeEvidence("notification-system-permission.json","{\"automaticSystemPrompt\":true,\"physicalAllowTap\":true,\"permissionGranted\":true}");
