@@ -205,6 +205,9 @@ public class LaunchValidationTest {
  private android.graphics.Rect touchBounds(String label)throws Exception{
   long until=android.os.SystemClock.uptimeMillis()+7000;
   while(android.os.SystemClock.uptimeMillis()<until){
+   // Refresh UiAutomation's own cached nodes after a WebView cabinet update.
+   // The coordinates still come from the current Android accessibility tree.
+   if(android.os.Build.VERSION.SDK_INT>=34)InstrumentationRegistry.getInstrumentation().getUiAutomation().clearCache();
    androidx.test.uiautomator.UiObject2 node=device.findObject(By.text(label));if(node==null)node=device.findObject(By.desc(label));
    if(node!=null)try{android.graphics.Rect bounds=node.getVisibleBounds();if(bounds.width()>0&&bounds.height()>0)return bounds;}catch(androidx.test.uiautomator.StaleObjectException changed){}
    Thread.sleep(100);
@@ -423,7 +426,13 @@ public class LaunchValidationTest {
   device.executeShellCommand("svc wifi disable");device.executeShellCommand("svc data disable");
   try{
    slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=100;window.__offlineStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===99 && lifeData.slot.total===window.__offlineStart+1");
-   js("unlocked=2000;lifeData.balance=1000;playerSettings.effects='lite';setScene('war');start('adventure',1);for(const p of LEVELS[0].proof){if(roundOutcome)break;placePiece(p.slot,p.x,p.y);}true");truth("roundOutcome==='win' && roundFinalized && !playing");
+   js("unlocked=2000;lifeData.balance=1000;playerSettings.effects='lite';setScene('war');true");truth("start('adventure',1)===true");
+   int moves=Integer.parseInt(js("LEVELS[0].proof.length"));
+   for(int i=0;i<moves;i++){
+    if("true".equals(js("!!roundOutcome")))break;
+    waitFor("!fxBusy",10000);truth("(()=>{const p=LEVELS[0].proof["+i+"];return placePiece(p.slot,p.x,p.y);})()");
+   }
+   waitFor("roundOutcome==='win' && roundFinalized && !playing",10000);
    js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===99 && stars[1]>0");
    writeEvidence("offline-gameplay.json","{\"networkDisabled\":true,\"slotDebit\":1,\"puzzleWon\":true,\"reloadPreserved\":true}");
   }finally{device.executeShellCommand("svc wifi enable");device.executeShellCommand("svc data enable");}
