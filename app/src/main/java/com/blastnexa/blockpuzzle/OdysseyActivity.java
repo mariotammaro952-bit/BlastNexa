@@ -39,6 +39,8 @@ public final class OdysseyActivity extends Activity {
     private boolean backPending;
     private boolean foreground;
     private boolean invitePermissionPending;
+    private boolean engineUpdateRequired;
+    private AlertDialog engineUpdateDialog;
     private int safeLeft,safeRight;
 
     @Override public void onCreate(Bundle state) {
@@ -117,6 +119,47 @@ public final class OdysseyActivity extends Activity {
         if(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false))return;
         ads.start();
     }
+    private void finishGameStartup(WebView view) {
+        // Android version alone does not identify the separately updated
+        // WebView engine. Old providers must offer a native way to update.
+        view.evaluateJavascript("(function(){try{return new Function('return ({value:1})?.value ?? 0;')()===1"
+            +"&&typeof Element.prototype.replaceChildren==='function';}catch(error){return false;}})()",result -> {
+            if(view!=game || ads==null || isFinishing() || isDestroyed())return;
+            if(!"true".equals(result)){engineUpdateRequired=true;pageReady=false;showEngineUpdate();return;}
+            pageReady=true;
+            boolean askingPermission=requestInviteNotificationPermission();
+            applySafeArea();
+            evaluate("navigator.vibrate=function(p){window.BlastNexaNative.vibrate(JSON.stringify(p));return true;};"
+                +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
+            if(!askingPermission)startAdsWhenReady();
+        });
+    }
+    private void showEngineUpdate() {
+        if(!foreground || isFinishing() || isDestroyed() || (engineUpdateDialog!=null&&engineUpdateDialog.isShowing()))return;
+        if(game!=null)game.setVisibility(View.GONE);
+        engineUpdateDialog=new AlertDialog.Builder(this)
+            .setTitle("Aggiorna il motore del gioco")
+            .setMessage("Per avviare BlastNexa aggiorna Android System WebView e Google Chrome dal Play Store, poi premi RIPROVA. I progressi salvati restano sul dispositivo.")
+            .setCancelable(false)
+            .setPositiveButton("AGGIORNA",(dialog,which)->openEngineStore())
+            .setNeutralButton("RIPROVA",(dialog,which)->recreate())
+            .setNegativeButton("ESCI",(dialog,which)->finish()).show();
+    }
+    private void openEngineStore() {
+        String provider="com.google.android.webview";
+        if(Build.VERSION.SDK_INT>=26){
+            android.content.pm.PackageInfo current=WebView.getCurrentWebViewPackage();
+            if(current!=null)provider=current.packageName;
+        } else {
+            try {if(getPackageManager().getApplicationInfo("com.android.chrome",0).enabled)provider="com.android.chrome";}
+            catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
+        }
+        try {startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("market://details?id="+provider)));}
+        catch(android.content.ActivityNotFoundException noStore){
+            try {startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://play.google.com/store/apps/details?id="+provider)));}
+            catch(android.content.ActivityNotFoundException noBrowser){root.post(this::showEngineUpdate);}
+        }
+    }
     @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults) {
         super.onRequestPermissionsResult(requestCode,permissions,grantResults);
         if(requestCode==7907){invitePermissionPending=false;OdysseyReminders.scheduleAll(this);if(game!=null)game.post(this::startAdsWhenReady);}
@@ -133,14 +176,7 @@ public final class OdysseyActivity extends Activity {
             }
             @Override public void onPageFinished(WebView view,String url) {
                 if(view!=game || ads==null || isDestroyed() || !GAME_URL.equals(url)) return;
-                pageReady=true;
-                boolean askingPermission=requestInviteNotificationPermission();
-                applySafeArea();
-                evaluate("navigator.vibrate=function(p){window.BlastNexaNative.vibrate(JSON.stringify(p));return true;};"
-                    +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
-                // Permission and consent dialogs share the Activity: finish
-                // the Android prompt before UMP attempts to show its form.
-                if(!askingPermission)startAdsWhenReady();
+                finishGameStartup(view);
             }
 
     }
@@ -240,6 +276,7 @@ public final class OdysseyActivity extends Activity {
         super.onResume();foreground=true;
         OdysseyReminders.scheduleAll(this);
         if(game!=null) game.onResume();
+        if(engineUpdateRequired){showEngineUpdate();return;}
         if(ads!=null) ads.setActive(hasWindowFocus());
         if(pageReady&&!requestInviteNotificationPermission())startAdsWhenReady();
         if(pageReady) evaluate("window.dispatchEvent(new Event('focus'));"
@@ -247,6 +284,7 @@ public final class OdysseyActivity extends Activity {
             +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
     }
     @Override protected void onDestroy() {
+        if(engineUpdateDialog!=null){engineUpdateDialog.dismiss();engineUpdateDialog=null;}
         if(ads!=null) ads.destroy();
         if(ranking!=null) ranking.destroy();
         pageReady=false;
