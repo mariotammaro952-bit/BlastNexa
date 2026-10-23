@@ -11,7 +11,7 @@ Android API 24–36. 2.000 livelli Avventura in quattro ambientazioni, 400 cruci
 - Nuova icona originale con blocchi lime, ciano e fucsia su fondo viola acceso: risorse adattive e legacy, con sorgente in `artwork/` e generatore `tools/prepare_icons.py`.
 - GIRA, monete, VITE VINTE, vite totali e AUTO sono visibili sui telefoni compatti. Le opzioni secondarie scorrono nella colonna sinistra.
 - Avvio orizzontale, tre mondi e motore **5 rulli × 3 righe**, bonus e pausa ogni 50 giri; puzzle e cruciverba conservano la disposizione orizzontale.
-- Versione Android **1.0.0-v27 / 2701**. Eseguire `python3 tools/prepare_assets.py` prima della compilazione. La firma usa la chiave di caricamento già in uso.
+- Versione Android **1.0.0-v27.1 / 2702**. Eseguire `python3 tools/prepare_assets.py` prima della compilazione. La firma usa la chiave di caricamento già in uso.
 
 ## Compilazione
 
@@ -22,7 +22,7 @@ Richiede JDK 17 e Android SDK 36. Il wrapper fissa Gradle 8.11.1 e il suo SHA256
 ./gradlew connectedPreviewDebugAndroidTest
 ```
 
-`preview` usa solo unità pubblicitarie di test e pacchetto `com.blastnexa.blockpuzzle.preview`. `production` usa il pacchetto Play esistente `com.blastnexa.blockpuzzle`, codice versione 2701 e le unità interstitial/rewarded autorizzate. La frequenza slot resta 50 giri complessivi, inclusi giri bonus e respin.
+`preview` usa solo unità pubblicitarie di test e pacchetto `com.blastnexa.blockpuzzle.preview`. `production` usa il pacchetto Play esistente `com.blastnexa.blockpuzzle`, codice versione 2702 e le unità interstitial/rewarded autorizzate. La frequenza slot resta 50 giri complessivi, inclusi giri bonus e respin.
 
 Il banner di produzione è disattivato se manca `BN_BANNER_AD_UNIT`: non viene usato un ID di prova nella release. Impostare un’unità banner dell’account `ca-app-pub-7428534984744854` prima della compilazione per monetizzare lo spazio già presente.
 

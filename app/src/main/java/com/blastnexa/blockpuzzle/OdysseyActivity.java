@@ -38,6 +38,7 @@ public final class OdysseyActivity extends Activity {
     private boolean pageReady;
     private boolean backPending;
     private boolean foreground;
+    private boolean invitePermissionPending;
     private int safeLeft,safeRight;
 
     @Override public void onCreate(Bundle state) {
@@ -99,18 +100,26 @@ public final class OdysseyActivity extends Activity {
     }
 
 
-    private void requestInviteNotificationPermission() {
-        if(Build.VERSION.SDK_INT<33 || !foreground || isFinishing() || isDestroyed())return;
-        if(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false))return;
-        if(checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)==android.content.pm.PackageManager.PERMISSION_GRANTED)return;
+    private boolean requestInviteNotificationPermission() {
+        if(invitePermissionPending)return true;
+        if(Build.VERSION.SDK_INT<33 || !foreground || isFinishing() || isDestroyed())return false;
+        if(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false))return false;
+        if(checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)==android.content.pm.PackageManager.PERMISSION_GRANTED)return false;
         android.content.SharedPreferences prefs=OdysseyReminders.preferences(this);
-        if(prefs.getBoolean("permission_asked",false))return;
+        if(prefs.getBoolean("permission_asked",false))return false;
         prefs.edit().putBoolean("permission_asked",true).apply();
+        invitePermissionPending=true;
         requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},7907);
+        return true;
+    }
+    private void startAdsWhenReady() {
+        if(!pageReady || !foreground || invitePermissionPending || ads==null || isFinishing() || isDestroyed())return;
+        if(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false))return;
+        ads.start();
     }
     @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults) {
         super.onRequestPermissionsResult(requestCode,permissions,grantResults);
-        if(requestCode==7907)OdysseyReminders.scheduleAll(this);
+        if(requestCode==7907){invitePermissionPending=false;OdysseyReminders.scheduleAll(this);if(game!=null)game.post(this::startAdsWhenReady);}
     }
 
     private class GameClient extends WebViewClient {
@@ -125,15 +134,18 @@ public final class OdysseyActivity extends Activity {
             @Override public void onPageFinished(WebView view,String url) {
                 if(view!=game || ads==null || isDestroyed() || !GAME_URL.equals(url)) return;
                 pageReady=true;
-                requestInviteNotificationPermission();
+                boolean askingPermission=requestInviteNotificationPermission();
                 applySafeArea();
                 evaluate("navigator.vibrate=function(p){window.BlastNexaNative.vibrate(JSON.stringify(p));return true;};"
                     +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
-                if(!(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false)))ads.start();
+                // Permission and consent dialogs share the Activity: finish
+                // the Android prompt before UMP attempts to show its form.
+                if(!askingPermission)startAdsWhenReady();
             }
 
     }
     /** API 26+: a lost renderer must not take down the native host. */
+    @android.annotation.TargetApi(26)
     private final class RecoveryClient extends GameClient {
         @Override public boolean onRenderProcessGone(WebView view,android.webkit.RenderProcessGoneDetail detail) {
             pageReady=false;
@@ -229,7 +241,7 @@ public final class OdysseyActivity extends Activity {
         OdysseyReminders.scheduleAll(this);
         if(game!=null) game.onResume();
         if(ads!=null) ads.setActive(hasWindowFocus());
-        if(pageReady)requestInviteNotificationPermission();
+        if(pageReady&&!requestInviteNotificationPermission())startAdsWhenReady();
         if(pageReady) evaluate("window.dispatchEvent(new Event('focus'));"
             +"if(typeof slotVisible==='function'&&slotVisible()&&!bnPendingAd)renderLifeSlot(document.getElementById('universeBody'));"
             +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");

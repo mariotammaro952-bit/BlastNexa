@@ -353,7 +353,10 @@ public class LaunchValidationTest {
    activity.getIntent().putExtra("bn_qa_no_ads",false);
    OdysseyReminders.preferences(activity).edit().remove("permission_asked").commit();
    java.lang.reflect.Method ask=OdysseyActivity.class.getDeclaredMethod("requestInviteNotificationPermission");ask.setAccessible(true);ask.invoke(activity);
-  }catch(Exception error){throw new RuntimeException(error);}});
+   java.lang.reflect.Field pending=OdysseyActivity.class.getDeclaredField("invitePermissionPending");pending.setAccessible(true);assertTrue(pending.getBoolean(activity));
+   java.lang.reflect.Method start=OdysseyActivity.class.getDeclaredMethod("startAdsWhenReady");start.setAccessible(true);start.invoke(activity);
+   java.lang.reflect.Field controller=OdysseyActivity.class.getDeclaredField("ads");controller.setAccessible(true);Object ads=controller.get(activity);java.lang.reflect.Field started=ads.getClass().getDeclaredField("started");started.setAccessible(true);assertFalse("UMP must wait for the Android permission prompt",started.getBoolean(ads));
+  }catch(Exception error){throw new RuntimeException(error);}finally{activity.getIntent().putExtra("bn_qa_no_ads",true);}});
   try{
    androidx.test.uiautomator.UiObject2 allow=device.wait(Until.findObject(By.res("com.android.permissioncontroller:id/permission_allow_button")),10000);
    assertNotNull("Android notification permission dialog must appear automatically",allow);android.graphics.Rect bounds=allow.getVisibleBounds();rawTouch(bounds.centerX(),bounds.centerY());
