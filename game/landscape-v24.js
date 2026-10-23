@@ -128,18 +128,19 @@ function composeSlot(){
 function installLayout(){
  installModal();
  if(typeof renderLifeSlot==='function'){
-  let slotFocusId='',focusEpoch=0;
+  let slotFocusId='',focusEpoch=0,pointerFocusPending=false;
   // Rebuilding a cabinet removes the focused native accessibility target.
   // Keep the user's control selected across the replacement and publish the
   // focus only after the new frame and modal inert state are ready.
   document.addEventListener('pointerdown',event=>{
    const slot=$id('slotTemple'),button=event.target.closest?.('button[id]');
-   slotFocusId=slot&&button&&slot.contains(button)?button.id:'';focusEpoch++;
+   slotFocusId=slot&&button&&slot.contains(button)?button.id:'';pointerFocusPending=!!slotFocusId;focusEpoch++;
   },true);
   const original=renderLifeSlot;
   renderLifeSlot=function(){
    const before=$id('slotTemple'),active=document.activeElement;
-   if(before?.contains(active)&&active.id)slotFocusId=active.id;
+   if(!pointerFocusPending&&before?.contains(active)&&active.id)slotFocusId=active.id;
+   pointerFocusPending=false;
    const side=before?.querySelector('.bn-slot-sidebar'),scroll=side?.scrollTop||0;
    const result=original.apply(this,arguments);
    const current=$id('slotTemple')?.querySelector('.bn-slot-sidebar');if(current)current.scrollTop=scroll;
