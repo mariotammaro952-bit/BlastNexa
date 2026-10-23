@@ -15,7 +15,9 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Build demo-unit APK and SDK instrumentation
-        run: ./gradlew --no-daemon --max-workers=2 assemblePreviewDebug assemblePreviewDebugAndroidTest
+        run: |
+          python3 tools/prepare_assets.py
+          ./gradlew --no-daemon --max-workers=2 assemblePreviewDebug assemblePreviewDebugAndroidTest
       - name: Enable emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

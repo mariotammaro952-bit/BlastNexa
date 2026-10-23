@@ -38,9 +38,10 @@ public class AdsSdkValidationTest {
   try(ActivityScenario<OdysseyActivity> scenario=ActivityScenario.launch(intent)){
    activeScenario=scenario;
    scenario.onActivity(activity->{try{java.lang.reflect.Field w=OdysseyActivity.class.getDeclaredField("game"),a=OdysseyActivity.class.getDeclaredField("ads");w.setAccessible(true);a.setAccessible(true);web=(WebView)w.get(activity);ads=(OdysseyAds)a.get(activity);}catch(Exception error){throw new RuntimeException(error);}});
-   waitJs("typeof playerTotals==='function'",45000);
+   waitJs("document.readyState==='complete' && typeof playerTotals==='function'",45000);
    UiObject2 education=device.wait(Until.findObject(By.text("Got it")),3000);if(education!=null)education.click();
    js("muted=true;localStorage.setItem('blastnexa_help_seen','true');openUniverse('slot');lifeData.slot.wallet.balance=0;lifeData.slot.sinceAd=0;saveLives();openSlotCoinRefill();true");
+   waitJs("!!document.querySelector('#slotTemple .bn-slot-sidebar')",10000);
    // Only the consent dependency is adapted. Initialization, loading, full
    // screen display, playback, reward callback and dismiss all use the SDK.
    InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{try{
