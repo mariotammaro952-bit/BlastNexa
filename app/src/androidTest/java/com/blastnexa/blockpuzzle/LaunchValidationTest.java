@@ -39,8 +39,7 @@ public class LaunchValidationTest {
   try{waitFor("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')",45000);}catch(AssertionError error){bootstrapFailed=true;try{writeEvidence("startup.txt",js("JSON.stringify({url:location.href,state:document.readyState,agent:navigator.userAgent,text:document.body?document.body.innerText.slice(0,1000):'',scripts:document.scripts.length})"));capture("startup_failure");}catch(Exception ignored){}throw error;}
   // Android shows its own one-time full-screen education above the WebView.
   // Acknowledge the actual system UI before lifecycle/back/touch assertions.
-  androidx.test.uiautomator.UiObject2 education=device.wait(Until.findObject(By.text("Got it")),3000);
-  if(education!=null){education.click();assertTrue(device.wait(Until.gone(By.text("Got it")),5000));}
+  dismissFullscreenEducation();
   js("window.__qaErrors=[];window.__qaRealClicks=0;window.__qaWatchSpin=false;window.__qaFilled=()=>document.querySelectorAll('#slotReels>.bn-temple-reel').length===5&&[...document.querySelectorAll('#slotReels>.bn-temple-reel')].every(reel=>{const r=reel.getBoundingClientRect();return [0,1,2].every(row=>document.elementFromPoint(r.left+r.width/2,r.top+r.height*(row+.5)/3)?.closest('.bn-temple-cell'));});document.addEventListener('click',e=>{window.__qaRealClicks++;const b=e.target.closest?.('button');window.__qaLastTouch={label:b?.getAttribute('aria-label')||b?.textContent,phase:typeof slotPhase!=='undefined'?slotPhase:null};if(b?.id==='slotAutoStop')window.__qaStopTotal=lifeData.slot.total;if(window.__qaWatchSpin&&b?.id==='slotSpinButton'&&b.getAttribute('aria-label')==='GIRA'){setTimeout(()=>window.__qaSpinStart={phase:slotPhase,disabled:document.getElementById('slotSpinButton').disabled,scroll:document.getElementById('app').scrollTop,total:lifeData.slot.total},0);setTimeout(()=>window.__qaSpinMid={phase:slotPhase,filled:window.__qaFilled()},400);setTimeout(()=>window.__qaSpinLate={phase:slotPhase,filled:window.__qaFilled()},1700);}},true);window.addEventListener('error',e=>window.__qaErrors.push(e.message));localStorage.setItem('blastnexa_help_seen','true');muted=true;displayMenu();true");
  }
  private void withActivity(ActivityScenario.ActivityAction<OdysseyActivity> action){Runnable observe=()->scenario.onActivity(action);if(android.os.Looper.myLooper()==android.os.Looper.getMainLooper())observe.run();else InstrumentationRegistry.getInstrumentation().runOnMainSync(observe);}
@@ -233,17 +232,40 @@ public class LaunchValidationTest {
   }}
   writeEvidence("touch-failure.txt","Accessible touch target missing: "+label);recordFailure("touch-"+label);throw new AssertionError("Accessible touch target missing: "+label);
  }
- private void rawTouch(int x,int y)throws Exception{
+ private void dismissFullscreenEducation()throws Exception{
+  androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text("Got it")),3000);
+  for(int attempt=0;node!=null&&attempt<3;attempt++){
+   try{android.graphics.Rect bounds=node.getVisibleBounds();if(!bounds.isEmpty())rawTouch(bounds.centerX(),bounds.centerY(),true);}catch(androidx.test.uiautomator.StaleObjectException changed){}
+   if(device.wait(Until.gone(By.text("Got it")),1000))return;
+   node=device.findObject(By.text("Got it"));
+  }
+  assertFalse("Full screen education must be dismissed",device.hasObject(By.text("Got it")));
+ }
+ private android.graphics.Rect stableSystemControl(String resource)throws Exception{
+  long until=android.os.SystemClock.uptimeMillis()+10000,stable=0;android.graphics.Rect previous=null;
+  while(android.os.SystemClock.uptimeMillis()<until){
+   if(android.os.Build.VERSION.SDK_INT>=34)InstrumentationRegistry.getInstrumentation().getUiAutomation().clearCache();
+   androidx.test.uiautomator.UiObject2 node=device.findObject(By.res(resource));
+   try{if(node!=null){android.graphics.Rect bounds=node.getVisibleBounds();if(!bounds.isEmpty()){
+    if(bounds.equals(previous)){if(android.os.SystemClock.uptimeMillis()-stable>=600)return bounds;}
+    else{previous=new android.graphics.Rect(bounds);stable=android.os.SystemClock.uptimeMillis();}
+   }}}catch(androidx.test.uiautomator.StaleObjectException changed){previous=null;}
+   Thread.sleep(150);
+  }
+  fail("System control never reached a stable visible position: "+resource);return null;
+ }
+ private void rawTouch(int x,int y)throws Exception{rawTouch(x,y,false);}
+ private void rawTouch(int x,int y,boolean sync)throws Exception{
   long down=android.os.SystemClock.uptimeMillis();
   android.view.MotionEvent press=android.view.MotionEvent.obtain(down,down,android.view.MotionEvent.ACTION_DOWN,x,y,0);
-  press.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(press,false));press.recycle();
+  press.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(press,sync));press.recycle();
   Thread.sleep(20);
   android.view.MotionEvent release=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,x,y,0);
-  release.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(release,false));release.recycle();
+  release.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(release,sync));release.recycle();
  }
- private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
- private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
- private void touchId(String id)throws Exception{android.graphics.Rect b=touchBounds(id,true);rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
+ private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);rawTouch(b.centerX(),b.centerY(),true);Thread.sleep(100);}
+ private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY(),true);Thread.sleep(100);}
+ private void touchId(String id)throws Exception{android.graphics.Rect b=touchBounds(id,true);rawTouch(b.centerX(),b.centerY(),true);Thread.sleep(100);}
  private void slotFixture(String machine,String effects)throws Exception{
   js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.balance=50000;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
  }
@@ -304,9 +326,9 @@ public class LaunchValidationTest {
   js("playerSettings.effects='full';window.__qaStopTotal=null;window.__touchTotal=lifeData.slot.total;true");truth("!reducedFX()");
   android.graphics.Rect autoFive=touchBounds("Avvia 5 giri automatici"),autoTen=touchBounds("Avvia 10 giri automatici");
   android.graphics.Rect autoArea=new android.graphics.Rect(autoFive);autoArea.union(autoTen);
-  rawTouch(autoTen.centerX(),autoTen.centerY());waitFor("!!document.getElementById('slotAutoStop') && slotAutoLeft>0",15000);
+  rawTouch(autoTen.centerX(),autoTen.centerY(),true);waitFor("!!document.getElementById('slotAutoStop') && slotAutoLeft>0",15000);
   // Stop fills the same control area previously occupied by Auto 5/10.
-  touch("Ferma i giri automatici");waitFor("!slotBusy",12000);Thread.sleep(900);truth("window.__qaStopTotal!==null && lifeData.slot.total===window.__qaStopTotal && slotAutoLeft===0 && slotAutoTimer===null");
+  touch("Ferma i giri automatici");waitFor("window.__qaStopTotal!==null",5000);waitFor("!slotBusy",12000);Thread.sleep(900);truth("window.__qaStopTotal!==null && lifeData.slot.total===window.__qaStopTotal && slotAutoLeft===0 && slotAutoTimer===null");
   java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();withActivity(a->task.set(a.getTaskId()));touch("GIRA");waitFor("slotBusy",5000);String total=js("lifeData.slot.total"),balance=js("lifeData.balance");device.pressHome();device.executeShellCommand("am task focus "+task.get());awaitForeground();waitFor("!slotBusy",10000);assertEquals(total,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));assertPinnedSlot();
   js("playerSettings.effects='lite';lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("lifeData.slot.sinceAd===50 && !slotBusy",5000);touch("CONTINUA");truth("document.getElementById('overlay').classList.contains('on') && !window.BlastNexaBannerLayout().visible");
   truth("document.getElementById('app').dataset.modal==='on' && document.getElementById('universeScreen').getAttribute('aria-hidden')==='true' && getComputedStyle(document.getElementById('gameBanner')).display==='none'");
@@ -372,7 +394,7 @@ public class LaunchValidationTest {
    androidx.test.uiautomator.UiObject2 allow=device.wait(Until.findObject(By.res("com.android.permissioncontroller:id/permission_allow_button")),10000);
    assertNotNull("Android notification permission dialog must appear automatically",allow);device.waitForIdle(500);
    if(android.os.Build.VERSION.SDK_INT>=34)InstrumentationRegistry.getInstrumentation().getUiAutomation().clearCache();
-   allow=device.wait(Until.findObject(By.res("com.android.permissioncontroller:id/permission_allow_button")),5000);assertNotNull(allow);allow.click();assertTrue(device.wait(Until.gone(By.res("com.android.permissioncontroller:id/permission_allow_button")),10000));
+   android.graphics.Rect permission=stableSystemControl("com.android.permissioncontroller:id/permission_allow_button");rawTouch(permission.centerX(),permission.centerY(),true);assertTrue(device.wait(Until.gone(By.res("com.android.permissioncontroller:id/permission_allow_button")),10000));
    long until=android.os.SystemClock.uptimeMillis()+10000;while(context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED&&android.os.SystemClock.uptimeMillis()<until)Thread.sleep(100);
    assertEquals(android.content.pm.PackageManager.PERMISSION_GRANTED,context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS));
    assertTrue(OdysseyReminders.preferences(context).getBoolean("permission_asked",false));

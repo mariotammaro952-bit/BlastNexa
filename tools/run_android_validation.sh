@@ -10,6 +10,9 @@ done
   while true; do
     date -u +%FT%TZ
     free -m
+    for metric in memory.max memory.current memory.events; do
+      if [ -r "/sys/fs/cgroup/$metric" ]; then printf "%s " "$metric"; cat "/sys/fs/cgroup/$metric"; fi
+    done
     ps -eo pid,comm,rss --sort=-rss | head -n 8
     sleep 10
   done

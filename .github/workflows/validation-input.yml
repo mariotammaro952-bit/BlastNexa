@@ -1,0 +1,111 @@
+name: BlastNexa final app synchronous input and tablet validation
+on:
+  push:
+    branches: [codex/validation-input-v27]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Build only the instrumentation harness
+        run: |
+          python3 tools/prepare_assets.py
+          ./gradlew --no-daemon --max-workers=2 assemblePreviewDebugAndroidTest
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: BlastNexa-v27-invites-build
+          run-id: 40006019755
+          github-token: ${{ github.token }}
+          path: original-final-build
+      - name: Pair unchanged final app APK with synchronized instrumentation
+        run: |
+          mkdir -p validation-apks/preview/debug validation-apks/androidTest/preview/debug
+          cp original-final-build/app/build/outputs/apk/preview/debug/app-preview-debug.apk validation-apks/preview/debug/
+          cp app/build/outputs/apk/androidTest/preview/debug/app-preview-debug-androidTest.apk validation-apks/androidTest/preview/debug/
+          sha256sum validation-apks/preview/debug/app-preview-debug.apk
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: v27_1-synchronized-validation-apks
+          path: validation-apks/
+          retention-days: 7
+  android:
+    needs: tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 31
+            screen: compact
+            size: 720x1280
+            density: 320
+            ram: 2048
+            cutout: 0
+          - api: 36
+            screen: compact
+            size: 720x1280
+            density: 320
+            ram: 2048
+            cutout: 0
+          - api: 36
+            screen: wide-cutout
+            size: 720x1600
+            density: 320
+            ram: 2048
+            cutout: 1
+          - api: 35
+            screen: tablet
+            size: 600x1024
+            density: 160
+            ram: 2048
+            cutout: 0
+          - api: 36
+            screen: tablet
+            size: 600x1024
+            density: 160
+            ram: 1536
+            cutout: 0
+    env:
+      BN_QA_SIZE: ${{ matrix.size }}
+      BN_QA_DENSITY: ${{ matrix.density }}
+      BN_QA_CUTOUT: ${{ matrix.cutout }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: v27_1-synchronized-validation-apks
+          path: imported-artifacts
+      - name: Enable acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-build: 14472402
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory ${{ matrix.ram }} -cores 2
+          script: bash tools/run_android_validation.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: v27_1-sync-api-${{ matrix.api }}-${{ matrix.screen }}
+          path: android-evidence/
+          retention-days: 7
