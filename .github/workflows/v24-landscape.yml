@@ -78,10 +78,10 @@ jobs:
             size: 720x1600
             density: 320
             cutout: 1
-          - api: 35
+          - api: 36
             screen: tablet
-            size: 1600x2560
-            density: 320
+            size: 800x1280
+            density: 160
             cutout: 0
     env:
       BN_QA_SIZE: ${{ matrix.size }}

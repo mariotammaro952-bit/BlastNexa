@@ -203,12 +203,15 @@ public class LaunchValidationTest {
  // These helpers inject actual Android touch events. JS is used only to set a
  // reproducible fixture and observe the production state, never to click.
  private android.graphics.Rect touchBounds(String label)throws Exception{
+  return touchBounds(label,false);
+ }
+ private android.graphics.Rect touchBounds(String label,boolean byId)throws Exception{
   long until=android.os.SystemClock.uptimeMillis()+7000;
   while(android.os.SystemClock.uptimeMillis()<until){
    // Refresh UiAutomation's own cached nodes after a WebView cabinet update.
    // The coordinates still come from the current Android accessibility tree.
    if(android.os.Build.VERSION.SDK_INT>=34)InstrumentationRegistry.getInstrumentation().getUiAutomation().clearCache();
-   androidx.test.uiautomator.UiObject2 node=device.findObject(By.text(label));if(node==null)node=device.findObject(By.desc(label));
+   androidx.test.uiautomator.UiObject2 node=device.findObject(byId?By.res(label):By.text(label));if(node==null&&!byId)node=device.findObject(By.desc(label));
    if(node!=null)try{android.graphics.Rect bounds=node.getVisibleBounds();if(bounds.width()>0&&bounds.height()>0)return bounds;}catch(androidx.test.uiautomator.StaleObjectException changed){}
    Thread.sleep(100);
   }
@@ -219,7 +222,7 @@ public class LaunchValidationTest {
   org.xmlpull.v1.XmlPullParser parser=android.util.Xml.newPullParser();
   try(java.io.FileInputStream stream=new java.io.FileInputStream(snapshot)){parser.setInput(stream,"UTF-8");for(int event=parser.getEventType();event!=org.xmlpull.v1.XmlPullParser.END_DOCUMENT;event=parser.next()){
    if(event!=org.xmlpull.v1.XmlPullParser.START_TAG||!"node".equals(parser.getName()))continue;
-   if(!label.equals(parser.getAttributeValue(null,"text"))&&!label.equals(parser.getAttributeValue(null,"content-desc")))continue;
+   if(byId?!label.equals(parser.getAttributeValue(null,"resource-id")):!label.equals(parser.getAttributeValue(null,"text"))&&!label.equals(parser.getAttributeValue(null,"content-desc")))continue;
    if(!"true".equals(parser.getAttributeValue(null,"enabled")))continue;
    java.util.regex.Matcher match=java.util.regex.Pattern.compile("\\[(-?\\d+),(-?\\d+)\\]\\[(-?\\d+),(-?\\d+)\\]").matcher(parser.getAttributeValue(null,"bounds"));
    if(match.matches()){android.graphics.Rect bounds=new android.graphics.Rect(Integer.parseInt(match.group(1)),Integer.parseInt(match.group(2)),Integer.parseInt(match.group(3)),Integer.parseInt(match.group(4)));if(bounds.width()>0&&bounds.height()>0){writeEvidence("accessibility-snapshot-fallback.txt",label+" "+bounds);return bounds;}}
@@ -236,7 +239,7 @@ public class LaunchValidationTest {
  }
  private void touch(String label)throws Exception{android.graphics.Rect b=touchBounds(label);rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
- private void touchId(String id)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.res(id)),7000);assertNotNull("Visible ID target missing: "+id,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
+ private void touchId(String id)throws Exception{android.graphics.Rect b=touchBounds(id,true);rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void slotFixture(String machine,String effects)throws Exception{
   js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.balance=50000;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
  }
@@ -311,6 +314,7 @@ public class LaunchValidationTest {
  @Test public void k_fullWidthNativeCanvasAndCutout()throws Exception{
   slotFixture("temple","lite");
   withActivity(activity->{
+   assertEquals(android.content.pm.ApplicationInfo.CATEGORY_GAME,activity.getApplicationInfo().category);
    try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("root");field.setAccessible(true);android.widget.FrameLayout root=(android.widget.FrameLayout)field.get(activity);assertEquals(0,root.getPaddingLeft());assertEquals(0,root.getPaddingRight());assertEquals(device.getDisplayWidth(),web.getWidth());int[] position=new int[2];web.getLocationOnScreen(position);assertEquals(0,position[0]);assertEquals(0,position[1]);
     if("true".equals(InstrumentationRegistry.getArguments().getString("bn_qa_cutout"))){assertNotNull(root.getRootWindowInsets().getDisplayCutout());assertTrue(root.getRootWindowInsets().getDisplayCutout().getSafeInsetLeft()>0||root.getRootWindowInsets().getDisplayCutout().getSafeInsetRight()>0);}
    }catch(Exception error){throw new RuntimeException(error);}
