@@ -15,20 +15,21 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Build only the instrumentation harness
+      - name: Build app and harness with one ephemeral CI debug certificate
         run: |
           python3 tools/prepare_assets.py
-          ./gradlew --no-daemon --max-workers=2 assemblePreviewDebugAndroidTest
+          ./gradlew --no-daemon --max-workers=2 assemblePreviewDebug assemblePreviewDebugAndroidTest
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: BlastNexa-v27-invites-build
           run-id: 40006019755
           github-token: ${{ github.token }}
           path: original-final-build
-      - name: Pair unchanged final app APK with synchronized instrumentation
+      - name: Verify unchanged payload and stage matching debug signatures
         run: |
           mkdir -p validation-apks/preview/debug validation-apks/androidTest/preview/debug
-          cp original-final-build/app/build/outputs/apk/preview/debug/app-preview-debug.apk validation-apks/preview/debug/
+          python3 tools/check_qa_apk_payload.py original-final-build/app/build/outputs/apk/preview/debug/app-preview-debug.apk app/build/outputs/apk/preview/debug/app-preview-debug.apk
+          cp app/build/outputs/apk/preview/debug/app-preview-debug.apk validation-apks/preview/debug/
           cp app/build/outputs/apk/androidTest/preview/debug/app-preview-debug-androidTest.apk validation-apks/androidTest/preview/debug/
           sha256sum validation-apks/preview/debug/app-preview-debug.apk
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
