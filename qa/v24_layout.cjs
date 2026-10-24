@@ -5,7 +5,7 @@ const manifest=read('app/src/main/AndroidManifest.xml'),gradle=read('app/build.g
 const html=read('app/src/main/assets/index.html'),css=read('app/src/main/assets/landscape-v24.css');
 const js=read('app/src/main/assets/landscape-v24.js');
 assert.match(manifest,/screenOrientation="landscape"/);
-assert.match(gradle,/versionCode\s*=\s*2702/);
+assert.match(gradle,/versionCode\s*=\s*2801/);
 assert.match(html,/href="landscape-v24.css"/);
 assert.match(html,/src="landscape-v24.js"/);
 assert.match(css,/#game\s+\.bn-wide-game/);

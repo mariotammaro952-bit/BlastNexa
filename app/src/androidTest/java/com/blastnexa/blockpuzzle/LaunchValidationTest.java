@@ -100,6 +100,21 @@ public class LaunchValidationTest {
    File folder=new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics");device.takeScreenshot(new File(folder,name+".png"));
   }catch(Exception ignored){}
  }
+ @Test public void a0_homeBannerSharesTheSidebarAndCollapsesWithoutAnAd()throws Exception{
+  js("displayMenu();window.BlastNexaBannerReady();true");
+  truth("document.getElementById('app').dataset.bannerContext==='home'");
+  truth("document.getElementById('menuBannerSeat').parentElement.classList.contains('bn-home-sidebar')");
+  truth("parseFloat(getComputedStyle(document.getElementById('app')).paddingBottom)<20");
+  truth("(()=>{const ad=document.getElementById('gameBannerFrame').getBoundingClientRect(),cards=document.querySelector('#menu>.menu-buttons').getBoundingClientRect();return ad.width>=200&&ad.height===50&&ad.right<=cards.left&&ad.top>=0&&ad.bottom<=innerHeight;})()");
+  truth("window.BlastNexaBannerLayout().visible&&window.BlastNexaBannerLayout().slot==='home_sidebar'");
+  capture("00_home_embedded_banner");
+  js("window.BlastNexaBannerStatus({session:gameSession,status:'unavailable'});true");
+  truth("document.getElementById('menuBannerSeat').getBoundingClientRect().height===0&&!window.BlastNexaBannerLayout().visible");
+  truth("getComputedStyle(document.getElementById('gameBanner')).visibility==='hidden'");
+  capture("00_home_no_empty_ad_rail");
+  js("window.BlastNexaBannerStatus({session:gameSession,status:'loading'});window.BlastNexaBannerReady();true");
+  truth("window.BlastNexaBannerLayout().visible");
+ }
  @Test public void a_menuProfileAnd400Crosswords()throws Exception{
   js("document.getElementById('openPlayerProfile').click();document.getElementById('playerNickname').value='Cometa Android';[...document.querySelectorAll('#universeBody button')].find(b=>b.textContent==='SALVA NOME').click();true");truth("playerProfile.name==='Cometa Android'");
   for(int start=0;start<400;start+=20){int end=Math.min(400,start+20);assertEquals("Crossword bounds", "true",js("(()=>{for(let id="+start+";id<"+end+";id++){startWord(id);const cells=[...document.getElementById('wordBoard').children],n=WORD_CATALOG[id].size;for(let i=0;i<cells.length;i++){const a=cells[i].getBoundingClientRect(),gap=i%n<n-1?cells[i+1].getBoundingClientRect().left-a.right:0;if(Math.abs(a.width-a.height)>.2||Math.abs(gap)>.2)return{word:id,cell:i,width:a.width,height:a.height,gap};}}return true;})()"));}
@@ -329,14 +344,14 @@ public class LaunchValidationTest {
   waitFor("lifeData.slot.total===window.__touchTotal+1 && !slotBusy",5000);assertPinnedSlot();capture("11_full_width_cutout");
  }
  @Test public void l_virtualCoinsUseRealTouchAndSurviveRecreation()throws Exception{
-  slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=2;lifeData.slot.wallet.spent=0;lifeData.slot.wallet.anchor=Date.now();window.__coinsStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");
+  slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=2;lifeData.slot.wallet.spent=0;lifeData.slot.wallet.anchor=Date.now();window.__coinsStart=lifeData.slot.total;window.__qaDraw=0;slotRandomInt=max=>max===100?[0,14,31,47,63][Math.floor(window.__qaDraw++/3)%5]:0;renderLifeSlot(document.getElementById('universeBody'));true");
   touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===1&&lifeData.slot.wallet.spent===1");
   touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
   touch("GIRA");truth("lifeData.slot.total===window.__coinsStart+2&&document.getElementById('overlay').classList.contains('on')&&!window.BlastNexaBannerLayout().visible");
   touchId("dialogPrimary");waitFor("!bnPendingAd",15000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
   touchId("dialogSecondary");js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
   js("openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.anchor=Date.now();lifeData.slot.arcade.freeSpins=1;slotRandomInt=()=>0;playerSettings.effects='lite';renderLifeSlot(document.getElementById('universeBody'));true");
-  touch("GIRA NELLA CAVERNA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2&&lifeData.slot.last.coinCost===0");
+  touch("GIRA NELLA CAVERNA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===25&&lifeData.slot.wallet.spent===2&&lifeData.slot.last.coinCost===0&&lifeData.slot.last.coinsCredited===25");
   assertPinnedSlot();capture("14_coins_and_embedded_banner");
  }
  @Test public void m_neonAdaptiveLauncherIcon()throws Exception{
@@ -425,17 +440,17 @@ public class LaunchValidationTest {
    for(int lines:new int[]{1,5,10}){
     touch(lines==1?"1 linea, 1 moneta per giro":lines+" linee, "+lines+" monete per giro");truth("slotLineCount()==="+lines+" && document.getElementById('slotLines"+lines+"').getAttribute('aria-pressed')==='true'");
     js("window.__lineBefore=lifeData.slot.wallet.balance;window.__lineLives=lifeData.balance;true");touch("GIRA");waitFor("!slotBusy",5000);
-    truth("lifeData.slot.wallet.balance===window.__lineBefore-"+lines+" && lifeData.slot.last.coinCost==="+lines+" && lifeData.slot.last.arcade.lineCount==="+lines+" && lifeData.balance===window.__lineLives+5");
+    truth("lifeData.slot.wallet.balance===window.__lineBefore-"+lines+"+25*"+lines+" && lifeData.slot.last.coinsCredited===25*"+lines+" && lifeData.slot.last.coinCost==="+lines+" && lifeData.slot.last.arcade.lineCount==="+lines+" && lifeData.balance===window.__lineLives+5");
    }
-   truth("lifeData.slot.wallet.balance===84 && lifeData.slot.total===window.__lineStart+3");assertPinnedSlot();
+   truth("lifeData.slot.wallet.balance===484 && lifeData.slot.total===window.__lineStart+3");assertPinnedSlot();
   }
-  js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===84 && slotLineCount()===10");
-  writeEvidence("native-line-wagers.json","{\"worlds\":3,\"lineChoices\":[1,5,10],\"physicalTaps\":true,\"exactDebitsAndLives\":true,\"reloadPreserved\":true}");
+  js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===484 && slotLineCount()===10");
+  writeEvidence("native-line-wagers.json","{\"worlds\":3,\"lineChoices\":[1,5,10],\"physicalTaps\":true,\"exactDebitsCoinsAndLives\":true,\"reloadPreserved\":true}");
  }
  @Test public void q_offlinePuzzleAndSlotKeepCommittedProgress()throws Exception{
   device.executeShellCommand("svc wifi disable");device.executeShellCommand("svc data disable");
   try{
-   slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=100;window.__offlineStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===99 && lifeData.slot.total===window.__offlineStart+1");
+   slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=100;window.__offlineStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===124 && lifeData.slot.total===window.__offlineStart+1");
    js("unlocked=2000;lifeData.balance=1000;playerSettings.effects='lite';setScene('war');true");truth("start('adventure',1)===true");
    int moves=Integer.parseInt(js("LEVELS[0].proof.length"));
    for(int i=0;i<moves;i++){
@@ -443,7 +458,7 @@ public class LaunchValidationTest {
     waitFor("!fxBusy",10000);truth("(()=>{const p=LEVELS[0].proof["+i+"];return placePiece(p.slot,p.x,p.y);})()");
    }
    waitFor("roundOutcome==='win' && roundFinalized && !playing",10000);
-   js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===99 && stars[1]>0");
+   js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===124 && stars[1]>0");
    writeEvidence("offline-gameplay.json","{\"networkDisabled\":true,\"slotDebit\":1,\"puzzleWon\":true,\"reloadPreserved\":true}");
   }finally{device.executeShellCommand("svc wifi enable");device.executeShellCommand("svc data enable");}
  }

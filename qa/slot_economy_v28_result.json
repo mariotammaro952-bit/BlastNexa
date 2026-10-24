@@ -1,0 +1,86 @@
+{
+  "version": 28,
+  "passed": 9,
+  "totalSpins": 30000,
+  "tests": [
+    "3/4/5 matching symbols award the published coin and life pair, once across restart",
+    "All selected winning lines add coins, while the best line alone awards lives",
+    "Chests and earned missions credit paired rewards once, including after reload",
+    "v27 wallet, lives, last result and history survive without retroactive coin awards",
+    "Balance ceilings record the actual credited coins and lives without overflow",
+    "Full animation counts both saved awards and cancellation cannot replay either reward"
+  ],
+  "worlds": [
+    {
+      "machine": "temple",
+      "spins": 10000,
+      "counts": {
+        "spin": 10000,
+        "free": 0,
+        "respin": 0,
+        "chests": 803,
+        "missions": 5,
+        "breaks": 199,
+        "reloads": 104
+      },
+      "lineCounts": {
+        "1": 3399,
+        "5": 3305,
+        "10": 3296
+      },
+      "spent": 52884,
+      "won": 24875,
+      "finalCoins": 471991,
+      "finalLives": 4626,
+      "maxPendingTimers": 1
+    },
+    {
+      "machine": "crystal",
+      "spins": 10000,
+      "counts": {
+        "spin": 9907,
+        "free": 93,
+        "respin": 0,
+        "chests": 0,
+        "missions": 5,
+        "breaks": 199,
+        "reloads": 104
+      },
+      "lineCounts": {
+        "1": 3399,
+        "5": 3305,
+        "10": 3296
+      },
+      "spent": 52407,
+      "won": 14260,
+      "finalCoins": 461853,
+      "finalLives": 2476,
+      "maxPendingTimers": 1
+    },
+    {
+      "machine": "forge",
+      "spins": 10000,
+      "counts": {
+        "spin": 8572,
+        "free": 0,
+        "respin": 1428,
+        "chests": 0,
+        "missions": 5,
+        "breaks": 199,
+        "reloads": 104
+      },
+      "lineCounts": {
+        "1": 3399,
+        "5": 3305,
+        "10": 3296
+      },
+      "spent": 52884,
+      "won": 13515,
+      "finalCoins": 460631,
+      "finalLives": 2354,
+      "maxPendingTimers": 1
+    }
+  ],
+  "seconds": 76.59,
+  "scope": "Exact bundled game engine and save/reload transactions with DOM, clock and ad adapters. Native geometry, real ads and device stability are separate checks."
+}

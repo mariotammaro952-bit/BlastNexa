@@ -48,7 +48,7 @@ function audioMock(r,{delayed=false}={}){
  });
  await test('Pending Crystal spins from v20 migrate into a resumable journey without awarding anything again',()=>{
   const old={stored:JSON.parse(fs.readFileSync('qa/fixtures/legacy-v20.json')).storage};
-  const r=createRuntime(FILE,{initialStorage:old.stored});r.run("openUniverse('slot')");assert.deepEqual(json(r,'lifeData.slot.arcade.crystalJourney'),{id:'crystal:0',awarded:3,played:0,lives:0,dismissed:false});assert.equal(r.run('lifeData.balance'),5);assert.equal(r.run('lifeData.slot.total'),1);
+  const r=createRuntime(FILE,{initialStorage:old.stored});r.run("openUniverse('slot')");assert.deepEqual(json(r,'lifeData.slot.arcade.crystalJourney'),{id:'crystal:0',awarded:3,played:0,lives:0,coins:0,dismissed:false});assert.equal(r.run('lifeData.balance'),5);assert.equal(r.run('lifeData.slot.total'),1);
  });
  await test('The Forge controls block two reels, disable the unselected relaunch, and preserve held columns',()=>{
   const r=fresh();r.run("setArcadeMachine('forge');slotRandomInt=()=>0;spinLifeSlot()");settle(r);r.run('lifeData.slot.arcade.reactor=6;renderLifeSlot($("universeBody"))');assert.equal(current(r,'slotRespinButton').disabled,true);

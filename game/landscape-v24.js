@@ -1,7 +1,16 @@
-/* BlastNexa v24 · landscape UI and universal banner. Slot payouts remain unchanged. */
+/* BlastNexa landscape UI: embedded home banner and paired coin/life rewards. */
 (()=>{
 'use strict';
 const $id=id=>document.getElementById(id);
+function rearrangeMenu(){
+ const menu=$id('menu');if(!menu||menu.querySelector('.bn-home-sidebar'))return;
+ const cards=menu.querySelector(':scope > .menu-buttons');if(!cards)return;
+ const side=document.createElement('aside');side.className='bn-home-sidebar';side.setAttribute('aria-label','Profilo e comandi principali');
+ for(const child of [...menu.children])if(child!==cards)side.append(child);
+ const seat=document.createElement('div');seat.id='menuBannerSeat';seat.className='bn-menu-ad-seat';seat.setAttribute('aria-hidden','true');
+ const note=side.querySelector('.footer-note');if(note)side.insertBefore(seat,note);else side.append(seat);
+ menu.prepend(side);
+}
 function pinCanvas(){
  if(window.innerWidth<=window.innerHeight)return;
  // Compatibility fallback for WebViews predating overflow:clip. Inner panels
@@ -108,7 +117,7 @@ function composeSlot(){
   if(typeof slotPhase!=='undefined'&&slotPhase==='celebrating'){
    spin.disabled=false;spin.onclick=()=>finishSlotCelebration();spin.setAttribute('aria-label','Incassa la vincita');spin.setAttribute('aria-busy','false');
    const label=[...spin.childNodes].find(node=>node.nodeType===3);if(label)label.textContent='INCASSA';
-   const detail=spin.querySelector('small');if(detail)detail.textContent='VITE GIÀ SALVATE';
+   const detail=spin.querySelector('small');if(detail)detail.textContent='PREMI GIÀ SALVATI';
   }
  }
  if(spin&&!spin.classList.contains('bn-world-normal-spin')){
@@ -119,7 +128,7 @@ function composeSlot(){
  if(wallet)sidebar.insertBefore(wallet,primaryAnchor);
  if(coins)deck.append(coins);
  const adSeat=document.createElement('div');adSeat.id='slotBannerSeat';adSeat.className='bn-slot-ad-seat';adSeat.setAttribute('aria-hidden','true');deck.append(adSeat);
- if(result){result.querySelector('#slotCollectButton')?.remove();deck.append(result);}else{const notice=document.createElement('div');notice.className='bn-world-result';notice.setAttribute('role','status');notice.textContent='BONUS IN VITE';deck.append(notice);}
+ if(result){result.querySelector('#slotCollectButton')?.remove();deck.append(result);}else{const notice=document.createElement('div');notice.className='bn-world-result';notice.setAttribute('role','status');notice.textContent='MONETE + VITE';deck.append(notice);}
  if(auto)sidebar.insertBefore(auto,primaryAnchor);if(controls)deck.append(controls);
  for(const [id,label,text] of [['slotAuto5','Avvia 5 giri automatici','AUTO 5'],['slotAuto10','Avvia 10 giri automatici','AUTO 10'],['slotAutoStop','Ferma i giri automatici','STOP AUTO']]){const node=auto?.querySelector('#'+id);if(node){node.setAttribute('aria-label',label);node.textContent=text;}}
  hero?.remove();layout.prepend(panorama,sidebar);layout.append(character,deck);
@@ -172,25 +181,30 @@ function installBanner(){
   const inSlot=typeof slotVisible==='function'&&slotVisible();
   const inWords=typeof wordsVisible==='function'&&wordsVisible();
   const inGame=$id('game')?.style.display==='flex';
+  const inMenu=$id('menu')?.style.display!=='none';
   const pending=typeof bnPendingAd!=='undefined'&&!!bnPendingAd;
   const valid=n=>Number.isFinite(n)?Math.round(n*10)/10:0;
-  return {slot:inSlot&&$id('slotBannerSeat')?'slot_control_deck':'landscape_bottom',context:inSlot?'slot':inWords?'words':inGame?'blocks':'other',session:typeof gameSession==='number'?gameSession:0,visible:!document.hidden&&!$id('overlay')?.classList.contains('on')&&!pending&&width>=200,x:valid(r.left),y:valid(r.top),width,height:50,coordinateSpace:'css-pixels',maxHeight:50};
+  const homeAvailable=!inMenu||typeof bnBannerState==='undefined'||bnBannerState!=='unavailable';
+  const fits=r.left>=-1&&r.top>=0&&r.right<=window.innerWidth+1&&r.bottom<=window.innerHeight+1;
+  return {slot:inSlot&&$id('slotBannerSeat')?'slot_control_deck':inMenu?'home_sidebar':'landscape_bottom',context:inSlot?'slot':inWords?'words':inGame?'blocks':inMenu?'home':'other',session:typeof gameSession==='number'?gameSession:0,visible:homeAvailable&&fits&&!document.hidden&&!$id('overlay')?.classList.contains('on')&&!pending&&width>=200,x:valid(r.left),y:valid(r.top),width,height:50,coordinateSpace:'css-pixels',maxHeight:50};
  };
  syncGameBanner=function(force=false){
   const dock=$id('gameBanner'),frame=$id('gameBannerFrame'),app=$id('app');if(!dock||!frame||!app)return;
   dock.hidden=false;app.dataset.banner='on';
   const inSlot=typeof slotVisible==='function'&&slotVisible();
   const inWords=typeof wordsVisible==='function'&&wordsVisible();
-  app.dataset.bannerContext=inSlot?'slot':inWords?'words':$id('game')?.style.display==='flex'?'blocks':'other';
+  const inMenu=$id('menu')?.style.display!=='none';
+  if(typeof bnBannerSession!=='undefined'&&bnBannerSession!==gameSession){bnBannerSession=gameSession;bnBannerState='preview';}
+  app.dataset.bannerContext=inSlot?'slot':inWords?'words':$id('game')?.style.display==='flex'?'blocks':inMenu?'home':'other';
+  app.dataset.bannerState=typeof bnBannerState==='undefined'?'preview':bnBannerState;
   if(!inSlot)delete app.dataset.slotWide;
-  const seat=inSlot?$id('slotBannerSeat'):null;
+  const seat=inSlot?$id('slotBannerSeat'):inMenu?$id('menuBannerSeat'):null;
   if(seat){const r=seat.getBoundingClientRect(),parent=app.getBoundingClientRect();Object.assign(dock.style,{top:(r.top-parent.top)+'px',left:(r.left-parent.left)+'px',right:'auto',bottom:'auto',width:r.width+'px',height:r.height+'px'});}
   else for(const prop of ['top','left','right','bottom','width','height'])dock.style.removeProperty(prop);
-  if(typeof bnBannerSession!=='undefined'&&bnBannerSession!==gameSession){bnBannerSession=gameSession;bnBannerState='preview';}
   const layout=gameBannerLayout();frame.style.visibility=layout.visible?'visible':'hidden';
   if(typeof bnBannerState!=='undefined'){frame.dataset.state=bnBannerState;dock.dataset.state=bnBannerState;$id('gameBannerPreview').hidden=bnBannerState==='loaded';}
   const preview=$id('gameBannerPreview');
-  if(preview){const labels=preview.querySelectorAll('strong,small,span');if(labels.length>=2){labels[0].textContent=seat?'PREMI IN VITE':'Spazio pubblicitario';labels[1].textContent=seat?'3 UGUALI: 1 VITA · 4: 2 · 5: 5':'ANTEPRIMA BANNER';}}
+  if(preview){const labels=preview.querySelectorAll('strong,small,span');if(labels.length>=2){labels[0].textContent=inSlot?'MONETE + VITE':'Spazio pubblicitario';labels[1].textContent=inSlot?'3: 5 ◉ + 1 ♥ · 4: 10 ◉ + 2 ♥ · 5: 25 ◉ + 5 ♥':'ANTEPRIMA BANNER';}}
   if(typeof bnExpansionReady!=='undefined'&&bnExpansionReady&&typeof slotMediaSync==='function')slotMediaSync();
   const payload=JSON.stringify(layout);
   if(!force&&typeof bnBannerLastPayload!=='undefined'&&payload===bnBannerLastPayload)return;
@@ -205,10 +219,14 @@ function installBanner(){
  for(const id of ['menu','map','mapScreen','universeScreen','wordsScreen','game','overlay']){
    const node=$id(id);if(node)observer.observe(node,{attributes:true,attributeFilter:['style','class']});
  }
+ const homeResize=new ResizeObserver(schedule);
+ for(const node of [$id('menuBannerSeat'),$id('menu')?.querySelector('.bn-home-sidebar')])if(node)homeResize.observe(node);
+ $id('menu')?.querySelector('.bn-home-sidebar')?.addEventListener('scroll',schedule,{passive:true});
+ $id('menu')?.addEventListener('scroll',schedule,{passive:true});
  window.addEventListener('resize',()=>syncGameBanner(true));
  document.addEventListener('visibilitychange',schedule);
  schedule();
 }
-function init(){rearrangeGame();rearrangeWords();installLayout();installBanner();}
+function init(){rearrangeMenu();rearrangeGame();rearrangeWords();installLayout();installBanner();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

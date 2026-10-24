@@ -33,7 +33,9 @@ adb logcat -v threadtime > android-evidence/logcat.txt 2>&1 &
 logcat_pid=$!
 trap 'kill "$logcat_pid" "$memory_pid" 2>/dev/null || true' EXIT
 instrument_status=0
-timeout 1800 adb shell am instrument -w -r -e bn_qa_cutout "$cutout" com.blastnexa.blockpuzzle.preview.test/androidx.test.runner.AndroidJUnitRunner | tee android-evidence/instrumentation.txt || instrument_status=$?
+instrument_args=()
+if [ -n "${BN_QA_TEST_METHODS:-}" ]; then instrument_args=(-e class "$BN_QA_TEST_METHODS"); fi
+timeout 1800 adb shell am instrument -w -r -e bn_qa_cutout "$cutout" "${instrument_args[@]}" com.blastnexa.blockpuzzle.preview.test/androidx.test.runner.AndroidJUnitRunner | tee android-evidence/instrumentation.txt || instrument_status=$?
 timeout 20 adb shell dumpsys activity lastanr > android-evidence/last-anr.txt || true
 timeout 20 adb shell uiautomator dump /sdcard/validation-ui.xml || true
 timeout 20 adb pull /sdcard/validation-ui.xml android-evidence/ui-final.xml || true
@@ -42,4 +44,4 @@ timeout 20 adb pull /sdcard/validation-screen.png android-evidence/screen-final.
 timeout 25 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/store android-evidence/store || true
 timeout 25 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/metrics android-evidence/metrics || true
 if [ "$instrument_status" -ne 0 ]; then exit "$instrument_status"; fi
-grep -Eq '^OK \(19 tests\)' android-evidence/instrumentation.txt
+grep -Eq "^OK \\(${BN_QA_EXPECTED_TESTS:-20} tests\\)" android-evidence/instrumentation.txt

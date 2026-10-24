@@ -8,7 +8,7 @@ def write_changed(path,data):
     temporary.replace(path)
 source=root/'game/index.html';h=source.read_text(encoding='utf-8')
 # Package the landscape UI alongside the complete embedded game catalogs.
-# The source game owns the v27 wallet and existing life-prize rules.
+# The source game owns the preserved v27 wallet and v28 paired coin/life awards.
 landscape_css=root/'game/landscape-v24.css'
 landscape_js=root/'game/landscape-v24.js'
 for f in (landscape_css,landscape_js):
@@ -25,6 +25,7 @@ h=h.replace('ODYSSEY GIOCATORI v23','ODYSSEY LANDSCAPE v24').replace('ODYSSEY v2
 h=h.replace('ODYSSEY LANDSCAPE v24','ODYSSEY LANDSCAPE v25').replace('ODYSSEY v24 · AVVENTURE ORIZZONTALI','ODYSSEY v25 · AVVENTURE ORIZZONTALI').replace('NEXA WORDS · v24','NEXA WORDS · v25')
 h=h.replace('ODYSSEY LANDSCAPE v25','ODYSSEY LANDSCAPE v26').replace('ODYSSEY v25 · AVVENTURE ORIZZONTALI','ODYSSEY v26 · AVVENTURE ORIZZONTALI').replace('NEXA WORDS · v25','NEXA WORDS · v26')
 h=h.replace('ODYSSEY LANDSCAPE v26','ODYSSEY LANDSCAPE v27').replace('ODYSSEY v26 · AVVENTURE ORIZZONTALI','ODYSSEY v27 · AVVENTURE ORIZZONTALI').replace('NEXA WORDS · v26','NEXA WORDS · v27')
+h=h.replace('ODYSSEY LANDSCAPE v27','ODYSSEY LANDSCAPE v28').replace('ODYSSEY v27 · AVVENTURE ORIZZONTALI','ODYSSEY v28 · AVVENTURE ORIZZONTALI').replace('NEXA WORDS · v27','NEXA WORDS · v28')
 # Some Android WebViews do not resolve aspect-ratio on an auto-height CSS grid.
 # A measured border-box height keeps the same square cells on those versions.
 if 'function syncWordBoardSquare()' not in h:
