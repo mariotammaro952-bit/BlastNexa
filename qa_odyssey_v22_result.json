@@ -1,0 +1,20 @@
+{
+  "passed": 14,
+  "tests": [
+    "Each mode exposes its own scene, eight illustrated symbol meanings and reel narration",
+    "The Temple replaces the reels with a playable treasure scene, commits once, and acknowledges without a spin",
+    "A new Temple chest still opens after a prior treasure scene was acknowledged",
+    "A Crystal journey resumes mid-bonus and totals only its three awarded spins",
+    "Pending Crystal spins from v20 migrate into a resumable journey without awarding anything again",
+    "The Forge controls block two reels, disable the unselected relaunch, and preserve held columns",
+    "The fifty-spin break preserves a pending bonus journey and does not consume its next free spin",
+    "Forge automatic play stops at reactor readiness and waits for the player to choose reels",
+    "Line, impact, count and transfer stages are presentation only, and skipping cancels future ticks",
+    "All six soundtracks are selected by world and bonus state on the music channel",
+    "Late decodes from abandoned worlds cannot replace the selected soundtrack",
+    "Leaving during a delayed bonus decode prevents all audio from starting in another screen",
+    "A delayed bonus sound cannot start after the player selects another world",
+    "Muting and volume zero stop bonus-state music while preserving its saved progress"
+  ],
+  "scope": "Exact production JavaScript, current DOM tree, saved-session transitions and mocked Web Audio. No physical audio output, browser geometry or Android execution."
+}

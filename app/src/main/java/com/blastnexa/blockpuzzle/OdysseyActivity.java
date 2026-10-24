@@ -3,6 +3,7 @@ package com.blastnexa.blockpuzzle;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.content.pm.ApplicationInfo;
 import android.graphics.Color;
 import android.net.Uri;
@@ -11,6 +12,8 @@ import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.JavascriptInterface;
@@ -35,18 +38,29 @@ public final class OdysseyActivity extends Activity {
     private boolean pageReady;
     private boolean backPending;
     private boolean foreground;
+    private boolean invitePermissionPending;
+    private boolean engineUpdateRequired;
+    private AlertDialog engineUpdateDialog;
+    private int safeLeft,safeRight;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        OdysseyReminders.scheduleAll(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         getWindow().setStatusBarColor(Color.rgb(8,19,43));
         getWindow().setNavigationBarColor(Color.rgb(8,19,43));
         root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(8,19,43));
         root.setOnApplyWindowInsetsListener((v,insets) -> {
-            v.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),
-                insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
-            return insets.consumeSystemWindowInsets();
+            // Paint through the camera cutout instead of reserving an empty
+            // native strip. Only the game's controls need the safe inset.
+            safeLeft=0;safeRight=0;
+            if(Build.VERSION.SDK_INT>=28 && insets.getDisplayCutout()!=null){
+                safeLeft=insets.getDisplayCutout().getSafeInsetLeft();
+                safeRight=insets.getDisplayCutout().getSafeInsetRight();
+            }
+            v.setPadding(0,0,0,0);applySafeArea();
+            return insets;
         });
         game = new WebView(this);
         game.setBackgroundColor(Color.rgb(8,19,43));
@@ -79,6 +93,7 @@ public final class OdysseyActivity extends Activity {
             }
         });
         setContentView(root);
+        enterImmersiveMode();
         root.requestApplyInsets();
         if(Build.VERSION.SDK_INT>=33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT,this::requestBack);
@@ -86,6 +101,69 @@ public final class OdysseyActivity extends Activity {
         game.loadUrl(GAME_URL);
     }
 
+
+    private boolean requestInviteNotificationPermission() {
+        if(invitePermissionPending)return true;
+        if(Build.VERSION.SDK_INT<33 || !foreground || isFinishing() || isDestroyed())return false;
+        if(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false))return false;
+        if(checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)==android.content.pm.PackageManager.PERMISSION_GRANTED)return false;
+        android.content.SharedPreferences prefs=OdysseyReminders.preferences(this);
+        if(prefs.getBoolean("permission_asked",false))return false;
+        prefs.edit().putBoolean("permission_asked",true).apply();
+        invitePermissionPending=true;
+        requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS},7907);
+        return true;
+    }
+    private void startAdsWhenReady() {
+        if(!pageReady || !foreground || invitePermissionPending || ads==null || isFinishing() || isDestroyed())return;
+        if(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false))return;
+        ads.start();
+    }
+    private void finishGameStartup(WebView view) {
+        // Android version alone does not identify the separately updated
+        // WebView engine. Old providers must offer a native way to update.
+        view.evaluateJavascript("(function(){try{return new Function('return ({value:1})?.value ?? 0;')()===1"
+            +"&&typeof Element.prototype.replaceChildren==='function';}catch(error){return false;}})()",result -> {
+            if(view!=game || ads==null || isFinishing() || isDestroyed())return;
+            if(!"true".equals(result)){engineUpdateRequired=true;pageReady=false;showEngineUpdate();return;}
+            pageReady=true;
+            boolean askingPermission=requestInviteNotificationPermission();
+            applySafeArea();
+            evaluate("navigator.vibrate=function(p){window.BlastNexaNative.vibrate(JSON.stringify(p));return true;};"
+                +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
+            if(!askingPermission)startAdsWhenReady();
+        });
+    }
+    private void showEngineUpdate() {
+        if(!foreground || isFinishing() || isDestroyed() || (engineUpdateDialog!=null&&engineUpdateDialog.isShowing()))return;
+        if(game!=null)game.setVisibility(View.GONE);
+        engineUpdateDialog=new AlertDialog.Builder(this)
+            .setTitle("Aggiorna il motore del gioco")
+            .setMessage("Per avviare BlastNexa aggiorna Android System WebView e Google Chrome dal Play Store, poi premi RIPROVA. I progressi salvati restano sul dispositivo.")
+            .setCancelable(false)
+            .setPositiveButton("AGGIORNA",(dialog,which)->openEngineStore())
+            .setNeutralButton("RIPROVA",(dialog,which)->recreate())
+            .setNegativeButton("ESCI",(dialog,which)->finish()).show();
+    }
+    private void openEngineStore() {
+        String provider="com.google.android.webview";
+        if(Build.VERSION.SDK_INT>=26){
+            android.content.pm.PackageInfo current=WebView.getCurrentWebViewPackage();
+            if(current!=null)provider=current.packageName;
+        } else {
+            try {if(getPackageManager().getApplicationInfo("com.android.chrome",0).enabled)provider="com.android.chrome";}
+            catch(android.content.pm.PackageManager.NameNotFoundException ignored){}
+        }
+        try {startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("market://details?id="+provider)));}
+        catch(android.content.ActivityNotFoundException noStore){
+            try {startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://play.google.com/store/apps/details?id="+provider)));}
+            catch(android.content.ActivityNotFoundException noBrowser){root.post(this::showEngineUpdate);}
+        }
+    }
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+        if(requestCode==7907){invitePermissionPending=false;OdysseyReminders.scheduleAll(this);if(game!=null)game.post(this::startAdsWhenReady);}
+    }
 
     private class GameClient extends WebViewClient {
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest request) {
@@ -98,14 +176,12 @@ public final class OdysseyActivity extends Activity {
             }
             @Override public void onPageFinished(WebView view,String url) {
                 if(view!=game || ads==null || isDestroyed() || !GAME_URL.equals(url)) return;
-                pageReady=true;
-                evaluate("navigator.vibrate=function(p){window.BlastNexaNative.vibrate(JSON.stringify(p));return true;};"
-                    +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
-                if(!(BuildConfig.DEBUG && getIntent().getBooleanExtra("bn_qa_no_ads",false)))ads.start();
+                finishGameStartup(view);
             }
 
     }
     /** API 26+: a lost renderer must not take down the native host. */
+    @android.annotation.TargetApi(26)
     private final class RecoveryClient extends GameClient {
         @Override public boolean onRenderProcessGone(WebView view,android.webkit.RenderProcessGoneDetail detail) {
             pageReady=false;
@@ -127,6 +203,13 @@ public final class OdysseyActivity extends Activity {
         runOnUiThread(() -> { if(game!=null && pageReady && !isDestroyed()) game.evaluateJavascript(script,null); });
     }
 
+    private void applySafeArea() {
+        float density=getResources().getDisplayMetrics().density;
+        evaluate("document.documentElement.style.setProperty('--bn-safe-left','"+(safeLeft/density)+"px');"
+            +"document.documentElement.style.setProperty('--bn-safe-right','"+(safeRight/density)+"px');"
+            +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
+    }
+
     private void requestBack() {
         if(backPending || game==null) return;
         if(!pageReady) { finish(); return; }
@@ -141,11 +224,45 @@ public final class OdysseyActivity extends Activity {
     }
 
     @Override public void onBackPressed() { requestBack(); }
+    @Override public void onConfigurationChanged(Configuration configuration) {
+        super.onConfigurationChanged(configuration);
+        // The responsive game handles viewport changes in place. Recreating
+        // its WebView here would interrupt a spin or the return from an ad.
+        enterImmersiveMode();
+        if(root!=null)root.requestApplyInsets();
+        evaluate("window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
+    }
     @Override public void onWindowFocusChanged(boolean focused) {
         super.onWindowFocusChanged(focused);
+        if (focused) enterImmersiveMode();
         if(ads!=null) ads.setActive(focused && foreground);
         if(pageReady) evaluate(focused?"window.dispatchEvent(new Event('focus'));"
             :"if(typeof stopSlotAuto==='function')stopSlotAuto();window.dispatchEvent(new Event('blur'));");
+    }
+
+    /** The edge swipe still reveals Android controls; the game keeps its full landscape area. */
+    @SuppressWarnings("deprecation")
+    private void enterImmersiveMode() {
+        if(Build.VERSION.SDK_INT>=28){
+            WindowManager.LayoutParams attributes=getWindow().getAttributes();
+            if(attributes.layoutInDisplayCutoutMode!=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES){
+                attributes.layoutInDisplayCutoutMode=WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+                getWindow().setAttributes(attributes);
+            }
+        }
+        if (Build.VERSION.SDK_INT >= 30) {
+            getWindow().setDecorFitsSystemWindows(false);
+            WindowInsetsController controller = getWindow().getInsetsController();
+            if (controller != null) {
+                controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                controller.hide(WindowInsets.Type.systemBars());
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        }
     }
     @Override protected void onPause() {
         foreground=false;
@@ -157,13 +274,17 @@ public final class OdysseyActivity extends Activity {
     }
     @Override protected void onResume() {
         super.onResume();foreground=true;
+        OdysseyReminders.scheduleAll(this);
         if(game!=null) game.onResume();
+        if(engineUpdateRequired){showEngineUpdate();return;}
         if(ads!=null) ads.setActive(hasWindowFocus());
+        if(pageReady&&!requestInviteNotificationPermission())startAdsWhenReady();
         if(pageReady) evaluate("window.dispatchEvent(new Event('focus'));"
             +"if(typeof slotVisible==='function'&&slotVisible()&&!bnPendingAd)renderLifeSlot(document.getElementById('universeBody'));"
             +"window.BlastNexaBannerReady&&window.BlastNexaBannerReady();");
     }
     @Override protected void onDestroy() {
+        if(engineUpdateDialog!=null){engineUpdateDialog.dismiss();engineUpdateDialog=null;}
         if(ads!=null) ads.destroy();
         if(ranking!=null) ranking.destroy();
         pageReady=false;

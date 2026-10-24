@@ -1,0 +1,55 @@
+{
+  "source": "artwork/blastnexa-icon-v26-foreground.png",
+  "source_sha256": "d057cde8f038696407028bc952aea7c613cadc68197519d4ba6d74c3f0c4740d",
+  "adaptive_safe_radius": 0.3,
+  "files": [
+    {
+      "path": "app/src/main/res/drawable-nodpi/ic_launcher_foreground.png",
+      "sha256": "423408c4ecd73dcaadf1bdceb90e8bacfdb7648a5ea26cf75ecb1db3fff75844"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "sha256": "2fea7f86de6b99595faca1a5612651d7cb8ed7521f5ff5f0df18fe52beb4af0d"
+    },
+    {
+      "path": "app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "sha256": "67c9f469525259d768a0218832454e1499a6d0c23d299fc0fd116d3762e0ce99"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "sha256": "64914342b8d5ec9e06b91b01e9d83e07f9ba4a15c161e279e07049d816170303"
+    },
+    {
+      "path": "app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "sha256": "6011f82d574cf35e4ddb2149049b98ede0b3962fc3393180744eaf5f5bb4afa5"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "sha256": "7e53617534bc370cca848210a38724138252d45901324d031b3b9d2db61d6d95"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "sha256": "a71d6fc6268c4e065758e3e4e325bf1bcb2ea0813ff79d14cd8db03ba8d81f14"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "sha256": "413aa2c2b785b18f85d448468b4ce1bf57e1a44de7ced81604662013e28cf209"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "sha256": "61d3550a3512f66893c100bd2a77bbd209fd8105148f392ea262c77cb1135147"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "sha256": "9ed42822564066f8a5a1b4b050b70fe76a8981b20c4343291ad3be2acea1c988"
+    },
+    {
+      "path": "app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "sha256": "5bae86a2843e10b24a40c9b2818bff8c0f95ee83ab76f2136ba4c5814d6ac7d4"
+    },
+    {
+      "path": "artwork/blastnexa-play-icon-v26.png",
+      "sha256": "22edd7099265ed0c938d88d0577dcb59a10be86658c9c782913590c34ad4f9a8"
+    }
+  ]
+}

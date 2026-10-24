@@ -24,9 +24,9 @@ test('A Wild substitutes normal symbols, Bonus never substitutes, and lines must
  assert.equal(evaluate(grid(['☾','♥','♥','♥','♥']),'forge').wins.some(w=>w.line===0),false);
  assert.equal(evaluate(grid(['W','W','W','W','W']),'forge').prize,5);
 });
-test('Only the best payline awards lives even when all 15 lines win, with one atomic result per spin',()=>{
- const r=fresh();r.run("setArcadeMachine('crystal');slotRandomInt=()=>0");assert.equal(r.run('spinLifeSlot()'),true);assert.equal(r.run('spinLifeSlot()'),false);
- assert.equal(r.run('lifeData.balance'),10);assert.equal(r.run('lifeData.slot.total'),1);assert.equal(r.run('lifeData.slot.arcade.lines'),15);assert.equal(r.run('lifeData.slot.archive.lives'),5);settle(r);assert.equal(r.run('lifeData.balance'),10);assert.equal(r.run('finishSlotCelebration()'),false);
+test('Only the best payline awards lives even when all 10 selected lines win, with one atomic result per spin',()=>{
+ const r=fresh();r.run("setArcadeMachine('crystal');setSlotLineCount(10);slotRandomInt=()=>0");assert.equal(r.run('spinLifeSlot()'),true);assert.equal(r.run('spinLifeSlot()'),false);
+ assert.equal(r.run('lifeData.balance'),10);assert.equal(r.run('lifeData.slot.total'),1);assert.equal(r.run('lifeData.slot.arcade.lines'),10);assert.equal(r.run('lifeData.slot.archive.lives'),5);settle(r);assert.equal(r.run('lifeData.balance'),10);assert.equal(r.run('finishSlotCelebration()'),false);
 });
 test('A pending chest survives reload, blocks spins, and can be claimed exactly once',()=>{
  const r=fresh();r.run('lifeData.slot.arcade.treasure=29;slotRandomInt=max=>max===100?31:0;spinLifeSlot()');settle(r);assert.ok(r.run('lifeData.slot.arcade.bonus'));assert.equal(r.run('lifeData.slot.arcade.treasure'),14);

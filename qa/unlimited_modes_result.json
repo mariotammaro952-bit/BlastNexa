@@ -40,37 +40,37 @@
     {
       "mode": "daily",
       "scene": "war",
-      "moves": 53,
-      "tools": 1,
-      "score": 5762,
-      "lines": 20,
+      "moves": 44,
+      "tools": 2,
+      "score": 2984,
+      "lines": 13,
       "ended": true
     },
     {
       "mode": "daily",
       "scene": "ocean",
-      "moves": 53,
-      "tools": 1,
-      "score": 5762,
-      "lines": 20,
+      "moves": 44,
+      "tools": 2,
+      "score": 2984,
+      "lines": 13,
       "ended": true
     },
     {
       "mode": "daily",
       "scene": "alien",
-      "moves": 53,
-      "tools": 1,
-      "score": 5762,
-      "lines": 20,
+      "moves": 44,
+      "tools": 2,
+      "score": 2984,
+      "lines": 13,
       "ended": true
     },
     {
       "mode": "daily",
       "scene": "explosive",
-      "moves": 53,
-      "tools": 1,
-      "score": 5762,
-      "lines": 20,
+      "moves": 44,
+      "tools": 2,
+      "score": 2984,
+      "lines": 13,
       "ended": true
     },
     {

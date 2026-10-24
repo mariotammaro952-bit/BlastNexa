@@ -1,0 +1,15 @@
+{
+  "passed": 7,
+  "tests": [
+    "Guest credentials are hashed; registration validates nickname and avatar",
+    "All 8,000 winning production traces pass the independent server verifier",
+    "Replay, concurrent duplicate submissions and forged totals cannot increase points",
+    "Illegal and incomplete moves are rejected; unauthenticated writes are refused",
+    "Shared positions, recovery, profile update, reporting, blocking and moderation work",
+    "Deleting a profile cascades results, blocks and reports; access code is revoked",
+    "Caller-controlled forwarded headers cannot bypass registration throttling"
+  ],
+  "verifiedAdventureTraces": 8000,
+  "database": "SQLite 3.53.3, actual generated D1 schema and production prepared statements",
+  "liveService": false
+}

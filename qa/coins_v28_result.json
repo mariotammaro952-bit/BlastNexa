@@ -1,0 +1,27 @@
+{
+  "passed": 13,
+  "tests": [
+    "New, v25 and v26 wallets start the daily economy at 100 while lives and recorded prizes survive",
+    "x1 costs exactly 1, 5 or 10 coins, changes only while idle, and reload cannot replay a debit or life prize",
+    "Daily grant occurs once on a new local calendar day, accumulates remaining coins, and never refills by minutes or clock rollback",
+    "A month of absence grants one daily allowance, bounded at the safe balance ceiling",
+    "Insufficient coins cannot draw symbols or change lives and remaining coins offer the one-line option",
+    "Rewarded video is available at zero only and grants 100 once after earned=true; skipped/missing videos grant zero",
+    "The chosen paid lines are saved for Crystal bonus spins and cannot be increased mid-bonus",
+    "Forge relaunch spends the selected number of coins once and retains held columns",
+    "Only selected lines can win: a top-row match cannot pay on the one-line center setting",
+    "AUTO stops at the last affordable selected wager without negative coins or a third transaction",
+    "Page navigation cannot debit coins; a chest credits its coins and lives together",
+    "Invites are automatic and the game exposes no invitation switch or opt-in control",
+    "Malformed wallet and line fields restore bounded usable state"
+  ],
+  "costPerLine": 1,
+  "lineChoices": [
+    1,
+    5,
+    10
+  ],
+  "dailyCoins": 100,
+  "rewardedCoinsAtZero": 100,
+  "scope": "Production wallet, line evaluation and automatic-invite UI with DOM/clock/rewarded adapters. No Android notification delivery or real ads are claimed."
+}
