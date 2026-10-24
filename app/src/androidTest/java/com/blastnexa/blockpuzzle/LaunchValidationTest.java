@@ -128,7 +128,7 @@ public class LaunchValidationTest {
   awaitForeground();touchId("dialogPrimary");
   waitFor("document.hasFocus()&&playing&&!document.getElementById('overlay').classList.contains('on')",5000);
   waitFor("document.getElementById('boardShell').getBoundingClientRect().width>innerHeight*.72",5000);
-  truth("(()=>{const b=document.getElementById('boardShell').getBoundingClientRect();return Math.abs(b.left+b.width/2-innerWidth/2)<2&&b.top>=0&&b.bottom<=innerHeight&&Math.abs(b.width-b.height)<2;})()");
+  truth("(()=>{const b=document.getElementById('boardShell').getBoundingClientRect(),a=document.querySelector('#game .bn-wide-game').getBoundingClientRect();return Math.abs(b.left+b.width/2-a.left-a.width/2)<2&&b.top>=0&&b.bottom<=innerHeight&&Math.abs(b.width-b.height)<2;})()");
   truth("window.BlastNexaBannerLayout().slot==='puzzle_sidepanel'");
   capture("01_centered_puzzle_before_touch");
   js("window.__nativeProof=LEVELS[0].proof[0];true");
