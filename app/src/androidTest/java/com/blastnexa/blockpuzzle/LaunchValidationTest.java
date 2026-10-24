@@ -34,6 +34,9 @@ public class LaunchValidationTest {
   // Continuously animated reels must not make accessibility wait ten seconds
   // for an idle screen before each physical touch.
   androidx.test.uiautomator.Configurator.getInstance().setWaitForIdleTimeout(250);
+  // Settle the emulator's display before cold-launching the landscape Activity.
+  // The app still performs a fresh WebView load, without a warm-up launch.
+  device.setOrientationLeft();device.waitForIdle(1000);
   Intent intent=new Intent(InstrumentationRegistry.getInstrumentation().getTargetContext(),OdysseyActivity.class);intent.putExtra("bn_qa_no_ads",true);
   scenario=ActivityScenario.launch(intent);bind();
   try{waitFor("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')",45000);}catch(AssertionError error){bootstrapFailed=true;try{writeEvidence("startup.txt",js("JSON.stringify({url:location.href,state:document.readyState,agent:navigator.userAgent,text:document.body?document.body.innerText.slice(0,1000):'',scripts:document.scripts.length})"));capture("startup_failure");}catch(Exception ignored){}throw error;}
@@ -50,7 +53,7 @@ public class LaunchValidationTest {
   long until=android.os.SystemClock.uptimeMillis()+30000;java.util.concurrent.atomic.AtomicBoolean changed=new java.util.concurrent.atomic.AtomicBoolean();
   while(android.os.SystemClock.uptimeMillis()<until){
    InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{try{scenario.onActivity(activity->{try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("game");field.setAccessible(true);changed.set(field.get(activity)!=null&&field.get(activity)!=previous);}catch(Exception error){throw new RuntimeException(error);}});}catch(IllegalStateException|NullPointerException transition){}});
-   if(changed.get()){awaitCurrentPage();return;}Thread.sleep(100);
+   if(changed.get()){awaitCurrentPage();awaitForeground();return;}Thread.sleep(100);
   }
   fail("Native Activity was not recreated");
  }
@@ -96,7 +99,7 @@ public class LaunchValidationTest {
  }
  private void recordFailure(String reason){
   try{String name=reason.replaceAll("[^a-zA-Z0-9_-]","_");if(name.length()>65)name=name.substring(0,65);
-   writeEvidence(name+".json",js("JSON.stringify({phase:typeof slotPhase==='undefined'?null:slotPhase,busy:typeof slotBusy==='undefined'?null:slotBusy,total:lifeData.slot.total,sinceAd:lifeData.slot.sinceAd,coins:lifeData.slot.wallet.balance,autoLeft:slotAutoLeft,autoTimer:slotAutoTimer,batchLeft:window.__qaBatchLeft,batchTrace:window.__qaBatchTrace,pending:bnPendingAd?{token:bnPendingAd.token,session:bnPendingAd.session}:null,session:gameSession,hidden:document.hidden,focused:document.hasFocus(),overlay:document.getElementById('overlay').className,spin:document.getElementById('slotSpinButton')?.outerHTML,errors:window.__qaErrors})"));
+   writeEvidence(name+".json",js("JSON.stringify({phase:typeof slotPhase==='undefined'?null:slotPhase,busy:typeof slotBusy==='undefined'?null:slotBusy,total:lifeData.slot.total,sinceAd:lifeData.slot.sinceAd,coins:lifeData.slot.wallet.balance,autoLeft:slotAutoLeft,autoTimer:slotAutoTimer,batchLeft:window.__qaBatchLeft,batchTrace:window.__qaBatchTrace,pending:bnPendingAd?{token:bnPendingAd.token,session:bnPendingAd.session}:null,session:gameSession,hidden:document.hidden,focused:document.hasFocus(),active:document.activeElement?.outerHTML.slice(0,600),overlay:document.getElementById('overlay').className,spin:document.getElementById('slotSpinButton')?.outerHTML,spinAncestors:(()=>{let n=document.getElementById('slotSpinButton'),a=[];for(;n;n=n.parentElement){const r=n.getBoundingClientRect(),s=getComputedStyle(n);a.push({tag:n.tagName,id:n.id,cls:n.className,rect:[r.x,r.y,r.width,r.height],hidden:n.getAttribute('aria-hidden'),inert:n.hasAttribute('inert'),display:s.display,visibility:s.visibility,overflow:s.overflow});}return a;})(),errors:window.__qaErrors})"));
    File folder=new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics");device.takeScreenshot(new File(folder,name+".png"));
   }catch(Exception ignored){}
  }

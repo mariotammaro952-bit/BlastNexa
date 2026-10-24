@@ -3,6 +3,7 @@ on:
   push:
     branches: [codex/landscape-slot-v24]
     paths-ignore:
+      - AGENTS.md
       - game/landscape-v24.css
       - app/src/androidTest/**
       - .github/workflows/v28-layout-validation.yml
