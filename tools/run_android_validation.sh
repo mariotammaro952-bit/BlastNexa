@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 mkdir -p android-evidence
-# Keep first-boot Google assistant/indexing jobs from competing with the game
-# on the 7 GB hosted runner. Notification UI, Play services and networking stay.
-for package in com.google.android.googlequicksearchbox com.google.android.as com.google.android.as.oss com.google.android.apps.wellbeing com.google.android.apps.messaging; do
-  timeout 15 adb shell pm disable-user --user 0 "$package" >> android-evidence/emulator-background-apps.txt 2>&1 || true
-done
+# Keep the system's assistant and navigation packages enabled. Changing their
+# roles during emulator boot can interrupt System UI before the game launches.
 (
   while true; do
     date -u +%FT%TZ
@@ -44,4 +41,4 @@ timeout 20 adb pull /sdcard/validation-screen.png android-evidence/screen-final.
 timeout 25 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/store android-evidence/store || true
 timeout 25 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/metrics android-evidence/metrics || true
 if [ "$instrument_status" -ne 0 ]; then exit "$instrument_status"; fi
-grep -Eq "^OK \\(${BN_QA_EXPECTED_TESTS:-20} tests\\)" android-evidence/instrumentation.txt
+grep -Eq "^OK \\(${BN_QA_EXPECTED_TESTS:-20} tests?\\)" android-evidence/instrumentation.txt
