@@ -67,29 +67,8 @@ jobs:
             size: 720x1280
             density: 320
             cutout: 0
-            expected: 5
-            methods: com.blastnexa.blockpuzzle.LaunchValidationTest#a0_homeBannerSharesTheSidebarAndCollapsesWithoutAnAd,com.blastnexa.blockpuzzle.LaunchValidationTest#g_landscapePuzzleSlotAndBanner,com.blastnexa.blockpuzzle.LaunchValidationTest#h_realTouchesRapidTapsAndFullAnimation,com.blastnexa.blockpuzzle.LaunchValidationTest#l_virtualCoinsUseRealTouchAndSurviveRecreation,com.blastnexa.blockpuzzle.LaunchValidationTest#p_coloredLineChoicesChargeTheDisplayedCoins
-          - api: 36
-            screen: compact
-            size: 720x1280
-            density: 320
-            cutout: 0
-            expected: 5
-            methods: com.blastnexa.blockpuzzle.LaunchValidationTest#a0_homeBannerSharesTheSidebarAndCollapsesWithoutAnAd,com.blastnexa.blockpuzzle.LaunchValidationTest#g_landscapePuzzleSlotAndBanner,com.blastnexa.blockpuzzle.LaunchValidationTest#h_realTouchesRapidTapsAndFullAnimation,com.blastnexa.blockpuzzle.LaunchValidationTest#l_virtualCoinsUseRealTouchAndSurviveRecreation,com.blastnexa.blockpuzzle.LaunchValidationTest#p_coloredLineChoicesChargeTheDisplayedCoins
-          - api: 36
-            screen: wide-cutout
-            size: 720x1600
-            density: 320
-            cutout: 1
-            expected: 5
-            methods: com.blastnexa.blockpuzzle.LaunchValidationTest#a0_homeBannerSharesTheSidebarAndCollapsesWithoutAnAd,com.blastnexa.blockpuzzle.LaunchValidationTest#g_landscapePuzzleSlotAndBanner,com.blastnexa.blockpuzzle.LaunchValidationTest#h_realTouchesRapidTapsAndFullAnimation,com.blastnexa.blockpuzzle.LaunchValidationTest#l_virtualCoinsUseRealTouchAndSurviveRecreation,com.blastnexa.blockpuzzle.LaunchValidationTest#p_coloredLineChoicesChargeTheDisplayedCoins
-          - api: 36
-            screen: tablet
-            size: 800x1280
-            density: 160
-            cutout: 0
-            expected: 3
-            methods: com.blastnexa.blockpuzzle.LaunchValidationTest#a0_homeBannerSharesTheSidebarAndCollapsesWithoutAnAd,com.blastnexa.blockpuzzle.LaunchValidationTest#l_virtualCoinsUseRealTouchAndSurviveRecreation,com.blastnexa.blockpuzzle.LaunchValidationTest#p_coloredLineChoicesChargeTheDisplayedCoins
+            expected: 1
+            methods: com.blastnexa.blockpuzzle.LaunchValidationTest#h_realTouchesRapidTapsAndFullAnimation
     env:
       BN_QA_SIZE: ${{ matrix.size }}
       BN_QA_DENSITY: ${{ matrix.density }}

@@ -283,21 +283,23 @@ public class LaunchValidationTest {
    slotFixture(machine,"full");assertPinnedSlot();truth("!reducedFX() && slotSpinDuration()===2600");
    // Only the collect window is extended for the accessibility controller;
    // reel timing, payouts and input handling remain the production behavior.
-   js("slotCelebrationDuration=()=>6000;window.__qaWatchSpin=true;window.__qaSpinStart=null;window.__qaSpinMid=null;window.__qaSpinLate=null;window.__touchTotal=lifeData.slot.total;window.__touchBalance=lifeData.balance;window.__touchY=document.getElementById('slotSpinButton').getBoundingClientRect().top;true");
+   js("window.__qaNaturalCelebrationDuration=slotCelebrationDuration;slotCelebrationDuration=()=>60000;window.__qaWatchSpin=true;window.__qaSpinStart=null;window.__qaSpinMid=null;window.__qaSpinLate=null;window.__touchTotal=lifeData.slot.total;window.__touchBalance=lifeData.balance;window.__touchY=document.getElementById('slotSpinButton').getBoundingClientRect().top;true");
    android.graphics.Rect bounds=touchBounds("GIRA");
    // Repeated presses at the same physical point must commit exactly one spin.
    long burst=android.os.SystemClock.uptimeMillis();for(int i=0;i<8;i++)rawTouch(bounds.centerX(),bounds.centerY());
    long elapsed=android.os.SystemClock.uptimeMillis()-burst;
    assertTrue("Touch burst exceeded the reel animation: "+elapsed+"ms",elapsed<2400);
-   // GIRA and INCASSA occupy the same pinned target. Reuse its observed UI
-   // bounds instead of querying a transient, freshly replaced WebView node.
-   waitFor("slotPhase==='celebrating'",15000);awaitTouchFrame();rawTouch(bounds.centerX(),bounds.centerY());Thread.sleep(100);waitFor("!slotBusy",5000);
+   // Observe the native collect control before tapping. A slow accessibility
+   // bridge must not outlive the collect window and accidentally buy a new spin.
+   waitFor("slotPhase==='celebrating'",15000);android.graphics.Rect collect=touchBounds("Incassa la vincita");
+   assertTrue("Collect target moved",Math.abs(collect.centerX()-bounds.centerX())<=2&&Math.abs(collect.centerY()-bounds.centerY())<=2);
+   rawTouch(collect.centerX(),collect.centerY());Thread.sleep(100);waitFor("!slotBusy",5000);
    truth("window.__qaLastTouch.label==='Incassa la vincita' && window.__qaLastTouch.phase==='celebrating'");
    truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.balance===window.__touchBalance+5");
    writeEvidence("touch-observed-"+machine+".json",js("JSON.stringify({start:window.__qaSpinStart,mid:window.__qaSpinMid,late:window.__qaSpinLate,last:window.__qaLastTouch,total:lifeData.slot.total,previous:window.__touchTotal,burstMs:"+elapsed+"})"));
    truth("window.__qaSpinStart.phase==='spinning' && window.__qaSpinStart.disabled && window.__qaSpinStart.scroll===0 && window.__qaSpinStart.total===window.__touchTotal+1");
    truth("window.__qaSpinMid.phase==='spinning' && window.__qaSpinMid.filled && window.__qaSpinLate.phase==='spinning' && window.__qaSpinLate.filled");assertPinnedSlot();assertFilledReels();
-   writeEvidence("touch-burst-"+machine+".json",js("JSON.stringify({machine:lifeData.slot.arcade.machine,previous:window.__touchTotal,total:lifeData.slot.total,start:window.__qaSpinStart,mid:window.__qaSpinMid,late:window.__qaSpinLate,burstMs:"+elapsed+"})"));js("window.__qaWatchSpin=false;true");
+   writeEvidence("touch-burst-"+machine+".json",js("JSON.stringify({machine:lifeData.slot.arcade.machine,previous:window.__touchTotal,total:lifeData.slot.total,start:window.__qaSpinStart,mid:window.__qaSpinMid,late:window.__qaSpinLate,burstMs:"+elapsed+"})"));js("window.__qaWatchSpin=false;slotCelebrationDuration=window.__qaNaturalCelebrationDuration;true");
    truth("Math.abs(document.getElementById('slotSpinButton').getBoundingClientRect().top-window.__touchY)<1");
    // A touch away from the centre also works inside the round control.
    bounds=touchBounds("GIRA");rawTouch(bounds.left+bounds.width()/3,bounds.top+bounds.height()*2/3);
