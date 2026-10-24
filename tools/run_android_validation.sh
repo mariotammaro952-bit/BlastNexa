@@ -28,7 +28,16 @@ timeout 20 adb shell dumpsys webviewupdate > android-evidence/webview-provider.t
 timeout 20 adb logcat -c
 adb logcat -v threadtime > android-evidence/logcat.txt 2>&1 &
 logcat_pid=$!
-trap 'kill "$logcat_pid" "$memory_pid" 2>/dev/null || true' EXIT
+# Preserve already captured evidence if a cloud emulator later disconnects.
+(
+  while true; do
+    timeout 10 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/store android-evidence/ >/dev/null 2>&1 || true
+    timeout 10 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/metrics android-evidence/ >/dev/null 2>&1 || true
+    sleep 15
+  done
+) &
+evidence_pid=$!
+trap 'kill "$evidence_pid" "$logcat_pid" "$memory_pid" 2>/dev/null || true' EXIT
 instrument_status=0
 instrument_args=()
 if [ -n "${BN_QA_TEST_METHODS:-}" ]; then instrument_args=(-e class "$BN_QA_TEST_METHODS"); fi

@@ -115,10 +115,14 @@ public class LaunchValidationTest {
   truth("unlocked===1&&lifeData.balance===20&&lifeData.slot.wallet.balance===1000");
  }
  @Test public void a01_centeredBoardAndStaticPagedScreensUsePhysicalTouches()throws Exception{
+  // Give the WebView real foreground focus through the same menu control a
+  // player uses before setting the authored adventure fixture.
+  touchId("startClassic");
   js("start('adventure',1);true");
   waitFor("document.getElementById('boardShell').getBoundingClientRect().width>innerHeight*.72",5000);
-  truth("(()=>{const b=document.getElementById('boardShell').getBoundingClientRect();return Math.abs(b.left+b.width/2-innerWidth/2)<innerWidth*.08&&b.top>=0&&b.bottom<=innerHeight&&Math.abs(b.width-b.height)<2;})()");
+  truth("(()=>{const b=document.getElementById('boardShell').getBoundingClientRect();return Math.abs(b.left+b.width/2-innerWidth/2)<2&&b.top>=0&&b.bottom<=innerHeight&&Math.abs(b.width-b.height)<2;})()");
   truth("window.BlastNexaBannerLayout().slot==='puzzle_sidepanel'");
+  capture("01_centered_puzzle_before_touch");
   js("window.__nativeProof=LEVELS[0].proof[0];true");
   int piece=Integer.parseInt(js("window.__nativeProof.slot"))+1,row=Integer.parseInt(js("window.__nativeProof.y"))+1,column=Integer.parseInt(js("window.__nativeProof.x"))+1;
   touch("Pezzo "+piece);touch("Riga "+row+", colonna "+column);waitFor("pieces[window.__nativeProof.slot]===null",5000);
@@ -304,7 +308,7 @@ public class LaunchValidationTest {
  private void assertPinnedSlot()throws Exception{
   truth("document.getElementById('app').scrollTop===0 && document.scrollingElement.scrollTop===0");
   truth("document.getElementById('universeScreen').getBoundingClientRect().top>=0");
-  truth("(()=>{let s=document.querySelector('.bn-slot-sidebar'),b=s.getBoundingClientRect();return s.scrollTop>0||Array.from(s.querySelectorAll('#slotAuto5,#slotAuto10')).every(e=>e.getBoundingClientRect().bottom<=b.bottom);})()");
+  truth("(()=>{const ids=['slotAuto5','slotAuto10','slotAutoStop'];return ids.map(id=>document.getElementById(id)).filter(Boolean).every(e=>{const r=e.getBoundingClientRect();return r.top>=0&&r.bottom<=innerHeight&&r.left>=0&&r.right<=innerWidth&&r.height>=24;});})()");
   truth("(()=>{let d=document.getElementById('gameBanner').getBoundingClientRect(),s=document.getElementById('slotBannerSeat').getBoundingClientRect();return d.bottom<=innerHeight+1&&Math.abs(d.top-s.top)<1&&Math.abs(d.bottom-s.bottom)<1;})()");
   truth("(()=>{let b=document.getElementById('slotSpinButton').getBoundingClientRect(),a=document.getElementById('gameBannerFrame').getBoundingClientRect();return b.width>=48&&b.height>=48&&b.left>=0&&b.right<=innerWidth&&b.bottom<=innerHeight&&b.left-a.right>=8;})()");
  }

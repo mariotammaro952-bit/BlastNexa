@@ -120,8 +120,8 @@ jobs:
             size: 800x1280
             density: 160
             cutout: 0
-            expected: 3
-            methods: com.blastnexa.blockpuzzle.LaunchValidationTest#a0_homeBannerSharesTheSidebarAndCollapsesWithoutAnAd,com.blastnexa.blockpuzzle.LaunchValidationTest#l_virtualCoinsUseRealTouchAndSurviveRecreation,com.blastnexa.blockpuzzle.LaunchValidationTest#p_coloredLineChoicesChargeTheDisplayedCoins
+            expected: 5
+            methods: com.blastnexa.blockpuzzle.LaunchValidationTest#a00_freshCampaignStartsOnceWithTwentyLivesAndOneThousandCoins,com.blastnexa.blockpuzzle.LaunchValidationTest#a01_centeredBoardAndStaticPagedScreensUsePhysicalTouches,com.blastnexa.blockpuzzle.LaunchValidationTest#a0_homeBannerSharesTheSidebarAndCollapsesWithoutAnAd,com.blastnexa.blockpuzzle.LaunchValidationTest#l_virtualCoinsUseRealTouchAndSurviveRecreation,com.blastnexa.blockpuzzle.LaunchValidationTest#p_coloredLineChoicesChargeTheDisplayedCoins
     env:
       BN_QA_SIZE: ${{ matrix.size }}
       BN_QA_DENSITY: ${{ matrix.density }}
@@ -161,7 +161,7 @@ jobs:
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: v28-android-api-${{ matrix.api }}-${{ matrix.screen }}
+          name: v29-android-api-${{ matrix.api }}-${{ matrix.screen }}
           path: android-evidence/
           retention-days: 7
 

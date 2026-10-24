@@ -36,12 +36,12 @@ function fitPlayAreas(){
  const wide=window.innerWidth>window.innerHeight,body=$id('game')?.querySelector('.bn-wide-game');
  if(wide&&body&&body.clientHeight){
   const under=body.querySelector('.under-board');
-  const size=Math.floor(Math.min(body.clientHeight-(under?.getBoundingClientRect().height||18)-7,body.clientWidth-326));
+  const size=Math.floor(Math.min(body.clientHeight-(under?.getBoundingClientRect().height||18)-7,body.clientWidth-316));
   if(size>0&&body.style.getPropertyValue('--bn-board-size')!==size+'px')body.style.setProperty('--bn-board-size',size+'px');
  }
  const words=$id('wordsScroll');
  if(wide&&words&&words.clientHeight){
-  const size=Math.floor(Math.min(words.clientHeight-6,words.clientWidth-326));
+  const size=Math.floor(Math.min(words.clientHeight-6,words.clientWidth-316));
   if(size>0&&words.style.getPropertyValue('--bn-word-size')!==size+'px')words.style.setProperty('--bn-word-size',size+'px');
  }
 }
@@ -125,13 +125,20 @@ function composeSlot(){
  }
  const primaryAnchor=sidebar.querySelector('.bn-world-feature')||sidebar.querySelector('.bn-world-xp');
  if(wallet)sidebar.insertBefore(wallet,primaryAnchor);
- if(coins)deck.append(coins);
+ const walletControls=document.createElement('div');walletControls.className='bn-slot-wallet-controls';
+ if(coins)walletControls.append(coins);
+ if(auto)walletControls.append(auto);
+ deck.append(walletControls);
  const adSeat=document.createElement('div');adSeat.id='slotBannerSeat';adSeat.className='bn-slot-ad-seat';adSeat.setAttribute('aria-hidden','true');deck.append(adSeat);
  if(result){result.querySelector('#slotCollectButton')?.remove();deck.append(result);}else{const notice=document.createElement('div');notice.className='bn-world-result';notice.setAttribute('role','status');notice.textContent='MONETE + VITE';deck.append(notice);}
- if(auto)sidebar.insertBefore(auto,primaryAnchor);if(controls)deck.append(controls);
+ if(controls)deck.append(controls);
  for(const [id,label,text] of [['slotAuto5','Avvia 5 giri automatici','AUTO 5'],['slotAuto10','Avvia 10 giri automatici','AUTO 10'],['slotAutoStop','Ferma i giri automatici','STOP AUTO']]){const node=auto?.querySelector('#'+id);if(node){node.setAttribute('aria-label',label);node.textContent=text;}}
  hero?.remove();layout.prepend(panorama,sidebar);layout.append(character,deck);
  for(const node of [...layout.children])if(node!==panorama&&node!==sidebar&&node!==cabinet&&node!==character&&node!==deck&&!node.classList.contains('bn-slot-fx-layer'))sidebar.append(node);
+ const primary=document.createElement('div');primary.className='bn-slot-primary';
+ const details=document.createElement('div');details.className='bn-slot-details';details.setAttribute('aria-label','Dettagli e audio della slot');
+ for(const node of [...sidebar.children])(['bn-world-brand','bn-world-machines','bn-arcade-tabs','bn-world-wallet'].some(cls=>node.classList.contains(cls))?primary:details).append(node);
+ sidebar.append(primary,details);
 }
 function installLayout(){
  installModal();

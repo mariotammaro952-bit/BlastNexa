@@ -2,7 +2,7 @@
 (()=>{
 'use strict';
 const id=n=>document.getElementById(n),states=new Map();
-const selectors=['#menu>.menu-buttons','.bn-home-sidebar','.bn-wide-info','#wordClues','#wordControls','#universeBody','.bn-slot-sidebar','.collect-scroll','.map-scroll','.settings-scroll','#adventureMap','#trophiesScreen','#mosaicGallery','#themeStudio','.dialog'];
+const selectors=['#menu>.menu-buttons','.bn-home-sidebar','.bn-wide-info','#wordClues','#wordControls','#universeBody','.bn-slot-details','.collect-scroll','.map-scroll','.settings-scroll','#adventureMap','#trophiesScreen','#mosaicGallery','#themeStudio','.dialog'];
 let queued=false,pagerSerial=0;
 function arrange(){
  const body=document.querySelector('#game .bn-wide-game'),info=body?.querySelector('.bn-wide-info'),right=body?.querySelector('.bn-wide-right'),actions=right?.querySelector('.bn-wide-actions');
@@ -74,7 +74,7 @@ function init(){
  universeNavigation();
  new MutationObserver(records=>{if(records.some(m=>{
   const n=m.target;if(n.nodeType!==1||n.closest('.bn-static-pager'))return false;
-  return ['app','menu','game','universeScreen','universeBody','wordsScreen','wordsScroll','adventureMap','worlds','trophiesScreen','mosaicGallery','themeStudio','settingsScreen','overlay'].includes(n.id);
+  return ['app','menu','game','universeScreen','universeBody','wordsScreen','wordsScroll','wordClues','wordControls','wordLevelGrid','adventureMap','worlds','trophiesScreen','mosaicGallery','themeStudio','settingsScreen','overlay'].includes(n.id);
  }))schedule();}).observe(id('app'),{childList:true,subtree:true});
  const visibility=new MutationObserver(schedule);for(const n of document.querySelectorAll('#app>section,#overlay'))visibility.observe(n,{attributes:true,attributeFilter:['style','class']});
  const size=new ResizeObserver(schedule);for(const n of document.querySelectorAll(selectors.join(',')))size.observe(n);
