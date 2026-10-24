@@ -1,7 +1,13 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
-const {createRuntime}=require('./runtime.cjs');
+const {createRuntime:runtimeBase}=require('./runtime.cjs');
+// Legacy-normalization fixtures represent an already migrated v29 profile.
+// fresh_start_v29.cjs separately verifies the intentional upgrade reset.
+function createRuntime(file,options={}){
+ if(options.initialStorage){const v=options.initialStorage,stored=new Map(v instanceof Map?v:Object.entries(v));stored.set('blastnexa_fresh_campaign_v29','true');options={...options,initialStorage:stored};}
+ return runtimeBase(file,options);
+}
 const FILE='game/index.html',tests=[];
-const fresh=()=>{const r=createRuntime(FILE);r.run("openUniverse('slot')");return r};
+const fresh=()=>{const r=createRuntime(FILE);r.run("lifeData.balance=5;lifeData.slot.wallet.balance=100;saveLives();openUniverse('slot')");return r};
 function test(name,fn){fn();tests.push(name);console.log('PASS',name)}
 function settle(r){r.clock.advance(6000);assert.equal(r.run('slotBusy'),false);}
 function snapshot(r,code){return JSON.parse(r.run('JSON.stringify('+code+')'));}
@@ -70,7 +76,7 @@ test('Mode and page switches are blocked during a spin, and result presentation 
 });
 test('Legacy slot statistics, lives and in-progress crosswords migrate without replaying a prize',()=>{
  const fixture=JSON.parse(fs.readFileSync('qa/fixtures/legacy-v18.json')),old={stored:fixture.storage},word=fixture.word;
- const r=createRuntime(FILE,{initialStorage:old.stored});assert.equal(r.run('lifeData.balance'),10);assert.equal(r.run('lifeData.slot.total'),1);assert.equal(r.run('lifeData.slot.archive.lives'),5);assert.equal(r.run('lifeData.slot.last.prize'),5);assert.equal(r.run('lifeData.slot.arcade.spins'),0);assert.deepEqual(snapshot(r,'wordData.active'),word);r.run("openUniverse('slot')");assert.equal(r.run('lifeData.balance'),10);
+ const r=createRuntime(FILE,{initialStorage:old.stored});assert.equal(r.run('lifeData.balance'),20);assert.equal(r.run('lifeData.slot.total'),1);assert.equal(r.run('lifeData.slot.archive.lives'),5);assert.equal(r.run('lifeData.slot.last.prize'),5);assert.equal(r.run('lifeData.slot.arcade.spins'),0);assert.deepEqual(snapshot(r,'wordData.active'),word);r.run("openUniverse('slot')");assert.equal(r.run('lifeData.balance'),20);
 });
 test('New result matrices and all history entries survive a saved-session round trip',()=>{
  const r=fresh();for(const m of ['temple','crystal','forge']){r.run(`setArcadeMachine('${m}')`);for(let i=0;i<3;i++){assert.equal(r.run('spinLifeSlot()'),true);settle(r);}}

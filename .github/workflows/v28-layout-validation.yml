@@ -1,12 +1,5 @@
 name: BlastNexa v28 layout and paired-reward checks
 on:
-  push:
-    branches: [codex/landscape-slot-v24]
-    paths:
-      - game/landscape-v24.css
-      - app/src/androidTest/**
-      - .github/workflows/v28-layout-validation.yml
-      - .github/workflows/v24-landscape.yml
   workflow_dispatch:
 permissions:
   contents: read

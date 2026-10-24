@@ -7,6 +7,9 @@ const read=(r,s)=>JSON.parse(r.run('JSON.stringify('+s+')'));
 const settle=r=>r.clock.advance(6000);
 function fresh(machine='temple',initialStorage=null){
  const r=createRuntime(file,{initialStorage});
+ // Fixed opening funds isolate payout accounting from the separately tested
+ // v29 starter gift and one-time campaign migration.
+ if(!initialStorage)r.run('lifeData.balance=5;lifeData.slot.wallet.balance=100;saveLives()');
  r.run(`playerSettings.effects='lite';openUniverse('slot');setArcadeMachine(${JSON.stringify(machine)})`);return r;
 }
 function test(name,fn){fn();tests.push(name);console.log('PASS',name);}

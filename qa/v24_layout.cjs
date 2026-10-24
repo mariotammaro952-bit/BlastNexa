@@ -5,9 +5,12 @@ const manifest=read('app/src/main/AndroidManifest.xml'),gradle=read('app/build.g
 const html=read('app/src/main/assets/index.html'),css=read('app/src/main/assets/landscape-v24.css');
 const js=read('app/src/main/assets/landscape-v24.js');
 assert.match(manifest,/screenOrientation="landscape"/);
-assert.match(gradle,/versionCode\s*=\s*2801/);
+assert.match(gradle,/versionCode\s*=\s*2901/);
 assert.match(html,/href="landscape-v24.css"/);
 assert.match(html,/src="landscape-v24.js"/);
+assert.match(html,/src="static-v29.js"/);
+assert.equal(read('game/static-v29.js'),read('app/src/main/assets/static-v29.js'));
+assert.equal(read('game/static-v29.css'),read('app/src/main/assets/static-v29.css'));
 assert.match(css,/#game\s+\.bn-wide-game/);
 assert.match(css,/#slotTemple\.bn-slot-odyssey/);
 assert.match(css,/#app\s+\.game-banner-dock/);

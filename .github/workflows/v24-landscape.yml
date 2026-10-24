@@ -1,11 +1,9 @@
-name: BlastNexa v28 coins, lives and home validation
+name: BlastNexa v29 centered boards, static pages and fresh campaign validation
 on:
   push:
     branches: [codex/landscape-slot-v24]
     paths-ignore:
       - AGENTS.md
-      - game/landscape-v24.css
-      - app/src/androidTest/**
       - .github/workflows/v28-layout-validation.yml
       - .github/workflows/v24-landscape.yml
       - docs/**
@@ -33,7 +31,7 @@ jobs:
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git rm .github/reviewed-source-v28.json
             git add game/index.html app/src/main/assets/index.html
-            git commit -m '[skip ci] Materialize reviewed v28 paired rewards source'
+            git commit -m '[skip ci] Materialize reviewed v29 fresh campaign and static pages source'
             git push origin HEAD:"$GITHUB_REF_NAME"
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -62,6 +60,7 @@ jobs:
           node qa/v24_layout.cjs
       - name: Validate game regressions
         run: |
+          node qa/fresh_start_v29.cjs
           node qa/coins.cjs
           node qa/slot_economy_v28.cjs
           node qa/all_levels.cjs game/index.html
@@ -81,7 +80,7 @@ jobs:
           cp -a "$ANDROID_HOME/build-tools/36.0.0/lib64/." signing-tools/lib64/
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: BlastNexa-v28-coins-lives-build
+          name: BlastNexa-v29-static-start-build
           path: |
             app/build/outputs/apk/
             app/build/outputs/bundle/
@@ -103,19 +102,19 @@ jobs:
             size: 720x1280
             density: 320
             cutout: 0
-            expected: 20
+            expected: 22
           - api: 36
             screen: compact
             size: 720x1280
             density: 320
             cutout: 0
-            expected: 20
+            expected: 22
           - api: 36
             screen: wide-cutout
             size: 720x1600
             density: 320
             cutout: 1
-            expected: 20
+            expected: 22
           - api: 36
             screen: tablet
             size: 800x1280
@@ -139,7 +138,7 @@ jobs:
           java-version: '17'
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
-          name: BlastNexa-v28-coins-lives-build
+          name: BlastNexa-v29-static-start-build
           path: imported-build
       - name: Stage emulator APKs and enable acceleration
         run: |

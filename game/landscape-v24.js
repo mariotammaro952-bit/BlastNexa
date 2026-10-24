@@ -12,7 +12,6 @@ function rearrangeMenu(){
  menu.prepend(side);
 }
 function pinCanvas(){
- if(window.innerWidth<=window.innerHeight)return;
  // Compatibility fallback for WebViews predating overflow:clip. Inner panels
  // retain their own scroll positions; only the fixed outer canvas is pinned.
  for(const node of [document.scrollingElement,document.body,$id('app')])if(node&&(node.scrollTop||node.scrollLeft)){node.scrollTop=0;node.scrollLeft=0;}
@@ -37,12 +36,12 @@ function fitPlayAreas(){
  const wide=window.innerWidth>window.innerHeight,body=$id('game')?.querySelector('.bn-wide-game');
  if(wide&&body&&body.clientHeight){
   const under=body.querySelector('.under-board');
-  const size=Math.floor(Math.min(body.clientHeight-(under?.getBoundingClientRect().height||24)-7,body.clientWidth*.52));
+  const size=Math.floor(Math.min(body.clientHeight-(under?.getBoundingClientRect().height||18)-7,body.clientWidth-326));
   if(size>0&&body.style.getPropertyValue('--bn-board-size')!==size+'px')body.style.setProperty('--bn-board-size',size+'px');
  }
  const words=$id('wordsScroll');
  if(wide&&words&&words.clientHeight){
-  const size=Math.floor(Math.min(words.clientHeight-6,words.clientWidth*.48));
+  const size=Math.floor(Math.min(words.clientHeight-6,words.clientWidth-326));
   if(size>0&&words.style.getPropertyValue('--bn-word-size')!==size+'px')words.style.setProperty('--bn-word-size',size+'px');
  }
 }
@@ -184,9 +183,9 @@ function installBanner(){
   const inMenu=$id('menu')?.style.display!=='none';
   const pending=typeof bnPendingAd!=='undefined'&&!!bnPendingAd;
   const valid=n=>Number.isFinite(n)?Math.round(n*10)/10:0;
-  const homeAvailable=!inMenu||typeof bnBannerState==='undefined'||bnBannerState!=='unavailable';
+  const homeAvailable=(!inMenu&&!inGame&&!inWords)||typeof bnBannerState==='undefined'||bnBannerState!=='unavailable';
   const fits=r.left>=-1&&r.top>=0&&r.right<=window.innerWidth+1&&r.bottom<=window.innerHeight+1;
-  return {slot:inSlot&&$id('slotBannerSeat')?'slot_control_deck':inMenu?'home_sidebar':'landscape_bottom',context:inSlot?'slot':inWords?'words':inGame?'blocks':inMenu?'home':'other',session:typeof gameSession==='number'?gameSession:0,visible:homeAvailable&&fits&&!document.hidden&&!$id('overlay')?.classList.contains('on')&&!pending&&width>=200,x:valid(r.left),y:valid(r.top),width,height:50,coordinateSpace:'css-pixels',maxHeight:50};
+  return {slot:inSlot&&$id('slotBannerSeat')?'slot_control_deck':inMenu?'home_sidebar':inGame?'puzzle_sidepanel':inWords?'words_sidepanel':'landscape_bottom',context:inSlot?'slot':inWords?'words':inGame?'blocks':inMenu?'home':'other',session:typeof gameSession==='number'?gameSession:0,visible:homeAvailable&&fits&&!document.hidden&&!$id('overlay')?.classList.contains('on')&&!pending&&width>=200,x:valid(r.left),y:valid(r.top),width,height:50,coordinateSpace:'css-pixels',maxHeight:50};
  };
  syncGameBanner=function(force=false){
   const dock=$id('gameBanner'),frame=$id('gameBannerFrame'),app=$id('app');if(!dock||!frame||!app)return;
@@ -198,7 +197,7 @@ function installBanner(){
   app.dataset.bannerContext=inSlot?'slot':inWords?'words':$id('game')?.style.display==='flex'?'blocks':inMenu?'home':'other';
   app.dataset.bannerState=typeof bnBannerState==='undefined'?'preview':bnBannerState;
   if(!inSlot)delete app.dataset.slotWide;
-  const seat=inSlot?$id('slotBannerSeat'):inMenu?$id('menuBannerSeat'):null;
+  const seat=inSlot?$id('slotBannerSeat'):inMenu?$id('menuBannerSeat'):inWords?$id('wordsBannerSeat'):$id('game')?.style.display==='flex'?$id('puzzleBannerSeat'):null;
   if(seat){const r=seat.getBoundingClientRect(),parent=app.getBoundingClientRect();Object.assign(dock.style,{top:(r.top-parent.top)+'px',left:(r.left-parent.left)+'px',right:'auto',bottom:'auto',width:r.width+'px',height:r.height+'px'});}
   else for(const prop of ['top','left','right','bottom','width','height'])dock.style.removeProperty(prop);
   const layout=gameBannerLayout();frame.style.visibility=layout.visible?'visible':'hidden';
