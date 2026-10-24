@@ -107,7 +107,7 @@ public class LaunchValidationTest {
   truth("parseFloat(getComputedStyle(document.getElementById('app')).paddingBottom)<20");
   truth("(()=>{const ad=document.getElementById('gameBannerFrame').getBoundingClientRect(),cards=document.querySelector('#menu>.menu-buttons').getBoundingClientRect();return ad.width>=200&&ad.height===50&&ad.right<=cards.left&&ad.top>=0&&ad.bottom<=innerHeight;})()");
   truth("window.BlastNexaBannerLayout().visible&&window.BlastNexaBannerLayout().slot==='home_sidebar'");
-  truth("['openWords','openLifeSlot'].every(id=>{const card=document.getElementById(id).getBoundingClientRect();return [...document.querySelectorAll('#'+id+' .bn-words-feature-copy>strong,#'+id+' .bn-words-feature-copy>small')].every(e=>{const r=e.getBoundingClientRect();return r.top>=card.top&&r.bottom<=card.bottom&&e.scrollWidth<=e.clientWidth+1;});})");
+  truth("['openWords','openLifeSlot'].every(id=>{const card=document.getElementById(id).getBoundingClientRect();return [...document.querySelectorAll('#'+id+' .bn-words-feature-copy>strong,#'+id+' .bn-words-feature-copy>small:first-child,#'+id+' #slotMenuLives')].every(e=>{const r=e.getBoundingClientRect();return r.top>=card.top&&r.bottom<=card.bottom&&e.scrollWidth<=e.clientWidth+1;});})");
   truth("(()=>{const cards=document.querySelector('#menu>.menu-buttons');return cards.scrollHeight<=cards.clientHeight+1;})()");
   capture("00_home_embedded_banner");
   js("window.BlastNexaBannerStatus({session:gameSession,status:'unavailable'});true");
