@@ -6,6 +6,8 @@ on:
       - AGENTS.md
       - .github/workflows/v28-layout-validation.yml
       - .github/workflows/v24-landscape.yml
+      - .github/workflows/v29-startup-validation.yml
+      - tools/run_android_validation_settled.sh
       - docs/**
       - qa/*result.json
   workflow_dispatch:
@@ -157,7 +159,7 @@ jobs:
           disable-animations: false
           emulator-boot-timeout: 600
           emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
-          script: bash tools/run_android_validation.sh
+          script: bash tools/run_android_validation_settled.sh
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
