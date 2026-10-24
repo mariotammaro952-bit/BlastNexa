@@ -107,6 +107,8 @@ public class LaunchValidationTest {
   truth("parseFloat(getComputedStyle(document.getElementById('app')).paddingBottom)<20");
   truth("(()=>{const ad=document.getElementById('gameBannerFrame').getBoundingClientRect(),cards=document.querySelector('#menu>.menu-buttons').getBoundingClientRect();return ad.width>=200&&ad.height===50&&ad.right<=cards.left&&ad.top>=0&&ad.bottom<=innerHeight;})()");
   truth("window.BlastNexaBannerLayout().visible&&window.BlastNexaBannerLayout().slot==='home_sidebar'");
+  truth("['openWords','openLifeSlot'].every(id=>{const card=document.getElementById(id).getBoundingClientRect();return [...document.querySelectorAll('#'+id+' .bn-words-feature-copy>strong,#'+id+' .bn-words-feature-copy>small')].every(e=>{const r=e.getBoundingClientRect();return r.top>=card.top&&r.bottom<=card.bottom&&e.scrollWidth<=e.clientWidth+1;});})");
+  truth("(()=>{const cards=document.querySelector('#menu>.menu-buttons');return cards.scrollHeight<=cards.clientHeight+1;})()");
   capture("00_home_embedded_banner");
   js("window.BlastNexaBannerStatus({session:gameSession,status:'unavailable'});true");
   truth("document.getElementById('menuBannerSeat').getBoundingClientRect().height===0&&!window.BlastNexaBannerLayout().visible");
@@ -350,8 +352,9 @@ public class LaunchValidationTest {
   touch("GIRA");truth("lifeData.slot.total===window.__coinsStart+2&&document.getElementById('overlay').classList.contains('on')&&!window.BlastNexaBannerLayout().visible");
   touchId("dialogPrimary");waitFor("!bnPendingAd",15000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
   touchId("dialogSecondary");js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
-  js("openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.anchor=Date.now();lifeData.slot.arcade.freeSpins=1;slotRandomInt=()=>0;playerSettings.effects='lite';renderLifeSlot(document.getElementById('universeBody'));true");
-  touch("GIRA NELLA CAVERNA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===25&&lifeData.slot.wallet.spent===2&&lifeData.slot.last.coinCost===0&&lifeData.slot.last.coinsCredited===25");
+  js("openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{machine:'crystal',lineCount:1,freeLineCount:1,freeSpins:1,bonus:null,revealed:null,crystalJourney:{id:'crystal:'+lifeData.slot.total,awarded:1,played:0,lives:0,coins:0,dismissed:false}});slotRandomInt=()=>0;playerSettings.effects='lite';renderLifeSlot(document.getElementById('universeBody'));true");
+  waitFor("document.getElementById('slotSpinButton')?.getAttribute('aria-label')==='GIRA NELLA CAVERNA'&&!document.getElementById('slotSpinButton').disabled",5000);
+  touchId("slotSpinButton");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===25&&lifeData.slot.wallet.spent===2&&lifeData.slot.last.coinCost===0&&lifeData.slot.last.coinsCredited===25");
   assertPinnedSlot();capture("14_coins_and_embedded_banner");
  }
  @Test public void m_neonAdaptiveLauncherIcon()throws Exception{

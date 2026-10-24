@@ -2,6 +2,13 @@ name: BlastNexa v28 coins, lives and home validation
 on:
   push:
     branches: [codex/landscape-slot-v24]
+    paths-ignore:
+      - game/landscape-v24.css
+      - app/src/androidTest/**
+      - .github/workflows/v28-layout-validation.yml
+      - .github/workflows/v24-landscape.yml
+      - docs/**
+      - qa/*result.json
   workflow_dispatch:
 permissions:
   contents: read
