@@ -8,6 +8,7 @@ on:
       - .github/workflows/v24-landscape.yml
       - .github/workflows/v29-startup-validation.yml
       - tools/run_android_validation_settled.sh
+      - app/src/androidTest/**
       - docs/**
       - qa/*result.json
   workflow_dispatch:

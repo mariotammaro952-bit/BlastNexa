@@ -38,12 +38,17 @@ public class LaunchValidationTest {
   // The app still performs a fresh WebView load, without a warm-up launch.
   device.setOrientationLeft();device.waitForIdle(1000);
   Intent intent=new Intent(InstrumentationRegistry.getInstrumentation().getTargetContext(),OdysseyActivity.class);intent.putExtra("bn_qa_no_ads",true);
+  java.util.concurrent.atomic.AtomicBoolean startupPending=new java.util.concurrent.atomic.AtomicBoolean(true);
+  Thread startupObserver=new Thread(()->{try{Thread.sleep(3000);if(startupPending.get()){StringBuilder trace=new StringBuilder("Cold-start main thread:\n");for(StackTraceElement frame:android.os.Looper.getMainLooper().getThread().getStackTrace())trace.append(frame).append('\n');android.util.Log.w("BlastNexa-QA",trace.toString());}}catch(InterruptedException ignored){}},"BN-startup-observer");startupObserver.setDaemon(true);startupObserver.start();
   scenario=ActivityScenario.launch(intent);bind();
-  acknowledgeFullscreenEducation();
-  try{waitFor("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')",45000);}catch(AssertionError error){bootstrapFailed=true;try{writeEvidence("startup.txt",js("JSON.stringify({url:location.href,state:document.readyState,agent:navigator.userAgent,text:document.body?document.body.innerText.slice(0,1000):'',scripts:document.scripts.length})"));capture("startup_failure");}catch(Exception ignored){}throw error;}
+  // On newer Android, the full-screen education sheet may block readiness.
+  // Older WebViews must finish initialization before accessibility queries.
+  if(android.os.Build.VERSION.SDK_INT>=34)acknowledgeFullscreenEducation();
+  try{waitFor("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')",45000);}catch(AssertionError error){bootstrapFailed=true;try{writeEvidence("startup.txt",js("JSON.stringify({url:location.href,state:document.readyState,agent:navigator.userAgent,text:document.body?document.body.innerText.slice(0,1000):'',scripts:document.scripts.length})"));capture("startup_failure");}catch(Exception ignored){}throw error;}finally{startupPending.set(false);}
   // Android shows its own one-time full-screen education above the WebView.
   // Acknowledge the actual system UI before lifecycle/back/touch assertions.
-  acknowledgeFullscreenEducation();
+  androidx.test.uiautomator.UiObject2 education=device.wait(Until.findObject(By.text("Got it")),3000);
+  if(education!=null){education.click();assertTrue(device.wait(Until.gone(By.text("Got it")),5000));}
   js("window.__qaErrors=[];window.__qaRealClicks=0;window.__qaWatchSpin=false;window.__qaFilled=()=>document.querySelectorAll('#slotReels>.bn-temple-reel').length===5&&[...document.querySelectorAll('#slotReels>.bn-temple-reel')].every(reel=>{const r=reel.getBoundingClientRect();return [0,1,2].every(row=>document.elementFromPoint(r.left+r.width/2,r.top+r.height*(row+.5)/3)?.closest('.bn-temple-cell'));});document.addEventListener('click',e=>{window.__qaRealClicks++;const b=e.target.closest?.('button');window.__qaLastTouch={label:b?.getAttribute('aria-label')||b?.textContent,phase:typeof slotPhase!=='undefined'?slotPhase:null};if(b?.id==='slotAutoStop')window.__qaStopTotal=lifeData.slot.total;if(window.__qaWatchSpin&&b?.id==='slotSpinButton'&&b.getAttribute('aria-label')==='GIRA'){setTimeout(()=>window.__qaSpinStart={phase:slotPhase,disabled:document.getElementById('slotSpinButton').disabled,scroll:document.getElementById('app').scrollTop,total:lifeData.slot.total},0);setTimeout(()=>window.__qaSpinMid={phase:slotPhase,filled:window.__qaFilled()},400);setTimeout(()=>window.__qaSpinLate={phase:slotPhase,filled:window.__qaFilled()},1700);}},true);window.addEventListener('error',e=>window.__qaErrors.push(e.message));localStorage.setItem('blastnexa_help_seen','true');muted=true;displayMenu();true");
  }
  private void acknowledgeFullscreenEducation()throws Exception{
@@ -83,7 +88,7 @@ public class LaunchValidationTest {
    }catch(Exception error){throw new RuntimeException(error);}}));
    // The OS education sheet can appear while the first page is loading. It
    // must be acknowledged before waiting for the Activity's ready state.
-   if(!loaded.get())acknowledgeFullscreenEducation();
+   if(!loaded.get()&&android.os.Build.VERSION.SDK_INT>=34)acknowledgeFullscreenEducation();
    WebView target=current.get();long now=android.os.SystemClock.uptimeMillis();
    if(loaded.get()){
     if(target==readyWeb){web=target;return;}
@@ -106,7 +111,7 @@ public class LaunchValidationTest {
  }
  private void recordFailure(String reason){
   try{String name=reason.replaceAll("[^a-zA-Z0-9_-]","_");if(name.length()>65)name=name.substring(0,65);
-   writeEvidence(name+".json",js("JSON.stringify({phase:typeof slotPhase==='undefined'?null:slotPhase,busy:typeof slotBusy==='undefined'?null:slotBusy,total:lifeData.slot.total,sinceAd:lifeData.slot.sinceAd,coins:lifeData.slot.wallet.balance,autoLeft:slotAutoLeft,autoTimer:slotAutoTimer,batchLeft:window.__qaBatchLeft,batchTrace:window.__qaBatchTrace,pending:bnPendingAd?{token:bnPendingAd.token,session:bnPendingAd.session}:null,session:gameSession,hidden:document.hidden,focused:document.hasFocus(),active:document.activeElement?.outerHTML.slice(0,600),overlay:document.getElementById('overlay').className,spin:document.getElementById('slotSpinButton')?.outerHTML,spinAncestors:(()=>{let n=document.getElementById('slotSpinButton'),a=[];for(;n;n=n.parentElement){const r=n.getBoundingClientRect(),s=getComputedStyle(n);a.push({tag:n.tagName,id:n.id,cls:n.className,rect:[r.x,r.y,r.width,r.height],hidden:n.getAttribute('aria-hidden'),inert:n.hasAttribute('inert'),display:s.display,visibility:s.visibility,overflow:s.overflow});}return a;})(),errors:window.__qaErrors})"));
+   writeEvidence(name+".json",js("JSON.stringify({phase:typeof slotPhase==='undefined'?null:slotPhase,busy:typeof slotBusy==='undefined'?null:slotBusy,total:lifeData.slot.total,sinceAd:lifeData.slot.sinceAd,coins:lifeData.slot.wallet.balance,autoLeft:slotAutoLeft,autoTimer:slotAutoTimer,batchLeft:window.__qaBatchLeft,batchTrace:window.__qaBatchTrace,pending:bnPendingAd?{token:bnPendingAd.token,session:bnPendingAd.session}:null,session:gameSession,hidden:document.hidden,focused:document.hasFocus(),active:document.activeElement?.outerHTML.slice(0,600),overlay:document.getElementById('overlay').className,spin:document.getElementById('slotSpinButton')?.outerHTML,spinAncestors:(()=>{let n=document.getElementById('slotSpinButton'),a=[];for(;n;n=n.parentElement){const r=n.getBoundingClientRect(),s=getComputedStyle(n);a.push({tag:n.tagName,id:n.id,cls:n.className,rect:[r.x,r.y,r.width,r.height],hidden:n.getAttribute('aria-hidden'),inert:n.hasAttribute('inert'),display:s.display,visibility:s.visibility,overflow:s.overflow});}return a;})(),bannerLayout:window.BlastNexaBannerLayout?.(),bannerGeometry:['gameBanner','gameBannerFrame','puzzleBannerSeat','wordsBannerSeat','wordsScreen','wordsScroll'].map(id=>{const n=document.getElementById(id);if(!n)return null;const r=n.getBoundingClientRect(),s=getComputedStyle(n);return{id,rect:[r.x,r.y,r.width,r.height],display:s.display,visibility:s.visibility,basis:s.flexBasis,fits:n.dataset.fits};}),errors:window.__qaErrors})"));
    File folder=new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics");device.takeScreenshot(new File(folder,name+".png"));
   }catch(Exception ignored){}
  }
@@ -258,7 +263,7 @@ public class LaunchValidationTest {
   truth("!lifeData.slot.arcade.bonus && !!document.getElementById('slotReels')");
  }
  private void assertSideBanner(String seat)throws Exception{
-  truth("(()=>{const r=document.getElementById('"+seat+"').getBoundingClientRect(),v=window.BlastNexaBannerLayout().visible;return r.width>=200?v&&r.height===59:!v&&r.height===0&&getComputedStyle(document.getElementById('gameBanner')).visibility==='hidden';})()");
+  waitFor("(()=>{const r=document.getElementById('"+seat+"').getBoundingClientRect(),layout=window.BlastNexaBannerLayout();return r.width>0&&layout.slot==='"+(seat.equals("wordsBannerSeat")?"words_sidepanel":"puzzle_sidepanel")+"'&&(r.width>=200?layout.visible&&r.height===59:!layout.visible&&r.height===0&&getComputedStyle(document.getElementById('gameBanner')).visibility==='hidden');})()",5000);
  }
  @Test public void z_rendererRecoveryReopensSavedGame()throws Exception{
   js("playerProfile.name='Recupero Android';savePlayer();true");
