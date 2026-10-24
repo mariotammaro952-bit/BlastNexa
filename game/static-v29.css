@@ -20,11 +20,17 @@ html,body,#app{overscroll-behavior:none;touch-action:none}
 #game .bn-wide-actions{height:100%;flex:1;min-height:0;gap:5px}
 #game .power-tools{flex:0 0 28px;min-height:28px;gap:4px}
 #game .power-tool{font-size:8px;padding:3px;min-height:28px}
+#app #game .power-tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+#app #game .power-tool{min-width:0;width:100%;font-size:6.5px;gap:1px;padding:2px 1px;white-space:nowrap;overflow:hidden}
+#app #game .power-tool>span{font-size:9px}
+#app #game .power-tool>b{font-size:7px}
 #game .tray{display:grid;grid-template-columns:1fr;grid-template-rows:repeat(3,minmax(0,1fr));flex:1;min-height:0;gap:5px}
 #game .piece-slot{height:100%;min-height:0;max-height:none;padding:3px;aspect-ratio:auto}
 #game .instruction{font-size:7px;line-height:1.1;flex:0 0 auto;margin:0;text-align:center}
 .bn-side-ad-seat{height:59px;min-height:59px;flex:0 0 59px;width:100%;pointer-events:none}
 #app[data-banner-state="unavailable"] .bn-side-ad-seat{height:0;min-height:0;flex-basis:0}
+.bn-side-ad-seat[data-fits="false"]{height:0;min-height:0;flex-basis:0}
+#app[data-side-banner="compact"]>#gameBanner{visibility:hidden}
 #app[data-banner-context="blocks"]>#gameBanner,#app[data-banner-context="words"]>#gameBanner{background:transparent;border:0;padding:0;gap:1px;justify-content:center}
 #app[data-banner-context="blocks"][data-banner-state="unavailable"]>#gameBanner,#app[data-banner-context="words"][data-banner-state="unavailable"]>#gameBanner{visibility:hidden}
 #app[data-banner-context="blocks"] .game-banner-frame,#app[data-banner-context="words"] .game-banner-frame{max-width:320px;width:100%;flex:0 0 50px}

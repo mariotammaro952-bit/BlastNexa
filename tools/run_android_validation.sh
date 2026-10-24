@@ -47,7 +47,7 @@ timeout 20 adb shell uiautomator dump /sdcard/validation-ui.xml || true
 timeout 20 adb pull /sdcard/validation-ui.xml android-evidence/ui-final.xml || true
 timeout 20 adb shell screencap -p /sdcard/validation-screen.png || true
 timeout 20 adb pull /sdcard/validation-screen.png android-evidence/screen-final.png || true
-timeout 25 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/store android-evidence/store || true
-timeout 25 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/metrics android-evidence/metrics || true
+timeout 25 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/store android-evidence/ || true
+timeout 25 adb pull /sdcard/Android/data/com.blastnexa.blockpuzzle.preview/files/metrics android-evidence/ || true
 if [ "$instrument_status" -ne 0 ]; then exit "$instrument_status"; fi
 grep -Eq "^OK \\(${BN_QA_EXPECTED_TESTS:-20} tests?\\)" android-evidence/instrumentation.txt

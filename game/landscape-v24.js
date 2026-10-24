@@ -205,6 +205,8 @@ function installBanner(){
   app.dataset.bannerState=typeof bnBannerState==='undefined'?'preview':bnBannerState;
   if(!inSlot)delete app.dataset.slotWide;
   const seat=inSlot?$id('slotBannerSeat'):inMenu?$id('menuBannerSeat'):inWords?$id('wordsBannerSeat'):$id('game')?.style.display==='flex'?$id('puzzleBannerSeat'):null;
+  if(seat?.classList.contains('bn-side-ad-seat')){const fits=seat.getBoundingClientRect().width>=200;seat.dataset.fits=String(fits);app.dataset.sideBanner=fits?'fit':'compact';}
+  else delete app.dataset.sideBanner;
   if(seat){const r=seat.getBoundingClientRect(),parent=app.getBoundingClientRect();Object.assign(dock.style,{top:(r.top-parent.top)+'px',left:(r.left-parent.left)+'px',right:'auto',bottom:'auto',width:r.width+'px',height:r.height+'px'});}
   else for(const prop of ['top','left','right','bottom','width','height'])dock.style.removeProperty(prop);
   const layout=gameBannerLayout();frame.style.visibility=layout.visible?'visible':'hidden';

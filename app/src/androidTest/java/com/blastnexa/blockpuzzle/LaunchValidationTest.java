@@ -39,12 +39,16 @@ public class LaunchValidationTest {
   device.setOrientationLeft();device.waitForIdle(1000);
   Intent intent=new Intent(InstrumentationRegistry.getInstrumentation().getTargetContext(),OdysseyActivity.class);intent.putExtra("bn_qa_no_ads",true);
   scenario=ActivityScenario.launch(intent);bind();
+  acknowledgeFullscreenEducation();
   try{waitFor("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')",45000);}catch(AssertionError error){bootstrapFailed=true;try{writeEvidence("startup.txt",js("JSON.stringify({url:location.href,state:document.readyState,agent:navigator.userAgent,text:document.body?document.body.innerText.slice(0,1000):'',scripts:document.scripts.length})"));capture("startup_failure");}catch(Exception ignored){}throw error;}
   // Android shows its own one-time full-screen education above the WebView.
   // Acknowledge the actual system UI before lifecycle/back/touch assertions.
-  androidx.test.uiautomator.UiObject2 education=device.wait(Until.findObject(By.text("Got it")),3000);
-  if(education!=null){education.click();assertTrue(device.wait(Until.gone(By.text("Got it")),5000));}
+  acknowledgeFullscreenEducation();
   js("window.__qaErrors=[];window.__qaRealClicks=0;window.__qaWatchSpin=false;window.__qaFilled=()=>document.querySelectorAll('#slotReels>.bn-temple-reel').length===5&&[...document.querySelectorAll('#slotReels>.bn-temple-reel')].every(reel=>{const r=reel.getBoundingClientRect();return [0,1,2].every(row=>document.elementFromPoint(r.left+r.width/2,r.top+r.height*(row+.5)/3)?.closest('.bn-temple-cell'));});document.addEventListener('click',e=>{window.__qaRealClicks++;const b=e.target.closest?.('button');window.__qaLastTouch={label:b?.getAttribute('aria-label')||b?.textContent,phase:typeof slotPhase!=='undefined'?slotPhase:null};if(b?.id==='slotAutoStop')window.__qaStopTotal=lifeData.slot.total;if(window.__qaWatchSpin&&b?.id==='slotSpinButton'&&b.getAttribute('aria-label')==='GIRA'){setTimeout(()=>window.__qaSpinStart={phase:slotPhase,disabled:document.getElementById('slotSpinButton').disabled,scroll:document.getElementById('app').scrollTop,total:lifeData.slot.total},0);setTimeout(()=>window.__qaSpinMid={phase:slotPhase,filled:window.__qaFilled()},400);setTimeout(()=>window.__qaSpinLate={phase:slotPhase,filled:window.__qaFilled()},1700);}},true);window.addEventListener('error',e=>window.__qaErrors.push(e.message));localStorage.setItem('blastnexa_help_seen','true');muted=true;displayMenu();true");
+ }
+ private void acknowledgeFullscreenEducation()throws Exception{
+  androidx.test.uiautomator.UiObject2 education=device.findObject(By.text("Got it"));
+  if(education!=null){education.click();assertTrue(device.wait(Until.gone(By.text("Got it")),5000));}
  }
  private void withActivity(ActivityScenario.ActivityAction<OdysseyActivity> action){Runnable observe=()->scenario.onActivity(action);if(android.os.Looper.myLooper()==android.os.Looper.getMainLooper())observe.run();else InstrumentationRegistry.getInstrumentation().runOnMainSync(observe);}
  private void bind(){withActivity(activity->{try{java.lang.reflect.Field field=OdysseyActivity.class.getDeclaredField("game");field.setAccessible(true);web=(WebView)field.get(activity);}catch(Exception e){throw new RuntimeException(e);}});}
@@ -77,6 +81,9 @@ public class LaunchValidationTest {
     java.lang.reflect.Field view=OdysseyActivity.class.getDeclaredField("game"),ready=OdysseyActivity.class.getDeclaredField("pageReady");view.setAccessible(true);ready.setAccessible(true);WebView target=(WebView)view.get(activity);current.set(target);
     loaded.set(target!=null&&ready.getBoolean(activity)&&target.getProgress()==100&&target.getWidth()>target.getHeight());
    }catch(Exception error){throw new RuntimeException(error);}}));
+   // The OS education sheet can appear while the first page is loading. It
+   // must be acknowledged before waiting for the Activity's ready state.
+   if(!loaded.get())acknowledgeFullscreenEducation();
    WebView target=current.get();long now=android.os.SystemClock.uptimeMillis();
    if(loaded.get()){
     if(target==readyWeb){web=target;return;}
@@ -115,15 +122,11 @@ public class LaunchValidationTest {
   truth("unlocked===1&&lifeData.balance===20&&lifeData.slot.wallet.balance===1000");
  }
  @Test public void a01_centeredBoardAndStaticPagedScreensUsePhysicalTouches()throws Exception{
-  // Give the WebView real foreground focus through the same menu control a
-  // player uses before setting the authored adventure fixture.
-  touchId("startClassic");
-  awaitForeground();waitFor("document.hasFocus()",5000);
-  js("start('adventure',1);true");
-  if("true".equals(js("document.getElementById('overlay').classList.contains('on')"))){
-   truth("document.getElementById('dialogTitle').textContent==='PARTITA IN PAUSA'");touchId("dialogPrimary");
-  }
-  waitFor("playing&&!document.getElementById('overlay').classList.contains('on')",5000);
+  // Resume a paused authored game with a physical touch. The foreground-focus
+  // pause must settle before measuring and placing the first piece.
+  js("start('adventure',1);pauseGame();true");
+  awaitForeground();touchId("dialogPrimary");
+  waitFor("document.hasFocus()&&playing&&!document.getElementById('overlay').classList.contains('on')",5000);
   waitFor("document.getElementById('boardShell').getBoundingClientRect().width>innerHeight*.72",5000);
   truth("(()=>{const b=document.getElementById('boardShell').getBoundingClientRect();return Math.abs(b.left+b.width/2-innerWidth/2)<2&&b.top>=0&&b.bottom<=innerHeight&&Math.abs(b.width-b.height)<2;})()");
   truth("window.BlastNexaBannerLayout().slot==='puzzle_sidepanel'");
@@ -235,7 +238,8 @@ public class LaunchValidationTest {
   truth("getComputedStyle(document.querySelector('#board .cell.tile')).backgroundImage!=='none'");
   truth("document.getElementById('boardShell').getBoundingClientRect().right<=document.getElementById('tray').getBoundingClientRect().left+16");
   truth("document.getElementById('boardShell').getBoundingClientRect().right<=document.getElementById('gameBannerFrame').getBoundingClientRect().left+2");
-  truth("window.BlastNexaBannerLayout().visible");
+  assertSideBanner("puzzleBannerSeat");
+  truth("[...document.querySelectorAll('#game .power-tool')].every(b=>b.scrollWidth<=b.clientWidth+1)");
   js("openUniverse('slot');setArcadeMachine('temple');true");
   truth("document.querySelectorAll('#slotReels .bn-temple-reel').length===5");
   truth("document.querySelectorAll('#slotReels .bn-temple-cell').length===15");
@@ -243,7 +247,7 @@ public class LaunchValidationTest {
   truth("window.BlastNexaBannerLayout().visible");
   js("startWord(0);true");
   truth("document.getElementById('wordBoard').getBoundingClientRect().right<=document.getElementById('wordControls').getBoundingClientRect().left+16");
-  truth("window.BlastNexaBannerLayout().visible");
+  assertSideBanner("wordsBannerSeat");
   truth("window.__qaErrors.length===0");
   js("openUniverse('slot');setArcadeMachine('temple');lifeData.slot.arcade.treasure=29;playerSettings.effects='lite';slotRandomInt=max=>max===100?31:0;spinLifeSlot();true");
   waitFor("!slotBusy",15000);
@@ -252,6 +256,9 @@ public class LaunchValidationTest {
   capture("08_bonus_temple");
   js("document.getElementById('slotChest1').click();document.getElementById('slotSpinButton').click();true");
   truth("!lifeData.slot.arcade.bonus && !!document.getElementById('slotReels')");
+ }
+ private void assertSideBanner(String seat)throws Exception{
+  truth("(()=>{const r=document.getElementById('"+seat+"').getBoundingClientRect(),v=window.BlastNexaBannerLayout().visible;return r.width>=200?v&&r.height===59:!v&&r.height===0&&getComputedStyle(document.getElementById('gameBanner')).visibility==='hidden';})()");
  }
  @Test public void z_rendererRecoveryReopensSavedGame()throws Exception{
   js("playerProfile.name='Recupero Android';savePlayer();true");
