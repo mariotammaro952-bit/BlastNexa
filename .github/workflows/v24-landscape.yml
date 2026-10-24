@@ -1,0 +1,192 @@
+name: BlastNexa v29 centered boards, static pages and fresh campaign validation
+on:
+  push:
+    branches: [codex/landscape-slot-v24]
+    paths-ignore:
+      - AGENTS.md
+      - .github/workflows/v28-layout-validation.yml
+      - .github/workflows/v24-landscape.yml
+      - .github/workflows/v29-startup-validation.yml
+      - tools/run_android_validation_settled.sh
+      - app/src/androidTest/**
+      - docs/**
+      - qa/*result.json
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - name: Materialize hash-verified reviewed source
+        id: source
+        run: |
+          if [ -f .github/reviewed-source-v28.json ]; then
+            python3 tools/apply_reviewed_source.py
+            git diff --check
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git rm .github/reviewed-source-v28.json
+            git add game/index.html app/src/main/assets/index.html
+            git commit -m '[skip ci] Materialize reviewed v29 fresh campaign and static pages source'
+            git push origin HEAD:"$GITHUB_REF_NAME"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  build:
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 28
+    env:
+      BN_BANNER_AD_UNIT: ${{ vars.BN_BANNER_AD_UNIT }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ needs.source.outputs.sha }}
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24'
+      - name: Package and check landscape game
+        run: |
+          python3 tools/prepare_assets.py
+          python3 tools/verify_release_inputs.py
+          node --check game/landscape-v24.js
+          node qa/v24_layout.cjs
+      - name: Validate game regressions
+        run: |
+          node qa/fresh_start_v29.cjs
+          node qa/coins.cjs
+          node qa/slot_economy_v28.cjs
+          node qa/all_levels.cjs game/index.html
+          node qa/qa_arcade.cjs
+          node qa/qa_odyssey.cjs
+          node qa/qa_spectra.cjs
+          node qa/other_games.cjs
+          node qa/unlimited_modes.cjs
+          node qa/soak.cjs
+          node --experimental-sqlite qa/d1.mjs
+      - name: Build Android installables and emulator tests
+        run: |
+          ./gradlew --no-daemon --max-workers=2 assemblePreviewDebug assemblePreviewDebugAndroidTest assemblePreviewRelease bundleProductionRelease
+          mkdir -p signing-tools/lib signing-tools/lib64
+          cp "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar" signing-tools/lib/
+          cp "$ANDROID_HOME/build-tools/36.0.0/zipalign" signing-tools/
+          cp -a "$ANDROID_HOME/build-tools/36.0.0/lib64/." signing-tools/lib64/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: BlastNexa-v29-static-start-build
+          path: |
+            app/build/outputs/apk/
+            app/build/outputs/bundle/
+            signing-tools/
+            qa/*result.json
+          retention-days: 7
+          if-no-files-found: error
+
+  android:
+    needs: [source, build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 31
+            screen: compact
+            size: 720x1280
+            density: 320
+            cutout: 0
+            expected: 22
+          - api: 36
+            screen: compact
+            size: 720x1280
+            density: 320
+            cutout: 0
+            expected: 22
+          - api: 36
+            screen: wide-cutout
+            size: 720x1600
+            density: 320
+            cutout: 1
+            expected: 22
+          - api: 36
+            screen: tablet
+            size: 800x1280
+            density: 160
+            cutout: 0
+            expected: 5
+            methods: com.blastnexa.blockpuzzle.LaunchValidationTest#a00_freshCampaignStartsOnceWithTwentyLivesAndOneThousandCoins,com.blastnexa.blockpuzzle.LaunchValidationTest#a01_centeredBoardAndStaticPagedScreensUsePhysicalTouches,com.blastnexa.blockpuzzle.LaunchValidationTest#a0_homeBannerSharesTheSidebarAndCollapsesWithoutAnAd,com.blastnexa.blockpuzzle.LaunchValidationTest#l_virtualCoinsUseRealTouchAndSurviveRecreation,com.blastnexa.blockpuzzle.LaunchValidationTest#p_coloredLineChoicesChargeTheDisplayedCoins
+    env:
+      BN_QA_SIZE: ${{ matrix.size }}
+      BN_QA_DENSITY: ${{ matrix.density }}
+      BN_QA_CUTOUT: ${{ matrix.cutout }}
+      BN_QA_EXPECTED_TESTS: ${{ matrix.expected }}
+      BN_QA_TEST_METHODS: ${{ matrix.methods }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ needs.source.outputs.sha }}
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: BlastNexa-v29-static-start-build
+          path: imported-build
+      - name: Stage emulator APKs and enable acceleration
+        run: |
+          mkdir imported-artifacts
+          cp -a imported-build/app/build/outputs/apk/. imported-artifacts/
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-build: 14472402
+          disable-animations: false
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
+          script: bash tools/run_android_validation_settled.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: v29-android-api-${{ matrix.api }}-${{ matrix.screen }}
+          path: android-evidence/
+          retention-days: 7
+
+  lint:
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      BN_BANNER_AD_UNIT: ${{ vars.BN_BANNER_AD_UNIT }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ needs.source.outputs.sha }}
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Android production release lint
+        run: ./gradlew --no-daemon --max-workers=2 lintProductionRelease
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: v28-production-lint
+          path: app/build/reports/
+          retention-days: 7

@@ -7,3 +7,11 @@ local.properties
 *.keystore
 .DS_Store
 __pycache__/
+app/src/main/assets/landscape-v24.css
+app/src/main/assets/landscape-v24.js
+app/src/main/assets/static-v29.css
+app/src/main/assets/static-v29.js
+app/src/main/assets/assets/
+game/preview-v27.html
+qa/fresh_start_v29_result.json
+qa/coins_v29_result.json

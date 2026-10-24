@@ -1,0 +1,23 @@
+{
+  "passed": 16,
+  "tests": [
+    "All eight symbols have their documented exact weight on the 100-point draw",
+    "6,000 generated matrices agree with an independent prefix-matching oracle in all three modes",
+    "A Wild substitutes normal symbols, Bonus never substitutes, and lines must begin on the first reel",
+    "Only the best payline awards lives even when all 15 lines win, with one atomic result per spin",
+    "A pending chest survives reload, blocks spins, and can be claimed exactly once",
+    "Crystal awards three saved bonus spins, consumes one per spin and never retriggers within bonus spins",
+    "Forge keeps both selected reel columns stationary and redraws only the other three",
+    "Mission claims survive reload without duplicate rewards and respect the balance ceiling",
+    "Automatic runs are finite and stop after exactly five or ten committed spins",
+    "Stopping automatic play preserves the current result and prevents further spins",
+    "An automatic run stops before spin 51 and resumes only after the ad-break callback",
+    "New bonus features stop an automatic sequence before another result is committed",
+    "Leaving or hiding the screen cancels pending animation and auto callbacks without losing a prize",
+    "Mode and page switches are blocked during a spin, and result presentation never changes saved state",
+    "Legacy slot statistics, lives and in-progress crosswords migrate without replaying a prize",
+    "New result matrices and all history entries survive a saved-session round trip"
+  ],
+  "randomGridComparisons": 6000,
+  "scope": "Exact production script with DOM/event adapters. No browser geometry or device audio is simulated."
+}

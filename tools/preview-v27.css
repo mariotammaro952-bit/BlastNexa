@@ -1,0 +1,7 @@
+#bnDemoVideo{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 20%,#126f69,#0a1430 70%);color:#ebfffa;font-family:system-ui,sans-serif}
+.bn-demo-video-card{max-width:500px;width:82%;text-align:center;display:flex;align-items:center;flex-direction:column;gap:9px;padding:14px}
+.bn-demo-video-card>small{font-size:8px;letter-spacing:.16em;color:#a2dbd2}.bn-demo-video-card h2{margin:0;font-size:23px}.bn-demo-video-card p{font-size:12px;margin:0;line-height:1.5}
+.bn-demo-play{display:grid;place-items:center;border:1px solid #7bfed9;border-radius:20px;background:#a3ffce;color:#0b3c41;width:57px;height:57px;font-size:24px;box-shadow:0 0 35px #6dffd665}
+.bn-demo-progress{width:85%;height:5px;border-radius:8px;overflow:hidden;background:#7af5c929;margin-top:7px}.bn-demo-progress>i{display:block;height:100%;width:100%;background:#a3ffce;transform-origin:left;animation:bnDemoProgress 4s linear both}
+#bnDemoCountdown{font-size:11px;color:#a3ffce}#bnDemoVideoCancel{border:1px solid #83b5b6;border-radius:8px;background:#122d45;color:white;padding:8px 17px;font-size:10px}
+@keyframes bnDemoProgress{from{transform:scaleX(0)}to{transform:scaleX(1)}}

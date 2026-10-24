@@ -1,0 +1,16 @@
+{
+  "passed": 10,
+  "tests": [
+    "The banner is visible in all four slot pages and leaves immediately with the slot",
+    "A missing or failing banner bridge cannot stop a spin or alter its prize",
+    "The fifteenth spin continues normally and the fiftieth blocks only the next spin",
+    "The former fifteen-spin threshold migrates as 15/50 without resetting lives or history",
+    "Crystal and Temple emit one supplied-audio cue per earned feature and never replay it on rerender",
+    "The new spectacle never changes the committed result and cleans up on leaving",
+    "Music is a genuine looping buffer on the music mixer channel and ducks under the supplied cue",
+    "Mute, music volume zero, and leaving the slot stop the correct audio sources",
+    "A delayed decoder cannot play a stale bonus after leaving the slot",
+    "The dedicated music switch persists independently from game progression"
+  ],
+  "scope": "Production logic, events and mocked Web Audio routing/lifecycle. No real speaker output, browser geometry or device performance is inferred."
+}

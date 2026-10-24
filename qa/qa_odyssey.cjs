@@ -1,7 +1,13 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
-const {createRuntime}=require('./runtime.cjs');
+const {createRuntime:runtimeBase}=require('./runtime.cjs');
+// Legacy-normalization fixtures represent an already migrated v29 profile.
+// fresh_start_v29.cjs separately verifies the intentional upgrade reset.
+function createRuntime(file,options={}){
+ if(options.initialStorage){const v=options.initialStorage,stored=new Map(v instanceof Map?v:Object.entries(v));stored.set('blastnexa_fresh_campaign_v29','true');options={...options,initialStorage:stored};}
+ return runtimeBase(file,options);
+}
 const FILE='game/index.html',tests=[];
-const fresh=()=>{const r=createRuntime(FILE);r.run("openUniverse('slot')");return r};
+const fresh=()=>{const r=createRuntime(FILE);r.run("lifeData.balance=5;lifeData.slot.wallet.balance=100;saveLives();openUniverse('slot')");return r};
 const json=(r,expr)=>JSON.parse(r.run('JSON.stringify('+expr+')'));
 const settle=r=>r.clock.advance(6000);
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
@@ -48,7 +54,7 @@ function audioMock(r,{delayed=false}={}){
  });
  await test('Pending Crystal spins from v20 migrate into a resumable journey without awarding anything again',()=>{
   const old={stored:JSON.parse(fs.readFileSync('qa/fixtures/legacy-v20.json')).storage};
-  const r=createRuntime(FILE,{initialStorage:old.stored});r.run("openUniverse('slot')");assert.deepEqual(json(r,'lifeData.slot.arcade.crystalJourney'),{id:'crystal:0',awarded:3,played:0,lives:0,dismissed:false});assert.equal(r.run('lifeData.balance'),5);assert.equal(r.run('lifeData.slot.total'),1);
+  const r=createRuntime(FILE,{initialStorage:old.stored});r.run("openUniverse('slot')");assert.deepEqual(json(r,'lifeData.slot.arcade.crystalJourney'),{id:'crystal:0',awarded:3,played:0,lives:0,coins:0,dismissed:false});assert.equal(r.run('lifeData.balance'),20);assert.equal(r.run('lifeData.slot.total'),1);
  });
  await test('The Forge controls block two reels, disable the unselected relaunch, and preserve held columns',()=>{
   const r=fresh();r.run("setArcadeMachine('forge');slotRandomInt=()=>0;spinLifeSlot()");settle(r);r.run('lifeData.slot.arcade.reactor=6;renderLifeSlot($("universeBody"))');assert.equal(current(r,'slotRespinButton').disabled,true);
