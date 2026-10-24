@@ -1,7 +1,7 @@
 /* Fixed app canvas, centered boards and explicit page controls. */
 (()=>{
 'use strict';
-const id=n=>document.getElementById(n),states=new Map();
+const id=n=>document.getElementById(n),states=new Map(),slotPages=new Map();
 const selectors=['#menu>.menu-buttons','.bn-home-sidebar','.bn-wide-info','#wordClues','#wordControls','#universeBody','.bn-slot-details','.collect-scroll','.map-scroll','.settings-scroll','#adventureMap','#trophiesScreen','#mosaicGallery','#themeStudio','.dialog'];
 let queued=false,pagerSerial=0;
 function arrange(){
@@ -36,9 +36,10 @@ function barFor(host,state){
 function page(host,state,index){
  state.index=Math.max(0,Math.min(state.anchors.length-1,index));state.top=state.anchors[state.index]||0;host.scrollTop=state.top;host.scrollLeft=0;
  state.prev.disabled=state.index===0;state.next.disabled=state.index===state.anchors.length-1;state.caption.textContent=(state.index+1)+' / '+state.anchors.length;
+ if(state.slotKey)slotPages.set(state.slotKey,state.index);
 }
 function update(host){
- let state=states.get(host);if(!state){state={index:0,top:0,anchors:[0],bar:null};states.set(host,state);
+ let state=states.get(host);if(!state){const slotKey=host.classList.contains('bn-slot-details')?host.closest('#slotTemple')?.dataset.machine:null;state={index:slotPages.get(slotKey)||0,top:0,anchors:[0],bar:null,slotKey};states.set(host,state);
   host.addEventListener('scroll',()=>{if(Math.abs(host.scrollTop-state.top)>1)host.scrollTop=state.top;if(host.scrollLeft)host.scrollLeft=0;},{passive:true});
  }
  const r=host.getBoundingClientRect(),visible=r.width>0&&r.height>0&&!!host.getClientRects().length;
@@ -70,7 +71,7 @@ function schedule(){if(!queued){queued=true;requestAnimationFrame(refresh);}}
 function init(){
  arrange();
  for(const name of ['renderTray','renderBoard'])if(typeof window[name]==='function'){const original=window[name];window[name]=function(){const result=original.apply(this,arguments);for(const n of document.querySelectorAll(name==='renderTray'?'#tray>.piece-slot':'#board>.cell')){const piece=name==='renderTray';n.setAttribute('role','button');n.setAttribute('aria-label',piece?'Pezzo '+(Number(n.dataset.index)+1):'Riga '+(Number(n.dataset.y)+1)+', colonna '+(Number(n.dataset.x)+1));n.tabIndex=0;const activate=()=>{if(piece){const i=Number(n.dataset.index);if(pieces[i]){selected=i;renderTray();}}else if(selected>=0)placePiece(selected,Number(n.dataset.x),Number(n.dataset.y));};n.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}};n.onclick=e=>{if(e.detail===0)activate();};}return result;};}
- if(typeof renderUniverse==='function'){const original=renderUniverse;renderUniverse=function(){const result=original.apply(this,arguments);universeNavigation();schedule();return result;};}
+ if(typeof renderUniverse==='function'){const original=renderUniverse;renderUniverse=function(){const host=id('universeBody'),previous=host?.dataset.page,result=original.apply(this,arguments);if(host&&previous!==universeTab){const state=states.get(host);if(state){state.index=0;state.top=0;}host.scrollTop=0;}universeNavigation();schedule();return result;};}
  universeNavigation();
  new MutationObserver(records=>{if(records.some(m=>{
   const n=m.target;if(n.nodeType!==1||n.closest('.bn-static-pager'))return false;

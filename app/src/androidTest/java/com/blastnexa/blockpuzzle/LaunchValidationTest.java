@@ -118,7 +118,12 @@ public class LaunchValidationTest {
   // Give the WebView real foreground focus through the same menu control a
   // player uses before setting the authored adventure fixture.
   touchId("startClassic");
+  awaitForeground();waitFor("document.hasFocus()",5000);
   js("start('adventure',1);true");
+  if("true".equals(js("document.getElementById('overlay').classList.contains('on')"))){
+   truth("document.getElementById('dialogTitle').textContent==='PARTITA IN PAUSA'");touchId("dialogPrimary");
+  }
+  waitFor("playing&&!document.getElementById('overlay').classList.contains('on')",5000);
   waitFor("document.getElementById('boardShell').getBoundingClientRect().width>innerHeight*.72",5000);
   truth("(()=>{const b=document.getElementById('boardShell').getBoundingClientRect();return Math.abs(b.left+b.width/2-innerWidth/2)<2&&b.top>=0&&b.bottom<=innerHeight&&Math.abs(b.width-b.height)<2;})()");
   truth("window.BlastNexaBannerLayout().slot==='puzzle_sidepanel'");
@@ -135,6 +140,7 @@ public class LaunchValidationTest {
   touchId("wordPageNext");truth("wordHubState.page===1&&document.getElementById('wordListSummary').textContent.includes('3–4')");
   capture("02_static_crossword_library");
   js("renderUniverse('styles');true");waitFor("!!document.getElementById('bnPageNext_universeBody')&&!document.getElementById('bnPages_universeBody').hidden",5000);
+  truth("(()=>{const b=document.getElementById('bnPages_universeBody'),r=b.getBoundingClientRect();return getComputedStyle(b).position==='absolute'&&r.top>=0&&r.bottom<=innerHeight&&r.height>=24;})()");
   String before=js("document.getElementById('universeBody').scrollTop");panel=touchBounds("universeBody",true);device.swipe(panel.centerX(),panel.bottom-20,panel.centerX(),panel.top+20,25);assertEquals(before,js("document.getElementById('universeBody').scrollTop"));
   touchId("bnPageNext_universeBody");truth("document.getElementById('universeBody').scrollTop>0&&document.getElementById('app').scrollTop===0&&document.scrollingElement.scrollTop===0");
   capture("03_static_page_navigation");

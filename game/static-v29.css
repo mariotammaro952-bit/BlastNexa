@@ -70,7 +70,7 @@ html,body,#app{overscroll-behavior:none;touch-action:none}
 #universeBody .bn-word-hub-help{display:none}
 .bn-static-paged{padding-bottom:calc(var(--bn-page-padding,0px) + 32px)!important}
 #menu,.bn-home-sidebar,.menu-buttons,.bn-wide-info,#wordClues,#wordControls,#universeBody,.bn-slot-sidebar,.bn-slot-details,.collect-scroll,.map-scroll,.settings-scroll,#adventureMap,#trophiesScreen,#mosaicGallery,#themeStudio,.dialog{overflow:hidden!important;overscroll-behavior:none;touch-action:none;scroll-behavior:auto!important}
-.bn-static-pager{position:absolute;z-index:35;display:flex;align-items:center;justify-content:space-between;gap:5px;height:27px;min-height:27px;padding:2px 4px;background:#102535f5;border:1px solid #77bcb27a;border-radius:8px;box-shadow:0 2px 5px #0005;pointer-events:auto}
+#app .bn-static-pager{position:absolute;z-index:35;display:flex;align-items:center;justify-content:space-between;gap:5px;height:27px;min-height:27px;padding:2px 4px;background:#102535f5;border:1px solid #77bcb27a;border-radius:8px;box-shadow:0 2px 5px #0005;pointer-events:auto}
 .bn-static-pager[hidden]{display:none!important}
 .bn-static-pager>button{width:36px;min-width:30px;height:22px;min-height:22px;padding:0;font-size:19px;line-height:1;background:#234a57;color:#f0f7e7;border:1px solid #80c8bb;border-radius:5px}
 .bn-static-pager>button:disabled{opacity:.3}
