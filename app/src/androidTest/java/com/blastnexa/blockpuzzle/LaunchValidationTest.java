@@ -356,6 +356,9 @@ public class LaunchValidationTest {
   touch("GIRA");truth("lifeData.slot.total===window.__coinsStart+2&&document.getElementById('overlay').classList.contains('on')&&!window.BlastNexaBannerLayout().visible");
   touchId("dialogPrimary");waitFor("!bnPendingAd",15000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
   touchId("dialogSecondary");js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
+  // A player reopens the slot through the home control after a cold page load.
+  // Retain that physical navigation and its WebView focus before the bonus fixture.
+  touchId("openLifeSlot");truth("slotVisible()");
   js("openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{machine:'crystal',lineCount:1,freeLineCount:1,freeSpins:1,bonus:null,revealed:null,crystalJourney:{id:'crystal:'+lifeData.slot.total,awarded:1,played:0,lives:0,coins:0,dismissed:false}});slotRandomInt=()=>0;playerSettings.effects='lite';renderLifeSlot(document.getElementById('universeBody'));true");
   waitFor("document.getElementById('slotSpinButton')?.getAttribute('aria-label')==='GIRA NELLA CAVERNA'&&!document.getElementById('slotSpinButton').disabled",5000);
   touchId("slotSpinButton");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===25&&lifeData.slot.wallet.spent===2&&lifeData.slot.last.coinCost===0&&lifeData.slot.last.coinsCredited===25");
