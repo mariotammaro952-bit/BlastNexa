@@ -18,29 +18,36 @@ async function attach(){
 }
 function launch(){adb('shell','am','start','-W','-n',pkg+'/com.blastnexa.blockpuzzle.OdysseyActivity','--ez','bn_qa_no_ads','true');}
 function capture(name){const p=cp.execFileSync('adb',['exec-out','screencap','-p'],{timeout:20000,maxBuffer:8*1024*1024});fs.writeFileSync(dir+'/'+name+'.png',p);}
-async function tree(){
- // Pause only CSS animation for the accessibility snapshot, then resume it
- // before physical input. No game click or prize action is synthesized.
- await evaluate("(()=>{const s=document.createElement('style');s.id='bnQaSnapshotFreeze';s.textContent='*,*::before,*::after{animation-play-state:paused!important;transition:none!important}';document.head.append(s);return true;})()");
- try{const path='/sdcard/bn-direct-'+(++snapshot)+'.xml';adb('shell','uiautomator','dump','--compressed',path);const xml=adb('exec-out','cat',path);assert.ok(xml.includes('<hierarchy'));fs.writeFileSync(dir+'/ui-'+snapshot+'.xml',xml);return xml;}finally{await evaluate("document.getElementById('bnQaSnapshotFreeze')?.remove();true");}
+async function tree(allowSystemDialog=false){
+ if(!allowSystemDialog)await wait('document.hasFocus()',15000);
+ for(let attempt=0;attempt<4;attempt++){
+  if(attempt)await pause(700);
+  await evaluate("(()=>{document.getElementById('bnQaSnapshotFreeze')?.remove();const s=document.createElement('style');s.id='bnQaSnapshotFreeze';s.textContent='*,*::before,*::after{animation-play-state:paused!important;transition:none!important}';document.head.append(s);return true;})()");
+  try{
+   const path='/sdcard/bn-direct-'+(++snapshot)+'.xml';adb('shell','uiautomator','dump','--compressed',path);const xml=adb('exec-out','cat',path);
+   if(xml.includes('<hierarchy')){fs.writeFileSync(dir+'/ui-'+snapshot+'.xml',xml);return xml;}
+   console.log('ACCESSIBILITY_ROOT_RETRY '+(attempt+1));
+  }finally{await evaluate("document.getElementById('bnQaSnapshotFreeze')?.remove();true");}
+ }
+ throw Error('Android accessibility root did not become available after the screen change');
 }
 async function tap(label,optional=false){
- const xml=await tree(),script="import sys,re,json,xml.etree.ElementTree as E\ns=sys.stdin.read();s=s[s.index('<hierarchy'):s.index('</hierarchy>')+12];key=sys.argv[1]\nfor n in E.fromstring(s).iter('node'):\n a=n.attrib;r=a.get('resource-id','')\n if a.get('enabled')!='false' and (r==key or r.endswith('/'+key) or a.get('text')==key or a.get('content-desc')==key):\n  b=list(map(int,re.findall(r'-?\\d+',a.get('bounds',''))))\n  if len(b)==4 and b[2]>b[0] and b[3]>b[1]:print(json.dumps([(b[0]+b[2])//2,(b[1]+b[3])//2]));break\n";
+ const xml=await tree(optional),script="import sys,re,json,xml.etree.ElementTree as E\ns=sys.stdin.read();s=s[s.index('<hierarchy'):s.index('</hierarchy>')+12];key=sys.argv[1]\nfor n in E.fromstring(s).iter('node'):\n a=n.attrib;r=a.get('resource-id','')\n if a.get('enabled')!='false' and (r==key or r.endswith('/'+key) or a.get('text')==key or a.get('content-desc')==key):\n  b=list(map(int,re.findall(r'-?\\d+',a.get('bounds',''))))\n  if len(b)==4 and b[2]>b[0] and b[3]>b[1]:print(json.dumps([(b[0]+b[2])//2,(b[1]+b[3])//2]));break\n";
  const result=cp.execFileSync('python3',['-c',script,label],{input:xml,encoding:'utf8',timeout:10000}).trim();
  if(!result){if(optional)return false;throw Error('Native accessibility target missing: '+label);}
  const [x,y]=JSON.parse(result);adb('shell','input','tap',String(x),String(y));await pause(200);return true;
 }
 async function fixture(machine,effects='lite'){
- await evaluate(`cancelSlotAnimation();document.getElementById('overlay').classList.remove('on');openUniverse('slot');muted=true;Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});lifeData.slot.wallet.balance=50000;setArcadeMachine('${machine}');slotRandomInt=()=>0;playerSettings.effects='${effects}';applyPlayerSettings();renderLifeSlot(document.getElementById('universeBody'));true`);await pause(300);
+ await evaluate(`cancelSlotAnimation();document.getElementById('overlay').classList.remove('on');openUniverse('slot');muted=true;Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});lifeData.slot.wallet.balance=50000;setArcadeMachine('${machine}');slotRandomInt=()=>0;playerSettings.effects='${effects}';applyPlayerSettings();saveLives();renderLifeSlot(document.getElementById('universeBody'));true`);await pause(1000);
 }
 async function test(name,fn){await fn();checks.push(name);console.log('DIRECT_PASS '+name);fs.writeFileSync(dir+'/direct-results.json',JSON.stringify({passed:checks.length,expected:4,checks,errors},null,2));}
 async function main(){
  adb('install','-r','imported-artifacts/preview/debug/app-preview-debug.apk');adb('logcat','-c');
  const fd=fs.openSync(dir+'/direct-logcat.txt','w');logcat=cp.spawn('adb',['logcat','-v','threadtime'],{stdio:['ignore',fd,fd]});
  fs.writeFileSync(dir+'/webview-provider-direct.txt',adb('shell','dumpsys','webviewupdate'));launch();await attach();console.log('DIRECT_APP_READY');capture('direct-started');
- await tap('Got it',true);await evaluate("localStorage.setItem('blastnexa_help_seen','true');document.getElementById('overlay').classList.remove('on');true");
+ await tap('Got it',true);await wait('document.hasFocus()',15000);await pause(1200);await evaluate("localStorage.setItem('blastnexa_help_seen','true');document.getElementById('overlay').classList.remove('on');muted=true;displayMenu();true");
  await test('Large red relaunch with native hold and relaunch touches',async()=>{
-  await fixture('forge','full');await evaluate("lifeData.slot.last=chooseSlotResult('spin');lifeData.slot.arcade.reactor=6;slotHolds.clear();renderLifeSlot(document.getElementById('universeBody'));true");
+  await fixture('forge','full');await evaluate("lifeData.slot.last=chooseSlotResult('spin');lifeData.slot.arcade.reactor=6;slotHolds.clear();saveLives();renderLifeSlot(document.getElementById('universeBody'));true");
   assert.equal(await evaluate("document.getElementById('slotRespinButton').disabled"),true);await tap('slotHold0');
   assert.equal(await evaluate("(()=>{const a=document.getElementById('slotRespinButton'),b=document.getElementById('slotSpinButton'),x=a.getBoundingClientRect(),y=b.getBoundingClientRect();return !a.disabled&&getComputedStyle(a,'::after').animationName==='bnRedRelaunch'&&Math.abs(x.width-y.width)<1&&Math.abs(x.height-y.height)<1;})()"),true);capture('direct-red-relaunch');
   const before=await evaluate("({total:lifeData.slot.total,coins:lifeData.slot.wallet.balance})");await tap('slotRespinButton');
