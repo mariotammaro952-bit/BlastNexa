@@ -1,0 +1,43 @@
+name: BlastNexa v33 HTML review
+on:
+  push:
+    branches: [codex/map-rewards-v33]
+    paths: [game/**, tools/prepare_assets.py, tools/upgrade_game_v*.py, tools/package_preview_v33.py, qa/*.cjs, .github/workflows/v33-html.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: blastnexa-v33-html-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: '24'}
+      - name: Prepare the actual UI and run browser checks
+        run: |
+          python3 tools/prepare_assets.py
+          python3 tools/package_preview_v33.py
+          npm install --no-save playwright@1.62.1
+          npx playwright install --with-deps chromium
+          node qa/bonus_parts_v33.cjs
+          node qa/slot_economy_v28.cjs
+          node qa/coin_bonus_v33.cjs
+          node qa/bonus_banner_v31.cjs
+      - name: Preserve a browser for local diagnosis if a check fails
+        if: failure()
+        run: tar -C "$HOME/.cache/ms-playwright" -czf qa/v33-browser/chromium-runtime.tgz chromium_headless_shell-1234
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: BlastNexa-v33-browser
+          path: |
+            qa/v33-browser/
+            qa/v33_bonus_parts_results.json
+            qa/v28_slot_economy_results.json
+            qa/v31_extras_results.json
+            qa/v31_extras_failure.txt
+          retention-days: 7

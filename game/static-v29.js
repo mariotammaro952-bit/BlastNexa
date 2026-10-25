@@ -2,7 +2,7 @@
 (()=>{
 'use strict';
 const id=n=>document.getElementById(n),states=new Map(),slotPages=new Map();
-const selectors=['#menu>.menu-buttons','.bn-home-sidebar','.bn-wide-info','#wordClues','#wordControls','#universeBody','.bn-slot-details','.collect-scroll','.map-scroll','.settings-scroll','#trophiesScreen','#mosaicGallery','#themeStudio','.dialog'];
+const selectors=['#menu>.menu-buttons','.bn-home-sidebar','.bn-wide-info','#wordClues','#wordControls','#universeBody','.bn-slot-details','.collect-scroll','.settings-scroll','#trophiesScreen','#mosaicGallery','#themeStudio','.dialog'];
 let queued=false,pagerSerial=0;
 function arrange(){
  const body=document.querySelector('#game .bn-wide-game'),info=body?.querySelector('.bn-wide-info'),right=body?.querySelector('.bn-wide-right'),actions=right?.querySelector('.bn-wide-actions');

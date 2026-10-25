@@ -9,12 +9,13 @@ def write_changed(path,data):
 import subprocess,sys
 subprocess.run([sys.executable,str(root/'tools/upgrade_game_v31.py')],check=True)
 subprocess.run([sys.executable,str(root/'tools/upgrade_game_v32.py')],check=True)
+subprocess.run([sys.executable,str(root/'tools/upgrade_game_v33.py')],check=True)
 source=root/'game/index.html';h=source.read_text(encoding='utf-8')
 # Package the landscape UI alongside the complete embedded game catalogs.
 # The source game owns the preserved v27 wallet and v28 paired coin/life awards.
 landscape_css=root/'game/landscape-v24.css'
 landscape_js=root/'game/landscape-v24.js'
-fixed_assets=tuple(root/'game'/name for name in ('static-v29.css','static-v29.js','radiance-v30.css','radiance-v30.js','supernova-v30.css','supernova-v30.js','bonus-banner-v31.css','coin-bonus-v32.css'))
+fixed_assets=tuple(root/'game'/name for name in ('static-v29.css','static-v29.js','radiance-v30.css','radiance-v30.js','supernova-v30.css','supernova-v30.js','bonus-banner-v31.css','coin-bonus-v32.css','worlds-v33.css','worlds-v33.js'))
 for f in (landscape_css,landscape_js,*fixed_assets):
     assert f.exists() and f.stat().st_size>100, 'Missing v24 layout asset: '+str(f)
 css_link='<link rel="stylesheet" href="landscape-v24.css">'
