@@ -2,7 +2,7 @@ name: BlastNexa v32 interactive bonus and layout
 on:
   push:
     branches: [codex/coin-bonus-v32]
-    paths: [game/**, tools/**, app/**, qa/*.cjs, .github/workflows/v32-coin-bonus.yml]
+    paths: [game/**, tools/prepare_assets.py, tools/upgrade_game_v*.py, tools/run_android_validation*.sh, app/**, qa/*.cjs, .github/workflows/v32-coin-bonus.yml]
   workflow_dispatch:
 permissions:
   contents: read

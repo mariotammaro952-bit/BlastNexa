@@ -127,6 +127,7 @@ for(const [worldIndex,machine]of ['temple','crystal','forge'].entries()){
  worlds.push({machine,spins:10000,counts,lineCounts,spent,won,finalCoins:expectedCoins,finalLives:expectedLives,maxPendingTimers:maxTimers});
  console.log('PASS',machine,'10000 actual committed spins against independent coin and life ledgers');
 }
-const result={version:31,passed:tests.length+worlds.length,totalSpins:30000,tests,worlds,seconds:(Date.now()-started)/1000,scope:'Exact bundled game engine and save/reload transactions with DOM, clock and ad adapters. Native geometry, real ads and device stability are separate checks.'};
+const result={version:32,passed:tests.length+worlds.length,totalSpins:30000,tests,worlds,seconds:(Date.now()-started)/1000,scope:'Exact bundled game engine and save/reload transactions with DOM, clock and ad adapters. Native geometry, real ads and device stability are separate checks.'};
 fs.writeFileSync('qa/slot_economy_v28_result.json',JSON.stringify(result,null,2)+'\n');
 console.log('PASS 30000 spins, all three worlds and all line choices');
+

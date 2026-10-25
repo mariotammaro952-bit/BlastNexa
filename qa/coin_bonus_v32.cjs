@@ -71,13 +71,13 @@ const ledger=page=>page.evaluate(()=>({coins:lifeData.slot.wallet.balance,lives:
   await test('Adventure map is centred; its pager and banner occupy separate rows at '+w+'x'+h+' safe '+safe,async()=>{
    await page.evaluate(()=>{displayMenu();openAdventureMap();});await page.waitForTimeout(250);
    const g=await page.evaluate(()=>{const box=n=>{const r=n.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height,right:r.right,bottom:r.bottom};};return {app:box(document.getElementById('app')),screen:box(document.getElementById('adventureMap')),scroll:box(document.getElementById('mapScroll')),hero:box(document.querySelector('.map-hero')),pager:box(document.getElementById('bnPages_mapScroll')),ad:box(document.getElementById('gameBanner')),extra:!!document.getElementById('bnPages_adventureMap'),outer:document.scrollingElement.scrollWidth};});
-   assert.equal(g.extra,false);assert.ok(g.hero.x>=g.scroll.x&&g.hero.right<=g.scroll.right+1);assert.ok(Math.abs((g.hero.x+g.hero.w/2)-(g.screen.x+g.screen.w/2))<1,JSON.stringify(g));assert.ok(g.scroll.bottom<=g.pager.y+1&&g.pager.bottom<=g.ad.y+1,JSON.stringify(g));assert.ok(g.outer<=w);
+   assert.equal(g.extra,false);assert.ok(Math.abs(g.hero.x+g.hero.w/2-w/2)<1,JSON.stringify(g));assert.ok(g.hero.x>=g.scroll.x&&g.hero.right<=g.scroll.right+1);assert.ok(Math.abs((g.hero.x+g.hero.w/2)-(g.screen.x+g.screen.w/2))<1,JSON.stringify(g));assert.ok(g.scroll.bottom<=g.pager.y+1&&g.pager.bottom<=g.ad.y+1,JSON.stringify(g));assert.ok(g.outer<=w);
    await page.locator('#bnPageNext_mapScroll').tap();assert.ok(await page.evaluate(()=>document.getElementById('mapScroll').scrollTop)>0);await page.locator('#bnPagePrev_mapScroll').tap();assert.equal(await page.evaluate(()=>document.getElementById('mapScroll').scrollTop),0);
    await page.screenshot({path:path.join(out,'map-'+w+'-'+h+'-'+safe+'.png')});
   });
   await test('Puzzle board stays square and centred between equal side panels at '+w+'x'+h+' safe '+safe,async()=>{
    await page.evaluate(()=>{start('adventure',1);});await page.waitForTimeout(150);
-   const g=await page.evaluate(()=>{const b=document.getElementById('boardShell').getBoundingClientRect(),a=document.querySelector('#game .bn-wide-game').getBoundingClientRect();return {centre:b.x+b.width/2,expected:a.x+a.width/2,w:b.width,h:b.height,top:b.top,bottom:b.bottom};});assert.ok(Math.abs(g.centre-g.expected)<1&&Math.abs(g.w-g.h)<1&&g.top>=0&&g.bottom<=h,JSON.stringify(g));
+   const g=await page.evaluate(()=>{const b=document.getElementById('boardShell').getBoundingClientRect(),a=document.querySelector('#game .bn-wide-game').getBoundingClientRect();return {centre:b.x+b.width/2,expected:a.x+a.width/2,w:b.width,h:b.height,top:b.top,bottom:b.bottom};});assert.ok(Math.abs(g.centre-w/2)<1&&Math.abs(g.centre-g.expected)<1&&Math.abs(g.w-g.h)<1&&g.top>=0&&g.bottom<=h,JSON.stringify(g));
    await page.screenshot({path:path.join(out,'puzzle-'+w+'-'+h+'-'+safe+'.png')});
   });
   await context.close();

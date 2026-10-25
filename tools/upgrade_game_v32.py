@@ -4,7 +4,9 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 source = root / 'game/index.html'
 page = source.read_text()
+page = page.replace('Un universo<br>da liberare', 'Un universo<br> da liberare')
 if 'ODYSSEY COIN BONUS v32' in page:
+    source.write_text(page)
     raise SystemExit(0)
 assert 'ODYSSEY SUPERNOVA v31' in page
 old = 'guarded(slotCelebrationDuration(last),finishSlotCelebration);'
