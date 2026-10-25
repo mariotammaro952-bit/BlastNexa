@@ -21,6 +21,7 @@ jobs:
       BN_QA_ISOLATE_TESTS: 1
       BN_QA_EXPECTED_TESTS: 4
       BN_QA_DIRECT: 1
+      BN_QA_BOOTSTRAP_ONLY: 1
       BN_QA_TEST_METHODS: com.blastnexa.blockpuzzle.LaunchValidationTest#t_v32RelaunchIsLargeRedAndUsesPhysicalTouches,com.blastnexa.blockpuzzle.LaunchValidationTest#u_v32CoinPagesStayOpenAndNeverDuplicateSavedRewards,com.blastnexa.blockpuzzle.LaunchValidationTest#v_v32MapPagerAndPuzzleAreCentredAndDoNotOverlapAds,com.blastnexa.blockpuzzle.LaunchValidationTest#s_bannerStaysInsideRequestedCentreDeck
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803

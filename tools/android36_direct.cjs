@@ -45,7 +45,12 @@ async function main(){
  adb('install','-r','imported-artifacts/preview/debug/app-preview-debug.apk');adb('logcat','-c');
  const fd=fs.openSync(dir+'/direct-logcat.txt','w');logcat=cp.spawn('adb',['logcat','-v','threadtime'],{stdio:['ignore',fd,fd]});
  fs.writeFileSync(dir+'/webview-provider-direct.txt',adb('shell','dumpsys','webviewupdate'));launch();await attach();console.log('DIRECT_APP_READY');capture('direct-started');
- await tap('Got it',true);await wait('document.hasFocus()',15000);await pause(1200);await evaluate("localStorage.setItem('blastnexa_help_seen','true');document.getElementById('overlay').classList.remove('on');muted=true;displayMenu();true");
+ await tap('Got it',true);await pause(1200);
+ if(process.env.BN_QA_BOOTSTRAP_ONLY==='1'){
+  adb('shell','input','keyevent','61');await pause(700);capture('fullscreen-education-dismissed');console.log('FULLSCREEN_EDUCATION_HANDLED_BEFORE_INSTRUMENTATION');
+  adb('shell','am','force-stop',pkg);return;
+ }
+ await wait('document.hasFocus()',15000);await evaluate("localStorage.setItem('blastnexa_help_seen','true');document.getElementById('overlay').classList.remove('on');muted=true;displayMenu();true");
  await test('Large red relaunch with native hold and relaunch touches',async()=>{
   await fixture('forge','full');await evaluate("lifeData.slot.last=chooseSlotResult('spin');lifeData.slot.arcade.reactor=6;slotHolds.clear();saveLives();renderLifeSlot(document.getElementById('universeBody'));true");
   assert.equal(await evaluate("document.getElementById('slotRespinButton').disabled"),true);await tap('slotHold0');
