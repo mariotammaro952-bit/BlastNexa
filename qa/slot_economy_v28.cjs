@@ -88,10 +88,7 @@ for(const [worldIndex,machine]of ['temple','crystal','forge'].entries()){
    assert.equal(r.run(`claimArcadeChest(${i%3})`),false);
   }
   r.run('dismissTempleScene();dismissCrystalScene()');
-  if(r.run('lifeData.slot.sinceAd>=SLOT_AD_INTERVAL')){
-   assert.equal(r.run('openSlotBreak()'),true);r.elements.get('dialogPrimary').click();
-   assert.equal(r.run('lifeData.slot.sinceAd'),0);counts.breaks++;
-  }
+  assert.equal(r.run('lifeData.slot.sinceAd'),0,'No mandatory ad cadence');
   if(!r.run('lifeData.slot.arcade.freeSpins'))r.run(`setSlotLineCount(${[1,5,10][Math.floor(i/103)%3]})`);
   let kind='spin',prior=null;
   if(machine==='forge'&&r.run('lifeData.slot.arcade.reactor>=6&&!!arcadeCurrentLast()?.arcade')){
@@ -130,6 +127,6 @@ for(const [worldIndex,machine]of ['temple','crystal','forge'].entries()){
  worlds.push({machine,spins:10000,counts,lineCounts,spent,won,finalCoins:expectedCoins,finalLives:expectedLives,maxPendingTimers:maxTimers});
  console.log('PASS',machine,'10000 actual committed spins against independent coin and life ledgers');
 }
-const result={version:28,passed:tests.length+worlds.length,totalSpins:30000,tests,worlds,seconds:(Date.now()-started)/1000,scope:'Exact bundled game engine and save/reload transactions with DOM, clock and ad adapters. Native geometry, real ads and device stability are separate checks.'};
+const result={version:31,passed:tests.length+worlds.length,totalSpins:30000,tests,worlds,seconds:(Date.now()-started)/1000,scope:'Exact bundled game engine and save/reload transactions with DOM, clock and ad adapters. Native geometry, real ads and device stability are separate checks.'};
 fs.writeFileSync('qa/slot_economy_v28_result.json',JSON.stringify(result,null,2)+'\n');
 console.log('PASS 30000 spins, all three worlds and all line choices');

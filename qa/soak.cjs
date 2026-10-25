@@ -3,7 +3,7 @@ function init(){r.run(`lifeData.balance=Math.max(50,lifeData.balance);lifeData.s
 for(let i=0;i<10000;i++){
  if(r.run('lifeData.slot.arcade.bonus!==null')){const before=r.run('lifeData.balance');assert.equal(r.run(`claimArcadeChest(${i%3})`),true);expected+=r.run('lifeData.balance')-before;counts.chests++;assert.equal(r.run(`claimArcadeChest(${i%3})`),false);}
  r.run('dismissTempleScene();dismissCrystalScene()');
- if(r.run('lifeData.slot.sinceAd>=SLOT_AD_INTERVAL')){assert.equal(r.run('openSlotBreak()'),true);r.elements.get('dialogPrimary').click();assert.equal(r.run('lifeData.slot.sinceAd'),0);counts.breaks++;}
+ assert.equal(r.run('lifeData.slot.sinceAd'),0,'No mandatory ad cadence');
  if(i%100===0&&!r.run('lifeData.slot.arcade.freeSpins'))r.run(`setArcadeMachine(${JSON.stringify(['temple','crystal','forge'][Math.floor(i/100)%3])})`);
  let kind='spin';if(r.run(`lifeData.slot.arcade.machine==='forge'&&lifeData.slot.arcade.reactor>=6&&arcadeCurrentLast()?.arcade?.machine==='forge'`)){r.run('toggleSlotHold(0);toggleSlotHold(2)');kind='respin';}
  const before=r.run('lifeData.slot.total'),prior=JSON.parse(r.run('JSON.stringify(arcadeCurrentLast())'));
@@ -13,7 +13,7 @@ for(let i=0;i<10000;i++){
  assert.equal(r.run('lifeData.balance'),expected,'balance '+i);assert.equal(r.run('slotBusy'),false);assert.equal(r.run('lifeData.slot.archive.history.length'),Math.min(10,i+1));maxTimers=Math.max(maxTimers,r.clock.timers.size);assert.ok(maxTimers<=80);
  if(i%1000===999)console.log('spins',i+1,'lives',expected,'seconds',Math.round((Date.now()-started)/1000));
 }
-assert.equal(r.run('lifeData.slot.total'),10000);tests.push('10,000 actual slot commits: all modes, bonus/free/respin/hold, ad breaks and history conservation');tests.push('104 reloads during a committed spin preserve the exact balance and never repeat a reward');
+assert.equal(r.run('lifeData.slot.total'),10000);tests.push('10,000 actual slot commits: all modes, bonus/free/respin/hold, uninterrupted spins and history conservation');tests.push('104 reloads during a committed spin preserve the exact balance and never repeat a reward');
 const values=[null,'bad',[],{},-1,1e99,true],keys=['blastnexa_stars_v041','blastnexa_unlocked_v041','blastnexa_best','blastnexa_stats_v07','blastnexa_player_v22','blastnexa_ranking_v22'];let cases=0;
 for(const key of keys)for(const value of values){const n=createRuntime('game/index.html',{initialStorage:{[key]:JSON.stringify(value)}});assert.equal(n.run('Number.isInteger(unlocked)&&unlocked>=1&&unlocked<=2000'),true);assert.equal(n.run('typeof stars==="object"&&stars!==null&&!Array.isArray(stars)'),true);assert.equal(n.run('Number.isSafeInteger(best)&&best>=0'),true);assert.equal(n.run('Object.values(trophyStats()).every(x=>Number.isSafeInteger(x)&&x>=0)'),true);n.run('openPlayer();openAdventureMap();start("adventure",1);openTrophyRoom()');cases++;}
 tests.push('42 malformed saved-state cases restore bounded, usable progress without exceptions');

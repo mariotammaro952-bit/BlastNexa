@@ -1,0 +1,49 @@
+/* More light on the artwork, quiet idle glow, then color-specific win effects. */
+#slotTemple .bn-radiance .bn-temple-reels{background:#21160f;box-shadow:inset 0 1px 16px #080400b0,0 0 0 1px #ffde7b33}
+#slotTemple[data-machine="crystal"] .bn-radiance .bn-temple-reels{background:#11192f}
+#slotTemple .bn-radiance .bn-temple-reel{background:#38271ccc}
+#slotTemple[data-machine="crystal"] .bn-radiance .bn-temple-reel{background:#1d2345cc}
+#slotTemple[data-machine="forge"] .bn-radiance .bn-temple-reel{background:#382217cc}
+#slotTemple .bn-radiance .bn-radiant-cell{isolation:isolate}
+#slotTemple .bn-radiance .bn-world-symbol{position:relative;z-index:2;transform:scale(1.025);filter:none;animation:none}
+#slotTemple .bn-radiance .bn-world-glyph{filter:brightness(1.22) saturate(1.23) contrast(1.07) drop-shadow(0 0 2px var(--gem-color)) drop-shadow(0 3px 3px #000b);transition:filter .25s ease}
+#slotTemple .bn-radiance.is-spinning .bn-world-glyph{filter:brightness(1.12) saturate(1.1)}
+#slotTemple .bn-radiance-aura{position:absolute;inset:12% 10%;z-index:0;border-radius:50%;background:radial-gradient(ellipse,var(--gem-color),transparent 66%);opacity:.17;pointer-events:none}
+#slotTemple .bn-radiance .bn-temple-cell.winning,#slotTemple .bn-radiance.is-celebrating .bn-temple-cell.winning{outline:0;background:transparent;box-shadow:inset 0 -.5px #e8e5d92b;animation:none;border-radius:0;filter:none}
+#slotTemple .bn-radiance .bn-radiant-match{z-index:3;background:radial-gradient(ellipse at center,#fff9cd10,transparent 72%)}
+#slotTemple .bn-radiance .bn-radiant-match>.bn-world-symbol{animation:bnRadiantLift 2.5s ease-in-out infinite;animation-delay:var(--gem-delay);transform-origin:center}
+#slotTemple .bn-radiance .bn-radiant-match .bn-world-glyph{filter:brightness(1.36) saturate(1.32) contrast(1.08) drop-shadow(0 0 3px #fff5ceaa) drop-shadow(0 0 7px var(--gem-color)) drop-shadow(0 3px 3px #0008)}
+#slotTemple .bn-radiant-match>.bn-radiance-aura{inset:1% -5%;opacity:.65;animation:bnRadiantAura 2.5s ease-in-out infinite;animation-delay:var(--gem-delay)}
+#slotTemple .bn-radiance-ring{position:absolute;inset:16% 17%;z-index:1;border-radius:50%;border:1px solid var(--gem-color);box-shadow:0 0 8px var(--gem-color),inset 0 0 8px var(--gem-color);opacity:0;animation:bnRadiantRing 2.5s ease-out infinite;animation-delay:var(--gem-delay);pointer-events:none}
+#slotTemple .bn-radiance-flare{position:absolute;inset:13% 15%;z-index:3;overflow:hidden;border-radius:40%;pointer-events:none}
+#slotTemple .bn-radiance-flare::before{content:"";position:absolute;inset:-20% -100%;background:linear-gradient(112deg,transparent 42%,#fff8d000 45%,#fffceba8 49%,#fff 50%,#fff4d178 51%,transparent 56%);transform:translateX(-45%);opacity:0;mix-blend-mode:screen;animation:bnRadiantSweep 2.5s ease-in-out infinite;animation-delay:var(--gem-delay)}
+#slotTemple .bn-radiance-spark{position:absolute;left:50%;top:50%;width:5px;height:5px;z-index:4;background:#fffde5;box-shadow:0 0 4px #fff,0 0 9px var(--gem-color);clip-path:polygon(50% 0,62% 36%,100% 50%,62% 64%,50% 100%,38% 64%,0 50%,38% 36%);opacity:0;animation:bnRadiantSpark 2.5s cubic-bezier(.16,.8,.3,1) infinite;animation-delay:var(--spark-delay);pointer-events:none}
+#slotTemple .bn-radiance .bn-arcade-payline{filter:drop-shadow(0 0 3px var(--line-color)) drop-shadow(0 0 7px var(--line-color));opacity:.92}
+#slotTemple .bn-radiance .bn-arcade-payline polyline{stroke-width:2.5;stroke-dasharray:9 8;animation:bnRadiantFlow 1.8s linear infinite}
+#slotTemple .bn-slot-colored-lines polyline{opacity:.12;stroke-width:1}
+#slotTemple .bn-slot-spectacle[data-kind="win"]{background:none}
+#slotTemple .bn-slot-spectacle[data-kind="win"]>.bn-slot-energy-ring,#slotTemple .bn-slot-spectacle[data-kind="win"]>.bn-slot-light-rays,#slotTemple .bn-slot-spectacle[data-kind="win"]>.bn-slot-star-mote{display:none}
+#slotTemple .bn-slot-ad-seat{position:relative;display:grid;place-items:center;overflow:hidden}
+#slotTemple .bn-radiance-note{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;text-align:center;border:1px solid #ffe2a32b;border-radius:7px;background:linear-gradient(130deg,#392718d9,#102a2cdf)}
+#slotTemple .bn-radiance-note small{font-size:7px;font-weight:850;letter-spacing:.16em;color:#ffe4a5}
+#slotTemple .bn-radiance-note strong{font-size:10px;color:#d6f9e5;font-weight:600}
+#slotTemple .bn-slot-ad-seat>.bn-modern-win{position:absolute;inset:0;min-height:0;padding:4px 7px;border-radius:7px;border:1px solid #a4ffcf88;background:linear-gradient(125deg,#194e46f5,#152637f5);box-shadow:inset 0 0 20px #69ffd820;gap:3px;transform:none;animation:bnRadiantReward .45s ease-out both}
+#slotTemple .bn-slot-ad-seat>.bn-modern-win>small{font-size:8px;letter-spacing:.14em}
+#slotTemple .bn-slot-ad-seat>.bn-modern-win>strong{font-size:clamp(15px,2.7vw,28px);filter:none}
+#slotTemple .bn-slot-ad-seat>.bn-modern-win>span{font-size:5px;letter-spacing:.08em}
+#gameBanner{display:none!important}
+@keyframes bnRadiantLift{0%,100%{transform:scale(1.04)}35%,65%{transform:scale(1.10)}}
+@keyframes bnRadiantAura{0%,100%{opacity:.38;transform:scale(.9)}45%,65%{opacity:.78;transform:scale(1.12)}}
+@keyframes bnRadiantRing{0%{opacity:0;transform:scale(.7)}15%{opacity:.8}55%,100%{opacity:0;transform:scale(1.25)}}
+@keyframes bnRadiantSweep{0%,12%{opacity:0;transform:translateX(-45%)}23%{opacity:.65}48%{opacity:0;transform:translateX(45%)}100%{opacity:0;transform:translateX(45%)}}
+@keyframes bnRadiantSpark{0%,10%{opacity:0;transform:translate(-50%,-50%) scale(.4)}22%{opacity:1}65%,100%{opacity:0;transform:translate(calc(-50% + var(--spark-x)),calc(-50% + var(--spark-y))) scale(.2)}}
+@keyframes bnRadiantFlow{to{stroke-dashoffset:-34}}
+@keyframes bnRadiantReward{from{opacity:0;transform:translateY(10%)}to{opacity:1;transform:none}}
+#app[data-effects="lite"] .bn-radiance .bn-radiant-match>.bn-world-symbol,#app[data-effects="lite"] .bn-radiance-aura,#app[data-effects="lite"] .bn-radiance-ring,#app[data-effects="lite"] .bn-radiance-flare::before,#app[data-effects="lite"] .bn-radiance-spark,#app[data-effects="lite"] .bn-radiance .bn-arcade-payline polyline{animation:none}
+#app[data-effects="lite"] .bn-radiance-ring{opacity:.45}
+#app[data-effects="lite"] .bn-radiance-flare,#app[data-effects="lite"] .bn-radiance-spark{display:none}
+@media(prefers-reduced-motion:reduce){#slotTemple .bn-radiance .bn-radiant-match>.bn-world-symbol,#slotTemple .bn-radiance-aura,#slotTemple .bn-radiance-ring,#slotTemple .bn-radiance-flare::before,#slotTemple .bn-radiance-spark,#slotTemple .bn-radiance .bn-arcade-payline polyline,#slotTemple .bn-slot-ad-seat>.bn-modern-win{animation:none}#slotTemple .bn-radiance-ring{opacity:.4}#slotTemple .bn-radiance-flare,#slotTemple .bn-radiance-spark{display:none}}
+/* A/B comparison lives in the review only. */
+body.bn-radiance-before #slotTemple .bn-radiance .bn-world-glyph{filter:drop-shadow(0 3px 3px #0008)}
+body.bn-radiance-before #slotTemple .bn-radiance .bn-world-symbol{animation:none;transform:none}
+body.bn-radiance-before #slotTemple .bn-radiance-aura,body.bn-radiance-before #slotTemple .bn-radiance-ring,body.bn-radiance-before #slotTemple .bn-radiance-flare,body.bn-radiance-before #slotTemple .bn-radiance-spark{display:none}

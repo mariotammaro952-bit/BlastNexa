@@ -1,7 +1,7 @@
 const assert=require('node:assert/strict'),fs=require('node:fs');
 const {createRuntime}=require('./runtime.cjs');
 const tests=[],fresh=()=>{const r=createRuntime('game/index.html');r.run("openUniverse('slot');slotRandomInt=()=>0");return r;};
-const json=(r,s)=>JSON.parse(r.run('JSON.stringify('+s+')')),settle=r=>r.clock.advance(6000);
+const json=(r,s)=>JSON.parse(r.run('JSON.stringify('+s+')')),settle=r=>r.clock.advance(12000);
 function test(name,fn){fn();tests.push(name);console.log('PASS',name);}
 test('New, v25 and v26 wallets start with 1000 coins and 20 lives; later wallet normalization preserves recorded prizes',()=>{
  const r=fresh();assert.equal(r.run('lifeData.slot.wallet.balance'),1000);assert.equal(r.run('lifeData.balance'),20);

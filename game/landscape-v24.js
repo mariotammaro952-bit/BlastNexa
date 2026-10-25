@@ -192,7 +192,7 @@ function installBanner(){
   const valid=n=>Number.isFinite(n)?Math.round(n*10)/10:0;
   const homeAvailable=(!inMenu&&!inGame&&!inWords)||typeof bnBannerState==='undefined'||bnBannerState!=='unavailable';
   const fits=r.left>=-1&&r.top>=0&&r.right<=window.innerWidth+1&&r.bottom<=window.innerHeight+1;
-  return {slot:inSlot&&$id('slotBannerSeat')?'slot_control_deck':inMenu?'home_sidebar':inGame?'puzzle_sidepanel':inWords?'words_sidepanel':'landscape_bottom',context:inSlot?'slot':inWords?'words':inGame?'blocks':inMenu?'home':'other',session:typeof gameSession==='number'?gameSession:0,visible:homeAvailable&&fits&&!document.hidden&&!$id('overlay')?.classList.contains('on')&&!pending&&width>=200,x:valid(r.left),y:valid(r.top),width,height:50,coordinateSpace:'css-pixels',maxHeight:50};
+  return {slot:inSlot&&$id('slotBannerSeat')?'slot_control_deck':inMenu?'home_sidebar':inGame?'puzzle_sidepanel':inWords?'words_sidepanel':'landscape_bottom',context:inSlot?'slot':inWords?'words':inGame?'blocks':inMenu?'home':'other',session:typeof gameSession==='number'?gameSession:0,visible:homeAvailable&&fits&&!document.getElementById('bnSupernova')&&!document.hidden&&!$id('overlay')?.classList.contains('on')&&!pending&&width>=200,x:valid(r.left),y:valid(r.top),width,height:50,coordinateSpace:'css-pixels',maxHeight:50};
  };
  syncGameBanner=function(force=false){
   const dock=$id('gameBanner'),frame=$id('gameBannerFrame'),app=$id('app');if(!dock||!frame||!app)return;
@@ -212,7 +212,7 @@ function installBanner(){
   const layout=gameBannerLayout();frame.style.visibility=layout.visible?'visible':'hidden';
   if(typeof bnBannerState!=='undefined'){frame.dataset.state=bnBannerState;dock.dataset.state=bnBannerState;$id('gameBannerPreview').hidden=bnBannerState==='loaded';}
   const preview=$id('gameBannerPreview');
-  if(preview){const labels=preview.querySelectorAll('strong,small,span');if(labels.length>=2){labels[0].textContent=inSlot?'MONETE + VITE':'Spazio pubblicitario';labels[1].textContent=inSlot?'3: 5 ◉ + 1 ♥ · 4: 10 ◉ + 2 ♥ · 5: 25 ◉ + 5 ♥':'ANTEPRIMA BANNER';}}
+  if(preview){const labels=preview.querySelectorAll('strong,small,span');if(labels.length>=2){labels[0].textContent='Spazio pubblicitario';labels[1].textContent=bnBannerState==='unavailable'?'Annuncio non disponibile':'BANNER';}}
   if(typeof bnExpansionReady!=='undefined'&&bnExpansionReady&&typeof slotMediaSync==='function')slotMediaSync();
   const payload=JSON.stringify(layout);
   if(!force&&typeof bnBannerLastPayload!=='undefined'&&payload===bnBannerLastPayload)return;

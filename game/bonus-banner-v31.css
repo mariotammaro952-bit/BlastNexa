@@ -1,0 +1,9 @@
+/* The centre deck is reserved for the native 50dp banner. */
+#slotTemple .bn-slot-ad-seat{isolation:isolate;background:#101d1c;border:1px solid #c3a16188;border-radius:8px;pointer-events:none}
+#slotTemple .bn-slot-ad-seat>.bn-radiance-note,#slotTemple .bn-slot-ad-seat>.bn-modern-win{display:none}
+#app[data-slot-wide="play"]>.game-banner-dock{z-index:14;padding:0 5px;gap:2px}
+#app[data-slot-wide="play"] .game-banner-label{visibility:visible;font-size:6px;line-height:7px;height:7px}
+#app[data-slot-wide="play"] .game-banner-preview{opacity:1;background:#142321;border:1px solid #bca77877;border-radius:5px;color:#e8e0ce}
+#app[data-slot-wide="play"] .game-banner-preview>strong{font-size:11px;font-weight:600}
+#app[data-slot-wide="play"] .game-banner-preview>small,#app[data-slot-wide="play"] .game-banner-preview>span{font-size:8px}
+#app:has(#bnSupernova)>.game-banner-dock{visibility:hidden}

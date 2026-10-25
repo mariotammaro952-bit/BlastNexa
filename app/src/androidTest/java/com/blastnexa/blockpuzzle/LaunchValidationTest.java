@@ -188,7 +188,7 @@ public class LaunchValidationTest {
   js("setArcadeMachine('crystal');window.__qaStartSpins=lifeData.slot.total;true");
   // Run the same fifty persisted transactions inside the real WebView. This
   // avoids making hundreds of cross-process observations between lite spins.
-  js("window.__qaBatchLeft=50;window.__qaBatchDone=false;window.__qaBatchTrace=[];window.__qaBatchStarted=performance.now();(function step(){if(slotBusy||bnPendingAd){setTimeout(step,30);return;}if(!window.__qaBatchLeft){window.__qaBatchDone=true;return;}if(lifeData.slot.sinceAd>=SLOT_AD_INTERVAL){if(!document.getElementById('overlay').classList.contains('on'))openSlotBreak();document.getElementById('dialogPrimary').click();setTimeout(step,30);return;}if(spinLifeSlot()){window.__qaBatchLeft--;if(window.__qaBatchLeft%5===0)window.__qaBatchTrace.push({left:window.__qaBatchLeft,total:lifeData.slot.total,elapsed:performance.now()-window.__qaBatchStarted});}setTimeout(step,30);})();true");
+  js("window.__qaBatchLeft=50;window.__qaBatchDone=false;window.__qaBatchTrace=[];window.__qaBatchStarted=performance.now();(function step(){if(slotBusy||bnPendingAd){setTimeout(step,30);return;}if(!window.__qaBatchLeft){window.__qaBatchDone=true;return;}if(spinLifeSlot()){window.__qaBatchLeft--;if(window.__qaBatchLeft%5===0)window.__qaBatchTrace.push({left:window.__qaBatchLeft,total:lifeData.slot.total,elapsed:performance.now()-window.__qaBatchStarted});}setTimeout(step,30);})();true");
   // Fifty actual DOM rebuilds, native saves and the ad bridge can exceed 30 s
   // on the software-rendered API 31 runner. Record progress; retain every debit.
   waitFor("window.__qaBatchDone",120000);
@@ -259,7 +259,7 @@ public class LaunchValidationTest {
   truth("!!lifeData.slot.arcade.bonus && document.querySelectorAll('.bn-world-chest').length===3");
   assertPinnedSlot();
   capture("08_bonus_temple");
-  js("document.getElementById('slotChest1').click();document.getElementById('slotSpinButton').click();true");
+  js("document.getElementById('slotChest1').click();if(bnSupernovaRun)bnSupernovaFinish();document.getElementById('slotSpinButton').click();true");
   truth("!lifeData.slot.arcade.bonus && !!document.getElementById('slotReels')");
  }
  private void assertSideBanner(String seat)throws Exception{
@@ -346,10 +346,9 @@ public class LaunchValidationTest {
    assertTrue("Touch burst exceeded the reel animation: "+elapsed+"ms",elapsed<2400);
    // Observe the native collect control before tapping. A slow accessibility
    // bridge must not outlive the collect window and accidentally buy a new spin.
-   waitFor("slotPhase==='celebrating'",15000);android.graphics.Rect collect=touchBounds("Incassa la vincita");
-   assertTrue("Collect target moved",Math.abs(collect.centerX()-bounds.centerX())<=2&&Math.abs(collect.centerY()-bounds.centerY())<=2);
-   rawTouch(collect.centerX(),collect.centerY());Thread.sleep(100);waitFor("!slotBusy",5000);
-   truth("window.__qaLastTouch.label==='Incassa la vincita' && window.__qaLastTouch.phase==='celebrating'");
+   waitFor("!!document.getElementById('bnSupernova')",15000);
+   touchId("snContinue");waitFor("!slotBusy",5000);
+   truth("window.__qaLastTouch.label==='CONTINUA'");
    truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.balance===window.__touchBalance+5");
    writeEvidence("touch-observed-"+machine+".json",js("JSON.stringify({start:window.__qaSpinStart,mid:window.__qaSpinMid,late:window.__qaSpinLate,last:window.__qaLastTouch,total:lifeData.slot.total,previous:window.__touchTotal,burstMs:"+elapsed+"})"));
    truth("window.__qaSpinStart.phase==='spinning' && window.__qaSpinStart.disabled && window.__qaSpinStart.scroll===0 && window.__qaSpinStart.total===window.__touchTotal+1");
@@ -363,21 +362,21 @@ public class LaunchValidationTest {
   capture("09_slot_after_real_touches");truth("window.__qaErrors.length===0");
  }
  @Test public void i_realTouchesChestCrystalAndForge()throws Exception{
-  slotFixture("temple","lite");js("lifeData.slot.arcade.treasure=29;slotRandomInt=max=>max===100?31:0;true");touch("GIRA");waitFor("!!lifeData.slot.arcade.bonus&&!slotBusy",5000);
+  slotFixture("temple","lite");js("lifeData.slot.arcade.treasure=29;slotRandomInt=max=>max===100?31:0;true");touch("GIRA");waitFor("!!lifeData.slot.arcade.bonus&&!slotBusy",15000);
   js("window.__touchBalance=lifeData.balance;window.__touchTotal=lifeData.slot.total;window.__chestPrize=lifeData.slot.arcade.bonus.choices[1];true");
   android.graphics.Rect chest=touchBounds("Apri il forziere 2");for(int i=0;i<4;i++)rawTouch(chest.centerX(),chest.centerY());
-  waitFor("!lifeData.slot.arcade.bonus",5000);
+  waitFor("!lifeData.slot.arcade.bonus",15000);
   truth("lifeData.balance===window.__touchBalance+window.__chestPrize && lifeData.slot.total===window.__touchTotal");
   touch("TORNA AI RULLI");truth("!!document.getElementById('slotReels') && !lifeData.slot.arcade.bonus");assertPinnedSlot();
-  slotFixture("crystal","lite");js("slotRandomInt=max=>max===100?98:0;true");touch("GIRA");waitFor("lifeData.slot.arcade.freeSpins===3&&!slotBusy",5000);
+  slotFixture("crystal","lite");js("slotRandomInt=max=>max===100?98:0;true");touch("GIRA");waitFor("lifeData.slot.arcade.freeSpins===3&&!slotBusy",15000);
   js("slotRandomInt=max=>0;window.__touchTotal=lifeData.slot.total;true");
-  for(int i=0;i<3;i++){touch("GIRA NELLA CAVERNA");waitFor("lifeData.slot.total===window.__touchTotal+"+(i+1)+" && !slotBusy",5000);}
+  for(int i=0;i<3;i++){touch("GIRA NELLA CAVERNA");waitFor("lifeData.slot.total===window.__touchTotal+"+(i+1)+" && !slotBusy",15000);}
   truth("lifeData.slot.total===window.__touchTotal+3 && lifeData.slot.arcade.crystalJourney.played===3");touch("TORNA AI RULLI");assertPinnedSlot();
-  slotFixture("forge","lite");touch("GIRA");waitFor("!slotBusy",5000);js("lifeData.slot.arcade.reactor=6;renderLifeSlot(document.getElementById('universeBody'));window.__touchTotal=lifeData.slot.total;true");
-  touch("Tieni il rullo 1");waitFor("document.activeElement.id==='slotHold0'",5000);touch("Tieni il rullo 4");waitFor("document.activeElement.id==='slotHold3'",5000);truth("slotHolds.size===2");assertPinnedSlot();capture("12_forge_ready_touch_targets");touch("Rilancia i rulli");waitFor("!slotBusy",5000);
+  slotFixture("forge","lite");touch("GIRA");waitFor("!slotBusy",15000);js("lifeData.slot.arcade.reactor=6;renderLifeSlot(document.getElementById('universeBody'));window.__touchTotal=lifeData.slot.total;true");
+  touch("Tieni il rullo 1");waitFor("document.activeElement.id==='slotHold0'",15000);touch("Tieni il rullo 4");waitFor("document.activeElement.id==='slotHold3'",15000);truth("slotHolds.size===2");assertPinnedSlot();capture("12_forge_ready_touch_targets");touch("Rilancia i rulli");waitFor("!slotBusy",15000);
   truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.slot.last.arcade.held.join(',')==='0,3' && lifeData.slot.arcade.reactor===0");assertPinnedSlot();capture("10_forge_after_touch_respin");
  }
- @Test public void j_realTouchesAutoStopPauseAndFiftySpinBreak()throws Exception{
+ @Test public void j_realTouchesAutoStopPauseAndUninterruptedSpins()throws Exception{
   slotFixture("crystal","lite");js("window.__touchTotal=lifeData.slot.total;true");touch("Avvia 5 giri automatici");waitFor("lifeData.slot.total===window.__touchTotal+5 && !slotBusy && slotAutoLeft===0 && slotAutoTimer===null",15000);
   js("playerSettings.effects='full';window.__qaStopTotal=null;window.__touchTotal=lifeData.slot.total;true");truth("!reducedFX()");
   android.graphics.Rect autoFive=touchBounds("Avvia 5 giri automatici"),autoTen=touchBounds("Avvia 10 giri automatici");
@@ -386,12 +385,10 @@ public class LaunchValidationTest {
   // Stop fills the same control area previously occupied by Auto 5/10.
   touch("Ferma i giri automatici");waitFor("!slotBusy",12000);Thread.sleep(900);truth("window.__qaStopTotal!==null && lifeData.slot.total===window.__qaStopTotal && slotAutoLeft===0 && slotAutoTimer===null");
   java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();withActivity(a->task.set(a.getTaskId()));touch("GIRA");waitFor("slotBusy",5000);String total=js("lifeData.slot.total"),balance=js("lifeData.balance");device.pressHome();device.executeShellCommand("am task focus "+task.get());awaitForeground();waitFor("!slotBusy",10000);assertEquals(total,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));assertPinnedSlot();
-  js("playerSettings.effects='lite';lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("lifeData.slot.sinceAd===50 && !slotBusy",5000);touch("CONTINUA");truth("document.getElementById('overlay').classList.contains('on') && !window.BlastNexaBannerLayout().visible");
-  truth("document.getElementById('app').dataset.modal==='on' && document.getElementById('universeScreen').getAttribute('aria-hidden')==='true' && getComputedStyle(document.getElementById('gameBanner')).display==='none'");
-  assertTrue("Background spin must be absent from modal accessibility",device.wait(Until.gone(By.res("slotSpinButton")),3000));
-  truth("(()=>{let d=document.querySelector('#overlay>.dialog').getBoundingClientRect(),b=document.getElementById('dialogPrimary').getBoundingClientRect(),h=document.getElementById('dialogHome').getBoundingClientRect();return d.top>=0&&d.bottom<=innerHeight&&b.top>=d.top&&b.bottom<=d.bottom&&h.bottom<=d.bottom;})()");capture("13_fifty_spin_dialog");
-  // The native SDK is disabled in QA: this tests the real no-ad callback path.
-  touchId("dialogPrimary");waitFor("!bnPendingAd && !document.getElementById('overlay').classList.contains('on')",15000);truth("lifeData.slot.sinceAd===0 && lifeData.slot.total===window.__touchTotal+1");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.total===window.__touchTotal+2");assertPinnedSlot();
+  js("playerSettings.effects='lite';lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");
+  touch("GIRA");waitFor("!slotBusy",15000);truth("lifeData.slot.sinceAd===0 && !document.getElementById('overlay').classList.contains('on')");
+  touch("GIRA");waitFor("!slotBusy",15000);truth("lifeData.slot.total===window.__touchTotal+2 && lifeData.slot.sinceAd===0");assertPinnedSlot();
+
  }
  @Test public void k_fullWidthNativeCanvasAndCutout()throws Exception{
   slotFixture("temple","lite");
@@ -404,12 +401,12 @@ public class LaunchValidationTest {
   truth("(()=>{let b=document.getElementById('app').getBoundingClientRect();return b.left===0&&b.top===0&&b.width===innerWidth&&b.height===innerHeight;})()");
   js("window.__touchTotal=lifeData.slot.total;true");truth("reducedFX() && slotSpinDuration()===0");
   android.graphics.Rect bounds=touchBounds("GIRA");assertTrue(device.click(bounds.centerX(),bounds.centerY()));
-  waitFor("lifeData.slot.total===window.__touchTotal+1 && !slotBusy",5000);assertPinnedSlot();capture("11_full_width_cutout");
+  waitFor("lifeData.slot.total===window.__touchTotal+1 && !slotBusy",15000);assertPinnedSlot();capture("11_full_width_cutout");
  }
  @Test public void l_virtualCoinsUseRealTouchAndSurviveRecreation()throws Exception{
   slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=2;lifeData.slot.wallet.spent=0;lifeData.slot.wallet.anchor=Date.now();window.__coinsStart=lifeData.slot.total;window.__qaDraw=0;slotRandomInt=max=>max===100?[0,14,31,47,63][Math.floor(window.__qaDraw++/3)%5]:0;renderLifeSlot(document.getElementById('universeBody'));true");
-  touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===1&&lifeData.slot.wallet.spent===1");
-  touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
+  touch("GIRA");waitFor("!slotBusy",15000);truth("lifeData.slot.wallet.balance===1&&lifeData.slot.wallet.spent===1");
+  touch("GIRA");waitFor("!slotBusy",15000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
   touch("GIRA");truth("lifeData.slot.total===window.__coinsStart+2&&document.getElementById('overlay').classList.contains('on')&&!window.BlastNexaBannerLayout().visible");
   touchId("dialogPrimary");waitFor("!bnPendingAd",15000);truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
   touchId("dialogSecondary");js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===0&&lifeData.slot.wallet.spent===2");
@@ -417,8 +414,8 @@ public class LaunchValidationTest {
   // Retain that physical navigation and its WebView focus before the bonus fixture.
   touchId("openLifeSlot");truth("slotVisible()");
   js("openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{machine:'crystal',lineCount:1,freeLineCount:1,freeSpins:1,bonus:null,revealed:null,crystalJourney:{id:'crystal:'+lifeData.slot.total,awarded:1,played:0,lives:0,coins:0,dismissed:false}});slotRandomInt=()=>0;playerSettings.effects='lite';renderLifeSlot(document.getElementById('universeBody'));true");
-  waitFor("document.getElementById('slotSpinButton')?.getAttribute('aria-label')==='GIRA NELLA CAVERNA'&&!document.getElementById('slotSpinButton').disabled",5000);
-  touchId("slotSpinButton");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===25&&lifeData.slot.wallet.spent===2&&lifeData.slot.last.coinCost===0&&lifeData.slot.last.coinsCredited===25");
+  waitFor("document.getElementById('slotSpinButton')?.getAttribute('aria-label')==='GIRA NELLA CAVERNA'&&!document.getElementById('slotSpinButton').disabled",15000);
+  touchId("slotSpinButton");waitFor("!slotBusy",15000);truth("lifeData.slot.wallet.balance===25&&lifeData.slot.wallet.spent===2&&lifeData.slot.last.coinCost===0&&lifeData.slot.last.coinsCredited===25");
   assertPinnedSlot();capture("14_coins_and_embedded_banner");
  }
  @Test public void m_neonAdaptiveLauncherIcon()throws Exception{
@@ -530,4 +527,32 @@ public class LaunchValidationTest {
   }finally{device.executeShellCommand("svc wifi enable");device.executeShellCommand("svc data enable");}
  }
 
+
+ @Test public void r_bonusSongOnlyDuringBonusAndNativeLifecycle()throws Exception{
+  slotFixture("temple","full");
+  js("muted=false;playerSettings.music=true;lifeData.slot.arcade.musicEnabled=true;applyPlayerSettings();slotMediaSync();true");
+  waitFor("slotMusicKey==='music' && !!slotMusicNode",20000);
+  truth("slotMusicProfile().key==='music' && !bnSupernovaRun");
+  js("window.__bonusTotal=lifeData.slot.total;window.__bonusCoins=lifeData.slot.wallet.balance;window.__bonusLives=lifeData.balance;true");
+  touch("GIRA");waitFor("!!bnSupernovaRun && slotMusicKey==='hype' && !!slotMusicNode",20000);
+  truth("!window.BlastNexaBannerLayout().visible && slotBusy && slotMusicOffset===0");
+  truth("lifeData.slot.total===window.__bonusTotal+1 && lifeData.slot.wallet.balance===window.__bonusCoins-lifeData.slot.last.coinCost+lifeData.slot.last.coinsCredited && lifeData.balance===window.__bonusLives+lifeData.slot.last.credited");
+  capture("31_bonus_song_and_hidden_banner");
+  touchId("snContinue");waitFor("!slotBusy && !bnSupernovaRun && slotMusicKey==='music'",10000);
+  truth("lifeData.slot.total===window.__bonusTotal+1 && slotSampleVoices.size===0 && window.BlastNexaBannerLayout().visible");
+  js("bnSupernovaStart({title:'MEGA BONUS',duration:8000});true");waitFor("slotMusicKey==='hype'",10000);
+  java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();withActivity(a->task.set(a.getTaskId()));
+  device.pressHome();device.executeShellCommand("am task focus "+task.get());awaitForeground();
+  waitFor("!bnSupernovaRun && !slotBusy && slotMusicKey!=='hype'",10000);
+  truth("lifeData.slot.total===window.__bonusTotal+1 && window.__qaErrors.length===0");
+ }
+ @Test public void s_bannerStaysInsideRequestedCentreDeck()throws Exception{
+  slotFixture("temple","lite");
+  truth("(()=>{const seat=document.getElementById('slotBannerSeat').getBoundingClientRect(),frame=document.getElementById('gameBannerFrame').getBoundingClientRect(),spin=document.getElementById('slotSpinButton').getBoundingClientRect(),wallet=document.getElementById('slotCoinWallet').getBoundingClientRect(),b=window.BlastNexaBannerLayout();return b.slot==='slot_control_deck'&&b.visible&&frame.height===50&&frame.left>=seat.left&&frame.right<=seat.right&&frame.top>=seat.top&&frame.bottom<=seat.bottom&&frame.right<spin.left&&frame.left>wallet.right&&!document.querySelector('#slotBannerSeat .bn-radiance-note');})()");
+  js("window.BlastNexaBannerStatus({session:gameSession,status:'loaded'});true");truth("document.getElementById('gameBannerPreview').hidden");
+  js("window.BlastNexaBannerStatus({session:gameSession,status:'unavailable'});true");truth("!document.getElementById('gameBannerPreview').hidden");
+  capture("31_centre_banner_deck");
+  for(String world:new String[]{"crystal","forge","temple"}){js("setArcadeMachine('"+world+"');true");truth("window.BlastNexaBannerLayout().slot==='slot_control_deck'&&window.BlastNexaBannerLayout().visible");}
+  truth("window.__qaErrors.length===0");
+ }
 }
