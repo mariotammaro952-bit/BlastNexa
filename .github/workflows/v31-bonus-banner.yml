@@ -2,6 +2,12 @@ name: BlastNexa v31 bonus music and banner release
 on:
   push:
     branches: [codex/bonus-banner-v31]
+    paths:
+      - app/src/main/**
+      - game/**
+      - tools/prepare_assets.py
+      - tools/upgrade_game_v31.py
+      - app/build.gradle.kts
   workflow_dispatch:
 permissions:
   contents: read

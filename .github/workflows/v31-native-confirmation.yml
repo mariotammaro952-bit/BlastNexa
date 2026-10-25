@@ -1,0 +1,106 @@
+name: BlastNexa v31 native confirmation
+on:
+  push:
+    branches: [codex/bonus-banner-v31-native]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: blastnexa-v31-native-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      BN_BANNER_AD_UNIT: ${{ vars.BN_BANNER_AD_UNIT }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '24'
+      - name: Compile final native checks with the same production game payload
+        run: |
+          python3 tools/prepare_assets.py
+          python3 tools/verify_release_inputs.py
+          ./gradlew --no-daemon --max-workers=2 assemblePreviewDebug assemblePreviewDebugAndroidTest
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: BlastNexa-v31-native-build
+          path: |
+            app/build/outputs/apk/
+          retention-days: 7
+          if-no-files-found: error
+  android:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api: 31
+            screen: compact
+            size: 720x1280
+            density: 320
+            cutout: 0
+          - api: 36
+            screen: compact
+            size: 720x1280
+            density: 320
+            cutout: 0
+          - api: 36
+            screen: wide-cutout
+            size: 720x1600
+            density: 320
+            cutout: 1
+          - api: 36
+            screen: tablet
+            size: 800x1280
+            density: 160
+            cutout: 0
+    env:
+      BN_QA_SIZE: ${{ matrix.size }}
+      BN_QA_DENSITY: ${{ matrix.density }}
+      BN_QA_CUTOUT: ${{ matrix.cutout }}
+      BN_QA_EXPECTED_TESTS: 17
+      BN_QA_TEST_METHODS: com.blastnexa.blockpuzzle.LaunchValidationTest#a00_freshCampaignStartsOnceWithTwentyLivesAndOneThousandCoins,com.blastnexa.blockpuzzle.LaunchValidationTest#a01_centeredBoardAndStaticPagedScreensUsePhysicalTouches,com.blastnexa.blockpuzzle.LaunchValidationTest#a0_homeBannerSharesTheSidebarAndCollapsesWithoutAnAd,com.blastnexa.blockpuzzle.LaunchValidationTest#a_menuProfileAnd400Crosswords,com.blastnexa.blockpuzzle.LaunchValidationTest#b_threeSlotWorldsAndFiftySpinPersistence,com.blastnexa.blockpuzzle.LaunchValidationTest#c_allAdventureLevelsAcrossFourScenes,com.blastnexa.blockpuzzle.LaunchValidationTest#d_pauseResumeBackAndNavigation,com.blastnexa.blockpuzzle.LaunchValidationTest#g_landscapePuzzleSlotAndBanner,com.blastnexa.blockpuzzle.LaunchValidationTest#h_realTouchesRapidTapsAndFullAnimation,com.blastnexa.blockpuzzle.LaunchValidationTest#i_realTouchesChestCrystalAndForge,com.blastnexa.blockpuzzle.LaunchValidationTest#j_realTouchesAutoStopPauseAndUninterruptedSpins,com.blastnexa.blockpuzzle.LaunchValidationTest#k_fullWidthNativeCanvasAndCutout,com.blastnexa.blockpuzzle.LaunchValidationTest#l_virtualCoinsUseRealTouchAndSurviveRecreation,com.blastnexa.blockpuzzle.LaunchValidationTest#p_coloredLineChoicesChargeTheDisplayedCoins,com.blastnexa.blockpuzzle.LaunchValidationTest#q_offlinePuzzleAndSlotKeepCommittedProgress,com.blastnexa.blockpuzzle.LaunchValidationTest#r_bonusSongOnlyDuringBonusAndNativeLifecycle,com.blastnexa.blockpuzzle.LaunchValidationTest#s_bannerStaysInsideRequestedCentreDeck
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: BlastNexa-v31-native-build
+          path: imported-build
+      - name: Stage matching test APKs and enable emulator acceleration
+        run: |
+          mkdir imported-artifacts
+          cp -a imported-build/app/build/outputs/apk/. imported-artifacts/
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-build: 14472402
+          disable-animations: false
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory 2048 -cores 2
+          script: bash tools/run_android_validation_settled.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: BlastNexa-v31-confirmed-api-${{ matrix.api }}-${{ matrix.screen }}
+          path: android-evidence/
+          retention-days: 7

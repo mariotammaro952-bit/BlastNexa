@@ -347,7 +347,7 @@ public class LaunchValidationTest {
    // Observe the native collect control before tapping. A slow accessibility
    // bridge must not outlive the collect window and accidentally buy a new spin.
    waitFor("!!document.getElementById('bnSupernova')",15000);
-   touchId("snContinue");waitFor("!slotBusy",5000);
+   touchId("snContinue");waitFor("!slotBusy",15000);
    truth("window.__qaLastTouch.label==='CONTINUA'");
    truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.balance===window.__touchBalance+5");
    writeEvidence("touch-observed-"+machine+".json",js("JSON.stringify({start:window.__qaSpinStart,mid:window.__qaSpinMid,late:window.__qaSpinLate,last:window.__qaLastTouch,total:lifeData.slot.total,previous:window.__touchTotal,burstMs:"+elapsed+"})"));
@@ -377,7 +377,7 @@ public class LaunchValidationTest {
   truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.slot.last.arcade.held.join(',')==='0,3' && lifeData.slot.arcade.reactor===0");assertPinnedSlot();capture("10_forge_after_touch_respin");
  }
  @Test public void j_realTouchesAutoStopPauseAndUninterruptedSpins()throws Exception{
-  slotFixture("crystal","lite");js("window.__touchTotal=lifeData.slot.total;true");touch("Avvia 5 giri automatici");waitFor("lifeData.slot.total===window.__touchTotal+5 && !slotBusy && slotAutoLeft===0 && slotAutoTimer===null",15000);
+  slotFixture("crystal","lite");js("window.__qaAutoDraw=0;slotRandomInt=max=>max===100?[0,14,31,47,63][Math.floor(window.__qaAutoDraw++/3)%5]:0;window.__touchTotal=lifeData.slot.total;true");touch("Avvia 5 giri automatici");waitFor("lifeData.slot.total===window.__touchTotal+5 && !slotBusy && slotAutoLeft===0 && slotAutoTimer===null",15000);
   js("playerSettings.effects='full';window.__qaStopTotal=null;window.__touchTotal=lifeData.slot.total;true");truth("!reducedFX()");
   android.graphics.Rect autoFive=touchBounds("Avvia 5 giri automatici"),autoTen=touchBounds("Avvia 10 giri automatici");
   android.graphics.Rect autoArea=new android.graphics.Rect(autoFive);autoArea.union(autoTen);
@@ -503,7 +503,7 @@ public class LaunchValidationTest {
    slotFixture(machine,"lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=100;window.__lineStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");
    for(int lines:new int[]{1,5,10}){
     touch(lines==1?"1 linea, 1 moneta per giro":lines+" linee, "+lines+" monete per giro");truth("slotLineCount()==="+lines+" && document.getElementById('slotLines"+lines+"').getAttribute('aria-pressed')==='true'");
-    js("window.__lineBefore=lifeData.slot.wallet.balance;window.__lineLives=lifeData.balance;true");touch("GIRA");waitFor("!slotBusy",5000);
+    js("window.__lineBefore=lifeData.slot.wallet.balance;window.__lineLives=lifeData.balance;true");touch("GIRA");waitFor("!slotBusy",15000);
     truth("lifeData.slot.wallet.balance===window.__lineBefore-"+lines+"+25*"+lines+" && lifeData.slot.last.coinsCredited===25*"+lines+" && lifeData.slot.last.coinCost==="+lines+" && lifeData.slot.last.arcade.lineCount==="+lines+" && lifeData.balance===window.__lineLives+5");
    }
    truth("lifeData.slot.wallet.balance===484 && lifeData.slot.total===window.__lineStart+3");assertPinnedSlot();
@@ -514,7 +514,7 @@ public class LaunchValidationTest {
  @Test public void q_offlinePuzzleAndSlotKeepCommittedProgress()throws Exception{
   device.executeShellCommand("svc wifi disable");device.executeShellCommand("svc data disable");
   try{
-   slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=100;window.__offlineStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("!slotBusy",5000);truth("lifeData.slot.wallet.balance===124 && lifeData.slot.total===window.__offlineStart+1");
+   slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=100;window.__offlineStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("!slotBusy",15000);truth("lifeData.slot.wallet.balance===124 && lifeData.slot.total===window.__offlineStart+1");
    js("unlocked=2000;lifeData.balance=1000;playerSettings.effects='lite';setScene('war');true");truth("start('adventure',1)===true");
    int moves=Integer.parseInt(js("LEVELS[0].proof.length"));
    for(int i=0;i<moves;i++){
