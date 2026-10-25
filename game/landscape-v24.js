@@ -94,6 +94,7 @@ function composeSlot(){
  const guardian=document.createElement('img');guardian.src='assets/nexa-guardian.webp';guardian.alt='';guardian.width=1024;guardian.height=1536;guardian.draggable=false;
  const caption=document.createElement('small');caption.textContent='NEXA ODYSSEY';character.append(guardian,caption);
  const panorama=document.createElement('img');panorama.className='bn-slot-panorama';panorama.src=cabinet.querySelector('.bn-world-background').src;panorama.alt='';panorama.draggable=false;
+ let backdrop=$id('bnSlotBackdrop');if(!backdrop){backdrop=document.createElement('img');backdrop.id='bnSlotBackdrop';backdrop.alt='';backdrop.setAttribute('aria-hidden','true');app.prepend(backdrop);}backdrop.src=panorama.src;
  if(brand){brand.querySelector('small').textContent='NEXA LUCK';brand.querySelector('strong').textContent='SLOT AVVENTURA';sidebar.append(brand);}
  for(const selector of ['.bn-world-machines','.bn-arcade-tabs','.bn-world-feature','.bn-world-xp','button.bn-arcade-auto-button','.bn-slot-audio-panel','.bn-slot-cadence','.bn-world-life-wait','.bn-temple-note']){
   const node=layout.querySelector(':scope > '+selector);if(node)sidebar.append(node);
@@ -104,7 +105,8 @@ function composeSlot(){
  if(respin&&auto){
   // At reactor readiness the two auto buttons are unavailable. Use their
   // space for a full-size relaunch instead of two tiny stacked spin targets.
-  auto.replaceChildren(respin);respin.setAttribute('aria-label','Rilancia i rulli');
+  auto.replaceChildren();respin.setAttribute('aria-label','Rilancia i rulli');
+  respin.dataset.ready=String(!respin.disabled);deck.dataset.respin='on';
   if(spin){
    spin.classList.remove('bn-world-normal-spin');
    spin.textContent=spin.textContent.startsWith('CONTINUA')?'CONTINUA':'GIRA';
@@ -129,6 +131,7 @@ function composeSlot(){
  if(coins)walletControls.append(coins);
  if(auto)walletControls.append(auto);
  deck.append(walletControls);
+ if(respin){deck.append(respin);walletControls.classList.add('bn-respin-wallet');}
  const adSeat=document.createElement('div');adSeat.id='slotBannerSeat';adSeat.className='bn-slot-ad-seat';adSeat.setAttribute('aria-hidden','true');deck.append(adSeat);
  if(result){result.querySelector('#slotCollectButton')?.remove();deck.append(result);}else{const notice=document.createElement('div');notice.className='bn-world-result';notice.setAttribute('role','status');notice.textContent='MONETE + VITE';deck.append(notice);}
  if(controls)deck.append(controls);
@@ -238,3 +241,4 @@ function installBanner(){
 function init(){rearrangeMenu();rearrangeGame();rearrangeWords();installLayout();installBanner();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
+

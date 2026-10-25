@@ -32,12 +32,12 @@ async function start(page,options={}){assert.equal(await page.evaluate(o=>bnSupe
   const committed=await p.evaluate(()=>({coins:lifeData.slot.wallet.balance,lives:lifeData.balance,total:lifeData.slot.total,last:lifeData.slot.last}));
   assert.equal(committed.total,before.total+1);assert.equal(committed.coins,before.coins-committed.last.coinCost+committed.last.coinsCredited);assert.equal(committed.lives,before.lives+committed.last.credited);
   assert.equal(await p.evaluate(()=>window.BlastNexaBannerLayout().visible),false);assert.equal(await p.evaluate(()=>window.__layouts.at(-1).visible),false);
-  await p.locator('#snContinue').tap();await song(p,'music');assert.equal(await p.evaluate(()=>slotBusy),false);assert.equal(await p.evaluate(()=>lifeData.slot.total),committed.total);details.realBonus={before,after:committed};
+  await p.locator('#snSkip').tap();await song(p,'music');assert.equal(await p.evaluate(()=>slotBusy),false);assert.equal(await p.evaluate(()=>lifeData.slot.total),committed.total);details.realBonus={before,after:committed};
  });
  await test('Every bonus restarts the supplied song at zero and returns to its previous world on CONTINUA',async()=>{
   for(const [world,key]of [['crystal','music_crystal'],['forge','music_forge']]){
    await p.evaluate(world=>{setArcadeMachine(world);slotMusicOffsets.set('hype',37);},world);await song(p,key);
-   await start(p,{title:'MEGA BONUS'});assert.equal(await p.evaluate(()=>slotMusicOffset),0);await p.locator('#snContinue').tap();await song(p,key);
+   await start(p,{title:'MEGA BONUS'});assert.equal(await p.evaluate(()=>slotMusicOffset),0);await p.locator('#snSkip').tap();await song(p,key);
    assert.equal(await p.evaluate(()=>slotMusicOffsets.has('hype')),false);
   }
  });
@@ -47,12 +47,12 @@ async function start(page,options={}){assert.equal(await page.evaluate(o=>bnSupe
  });
  await test('Music OFF suppresses the song while bonus effects remain available',async()=>{
   await p.evaluate(()=>{playerSettings.music=false;slotMediaSync();bnSupernovaStart({});});await p.waitForTimeout(250);
-  assert.equal(await p.evaluate(()=>slotMusicNode),null);assert.ok(await p.evaluate(()=>bnSupernovaRun.voices.size>0));await p.locator('#snContinue').tap();await p.evaluate(()=>{playerSettings.music=true;slotMediaSync();});
+  assert.equal(await p.evaluate(()=>slotMusicNode),null);assert.ok(await p.evaluate(()=>bnSupernovaRun.voices.size>0));await p.locator('#snSkip').tap();await p.evaluate(()=>{playerSettings.music=true;slotMediaSync();});
  });
  await test('Mute immediately clears the song and all bonus cues without replaying the prize',async()=>{
   await start(p);const total=await p.evaluate(()=>lifeData.slot.total);
   await p.evaluate(()=>{muted=true;updateAudioMix();slotMediaSync();});assert.equal(await p.evaluate(()=>slotMusicNode),null);assert.equal(await p.evaluate(()=>bnSupernovaRun.voices.size),0);
-  await p.locator('#snContinue').tap();assert.equal(await p.evaluate(()=>lifeData.slot.total),total);await p.evaluate(()=>{muted=false;updateAudioMix();slotMediaSync();});
+  await p.locator('#snSkip').tap();assert.equal(await p.evaluate(()=>lifeData.slot.total),total);await p.evaluate(()=>{muted=false;updateAudioMix();slotMediaSync();});
  });
  await test('Losing focus cancels bonus audio, stops auto play and restores the central ad without another award',async()=>{
   await start(p);const coins=await p.evaluate(()=>lifeData.slot.wallet.balance);
@@ -79,3 +79,4 @@ async function start(page,options={}){assert.equal(await page.evaluate(o=>bnSupe
  }
  assert.deepEqual(errors,[]);fs.writeFileSync(path.join(root,'qa/v31_extras_results.json'),JSON.stringify({passed:tests.length,tests,errors,details},null,2));console.log(JSON.stringify({passed:tests.length,errors}));await browser.close();
 })().catch(async error=>{console.error(error);fs.writeFileSync(path.join(root,'qa/v31_extras_failure.txt'),error.stack);await browser?.close();process.exit(1);});
+

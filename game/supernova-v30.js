@@ -13,6 +13,8 @@ function bnSupernovaCleanup(){
  bnSupernovaStopAudio();if(slotMusicKey==='hype'){slotStopMusic();slotMusicOffsets.delete('hype');}bnSupernovaRun=null;bnSupernovaSerial++;
  cancelAnimationFrame(run.frame);run.timers.forEach(clearTimeout);run.observer?.disconnect();run.layer.remove();
  document.removeEventListener('keydown',run.onKey);
+ for(const {node,inert,hidden}of run.background||[]){if(!inert)node.removeAttribute('inert');if(hidden===null)node.removeAttribute('aria-hidden');else node.setAttribute('aria-hidden',hidden);}
+ delete $('app').dataset.superBonus;
  if(run.previousFocus?.isConnected)try{run.previousFocus.focus({preventScroll:true})}catch{}
  return true;
 }
@@ -40,41 +42,74 @@ function bnSupernovaAudio(run){
   });
  }).catch(()=>{});
 }
+// The coins reveal portions of the already committed result. They never draw
+// odds, spend currency, grant a second reward, or save a second transaction.
+function bnSupernovaReveal(run,index){
+ if(bnSupernovaRun!==run||run.revealed.has(index)||Math.floor(index/12)!==run.page)return false;
+ run.revealed.add(index);const coin=run.grid.children[index%12];coin.disabled=true;coin.classList.add('revealed');
+ const part=run.parts[index],labels=[];
+ if(part.coins)labels.push('+'+part.coins+' ◉');if(part.lives)labels.push('+'+part.lives+' ♥');if(part.free)labels.push('+'+part.free+' GIRI');
+ coin.replaceChildren(uNode('strong','',labels.join(' · ')||'✦'),uNode('small','',labels.length?'SCOPERTO':'ENERGIA NEXA'));
+ coin.setAttribute('aria-label','Moneta '+(index%12+1)+': '+(labels.join(', ')||'energia Nexa'));
+ for(const c of run.counters){c.collected+=part[c.key]||0;c.node.textContent='+'+c.collected.toLocaleString('it-IT');}
+ const found=[...run.revealed].filter(i=>Math.floor(i/12)===run.page).length;
+ run.progress.textContent=found+' / 12 MONETE';run.next.disabled=found<12;run.all.disabled=found===12;
+ if(found===12){run.status.textContent=run.page===2?'Tutte le monete scoperte. Il premio è salvo.':'Pagina completata. Puoi passare alla prossima.';haptic([12,25,20]);}
+ else {run.status.textContent=labels.length?'Scoperto '+labels.join(', '):'Moneta scoperta';haptic([8]);}
+ slotSound('tick',index%5+1);run.lastImpact=performance.now();
+ if(!run.lite)bnSupernovaBurst(run,run.lastImpact,index);
+ if(!run.frame)run.frame=requestAnimationFrame(t=>bnSupernovaDraw(run,t));
+ return true;
+}
+function bnSupernovaPage(run){
+ run.grid.replaceChildren();run.next.disabled=true;run.all.disabled=false;
+ run.pageLabel.textContent='PAGINA '+(run.page+1)+' / 3';run.progress.textContent='0 / 12 MONETE';
+ run.next.textContent=run.page===2?'TORNA ALLA SLOT':'PAGINA SUCCESSIVA';
+ for(let i=0;i<12;i++){
+  const index=run.page*12+i,coin=uButton('',()=>bnSupernovaReveal(run,index),'sn-coin');coin.id='snCoin'+i;
+  coin.setAttribute('aria-label','Scopri moneta '+(i+1));coin.append(uNode('strong','','✦'),uNode('small','','TOCCA'));run.grid.append(coin);
+ }
+}
 function bnSupernovaStart(options={}){
  if(window.__BN_TEST_FAST__||!slotVisible()||document.hidden||!slotPlaybackAllowed())return false;
- bnSupernovaCleanup();clearSlotSpectacle();stopSlotSample();slotStopMusic();slotMusicOffsets.delete('hype');
- // A bonus can arrive without a line win. Lock that presentation too, and
- // use the same finish path as a normal saved win.
- const ownLock=!slotBusy;
- slotBusy=true;slotPhase='celebrating';if(ownLock&&arcadeCurrentLast())renderLifeSlot($('universeBody'));
- const layer=uNode('section','');layer.id='bnSupernova';layer.setAttribute('role','dialog');layer.setAttribute('aria-modal','true');layer.setAttribute('aria-labelledby','snTitle');layer.setAttribute('aria-describedby','snRewards');
- const duration=Math.max(1200,Math.min(10000,Number(options.duration)||8000));layer.style.setProperty('--sn-duration',duration+'ms');layer.dataset.motion=reducedFX()?'lite':'full';
+ bnSupernovaCleanup();clearSlotSpectacle();stopSlotSample();slotStopMusic();slotMusicOffsets.delete('hype');stopSlotAuto();
+ const ownLock=!slotBusy;slotBusy=true;slotPhase='celebrating';if(ownLock&&arcadeCurrentLast())renderLifeSlot($('universeBody'));
+ const layer=uNode('section','sn-collect');layer.id='bnSupernova';layer.setAttribute('role','dialog');layer.setAttribute('aria-modal','true');layer.setAttribute('aria-labelledby','snTitle');layer.setAttribute('aria-describedby','snInstructions');
+ layer.dataset.motion=reducedFX()?'lite':'full';
  const canvas=uNode('canvas','sn-canvas');canvas.setAttribute('aria-hidden','true');layer.append(canvas);
- const top=uNode('div','sn-top');top.append(uNode('span','','BLASTNEXA / NEXA LUCK'),uNode('span','','S U P E R N O V A'));layer.append(top);
- for(const cls of ['sn-orbit','sn-orbit sn-orbit-two']){const orbit=uNode('i',cls);orbit.setAttribute('aria-hidden','true');layer.append(orbit);}
- const core=uNode('div','sn-core');core.append(uNode('small','sn-eyebrow','NEXA ENERGY · MAXIMUM'));
- const title=uNode('h2','sn-title',options.title||'MEGA BONUS');title.id='snTitle';
- const copy=uNode('p','sn-copy',options.copy||'ESPLOSIONE DI ENERGIA');core.append(title,copy);
- const rewards=uNode('div','sn-rewards');rewards.id='snRewards';rewards.setAttribute('aria-live','off');
- const coins=Math.max(0,Math.floor(Number(options.coins)||0)),lives=Math.max(0,Math.floor(Number(options.lives)||0)),counters=[];
- for(const [icon,value,label,cls]of [['◉',coins,'MONETE\nVIRTUALI','sn-coins'],['♥',lives,'VITE\nEXTRA','sn-lives']]){
-  if(!value)continue;const row=uNode('div','sn-reward '+cls),count=uNode('strong','','+0');row.append(uNode('i','',icon),count,uNode('small','',label));rewards.append(row);counters.push({node:count,value});
+ const top=uNode('div','sn-top'),exit=uButton('TORNA ALLA SLOT',bnSupernovaFinish,'sn-exit');exit.id='snSkip';
+ top.append(uNode('span','','NEXA LUCK / SUPER BONUS'),exit);layer.append(top);
+ const main=uNode('div','sn-collection'),head=uNode('div','sn-collection-head'),copy=uNode('div','');
+ const title=uNode('h2','sn-title','SUPER BONUS');title.id='snTitle';const instructions=uNode('p','sn-copy','TOCCA LE MONETE E SCOPRI IL TUO PREMIO');instructions.id='snInstructions';copy.append(title,instructions);head.append(copy);
+ const rewards=uNode('div','sn-rewards');rewards.id='snRewards';const counters=[];
+ const coins=Math.max(0,Math.floor(Number(options.coins)||0)),lives=Math.max(0,Math.floor(Number(options.lives)||0)),free=String(options.copy||'').includes('+3')?3:0;
+ for(const [key,value,label]of [['coins',coins,'MONETE VIRTUALI'],['lives',lives,'VITE EXTRA'],['free',free,'GIRI BONUS']]){
+  if(!value)continue;const row=uNode('div','sn-reward'),count=uNode('strong','','+0');row.append(count,uNode('small','',label));rewards.append(row);counters.push({key,node:count,value,collected:0});
  }
- if(!counters.length){const row=uNode('div','sn-reward sn-free');row.append(uNode('i','','✦'),uNode('strong','',options.copy?.includes('+3')?'+3':'✦'),uNode('small','',options.copy?.includes('+3')?'GIRI\nBONUS':'NUOVO\nBONUS'));rewards.append(row);}
- core.append(rewards);layer.append(core);
- const bottom=uNode('div','sn-bottom'),button=uButton('CONTINUA',bnSupernovaFinish,'sn-continue');button.id='snContinue';
- bottom.append(button,uNode('small','sn-saved','PREMI SALVATI · SOLO MONETE VIRTUALI E VITE'));layer.append(bottom,uNode('div','sn-timeline'));
- const run={serial:++bnSupernovaSerial,layer,canvas,title,duration,counters,started:performance.now(),voices:new Set(),timers:[],frame:0,previousFocus:document.activeElement,audioStopped:false,lite:reducedFX(),width:1,height:1,particles:[],rings:[],hit:0,seed:(Number(options.spin)||13)*971+1};
+ if(!counters.length)rewards.append(uNode('small','sn-copy',String(options.copy||'ENERGIA NEXA')));
+ head.append(rewards);const grid=uNode('div','sn-coin-grid');grid.setAttribute('role','group');grid.setAttribute('aria-label','Monete del super bonus');main.append(head,grid);layer.append(main);
+ const bottom=uNode('div','sn-bottom'),info=uNode('div','sn-page-info'),pageLabel=uNode('strong','','PAGINA 1 / 3'),progress=uNode('small','','0 / 12 MONETE');info.append(pageLabel,progress);
+ const all=uButton('SCOPRI QUESTA PAGINA',()=>{const run=bnSupernovaRun;if(run)for(let i=0;i<12;i++)bnSupernovaReveal(run,run.page*12+i);},'sn-reveal-all');all.id='snRevealAll';
+ const next=uButton('PAGINA SUCCESSIVA',()=>{const run=bnSupernovaRun;if(!run||run.next.disabled)return;if(run.page===2){bnSupernovaFinish();return;}run.page++;bnSupernovaPage(run);run.grid.firstElementChild.focus({preventScroll:true});},'sn-continue');next.id='snContinue';
+ const status=uNode('p','sn-live');status.setAttribute('aria-live','polite');status.setAttribute('role','status');
+ bottom.append(info,all,next,uNode('small','sn-saved','PREMIO GIÀ SALVATO · MONETE VIRTUALI E VITE'));layer.append(bottom,status);
+ const parts=Array.from({length:36},(_,i)=>Object.fromEntries([['coins',coins],['lives',lives],['free',free]].map(([key,total])=>[key,Math.floor(total*(i+1)/36)-Math.floor(total*i/36)])));
+ const run={serial:++bnSupernovaSerial,layer,canvas,title,duration:8000,counters,started:performance.now(),voices:new Set(),timers:[],frame:0,previousFocus:document.activeElement,audioStopped:false,lite:reducedFX(),width:1,height:1,particles:[],rings:[],hit:0,seed:(Number(options.spin)||13)*971+1,collecting:true,parts,revealed:new Set(),page:0,grid,pageLabel,progress,next,all,status,lastImpact:0,background:[]};
  run.onKey=event=>{
-  if(event.key==='Escape'){event.preventDefault();bnSupernovaFinish();}
-  if(event.key==='Tab'){event.preventDefault();button.focus({preventScroll:true});}
+  if(event.key==='Escape'){event.preventDefault();bnSupernovaFinish();return;}
+  if(event.key==='Tab'){
+   const buttons=[...layer.querySelectorAll('button:not(:disabled)')],first=buttons[0],last=buttons.at(-1);
+   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  }
  };
- bnSupernovaRun=run;document.addEventListener('keydown',run.onKey);$('app').append(layer);
- const size=()=>{const rect=layer.getBoundingClientRect(),dpr=Math.min(1.5,devicePixelRatio||1);run.width=Math.max(1,rect.width);run.height=Math.max(1,rect.height);canvas.width=Math.round(run.width*dpr);canvas.height=Math.round(run.height*dpr);run.context=canvas.getContext('2d',{alpha:true});run.context?.setTransform(dpr,0,0,dpr,0,0);};
+ bnSupernovaRun=run;document.addEventListener('keydown',run.onKey);$('app').append(layer);$('app').dataset.superBonus='on';
+ for(const node of $('app').children)if(node!==layer){run.background.push({node,inert:node.hasAttribute('inert'),hidden:node.getAttribute('aria-hidden')});node.setAttribute('inert','');node.setAttribute('aria-hidden','true');}
+ bnSupernovaPage(run);
+ const size=()=>{const rect=layer.getBoundingClientRect(),dpr=Math.min(1.5,devicePixelRatio||1);run.width=Math.max(1,rect.width);run.height=Math.max(1,rect.height);canvas.width=Math.round(run.width*dpr);canvas.height=Math.round(run.height*dpr);run.context=canvas.getContext('2d',{alpha:true});run.context?.setTransform(dpr,0,0,dpr,0,0);if(!run.frame)run.frame=requestAnimationFrame(t=>bnSupernovaDraw(run,t));};
  size();if(typeof ResizeObserver==='function'){run.observer=new ResizeObserver(size);run.observer.observe(layer);}
- button.focus({preventScroll:true});syncGameBanner(true);slotMediaSync();
- bnSupernovaAudio(run);bnSupernovaDraw(run,run.started);
- run.timers.push(setTimeout(()=>{if(bnSupernovaRun===run)bnSupernovaFinish()},duration));return true;
+ grid.firstElementChild.focus({preventScroll:true});syncGameBanner(true);slotMediaSync();bnSupernovaAudio(run);
+ return true;
 }
 function bnSupernovaRandom(run){run.seed=(Math.imul(run.seed,1664525)+1013904223)>>>0;return run.seed/4294967296;}
 function bnSupernovaBurst(run,now,index){
@@ -91,10 +126,10 @@ function bnSupernovaBurst(run,now,index){
  run.title.classList.remove('sn-hit');void run.title.offsetWidth;run.title.classList.add('sn-hit');
 }
 function bnSupernovaDraw(run,now){
- if(bnSupernovaRun!==run)return;
+ if(bnSupernovaRun!==run)return;run.frame=0;
  if(!slotVisible()||document.hidden){bnSupernovaCleanup();return;}
  const t=now-run.started,progress=Math.min(1,t/Math.min(5800,run.duration*.8));
- for(const counter of run.counters)counter.node.textContent='+'+Math.floor(counter.value*(1-Math.pow(1-progress,3))).toLocaleString('it-IT');
+ if(!run.collecting)for(const counter of run.counters)counter.node.textContent='+'+Math.floor(counter.value*(1-Math.pow(1-progress,3))).toLocaleString('it-IT');
  const ctx=run.context,w=run.width,h=run.height,cx=w*.5,cy=h*.49;
  if(ctx){
   ctx.clearRect(0,0,w,h);
@@ -130,10 +165,11 @@ function bnSupernovaDraw(run,now){
    ctx.fillStyle='#bbf8e340';for(let i=0;i<35;i++)ctx.fillRect(((i*137)%797)/797*w,((i*73)%431)/431*h,2,2);
   }
  }
- run.frame=requestAnimationFrame(time=>bnSupernovaDraw(run,time));
+ if(t<run.duration||now-run.lastImpact<1800)run.frame=requestAnimationFrame(time=>bnSupernovaDraw(run,time));
 }
 
 // Prime the short horn cue after an actual gesture; the song still obeys
 // existing master/music controls and the browser's gesture requirements.
 document.addEventListener('pointerdown',()=>{if(slotVisible()&&!muted){slotLoadAudio('bonus');if(slotMusicAllowed())slotLoadAudio('hype');}},{passive:true});
 window.addEventListener('blur',()=>{if(bnSupernovaRun)bnSupernovaFinish()});
+

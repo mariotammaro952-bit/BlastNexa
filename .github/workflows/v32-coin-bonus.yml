@@ -1,0 +1,103 @@
+name: BlastNexa v32 interactive bonus and layout
+on:
+  push:
+    branches: [codex/coin-bonus-v32]
+    paths: [game/**, tools/**, app/**, qa/*.cjs, .github/workflows/v32-coin-bonus.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: blastnexa-v32-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      BN_BANNER_AD_UNIT: ${{ vars.BN_BANNER_AD_UNIT }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: '24'}
+      - name: Prepare and verify the actual engine
+        run: |
+          python3 tools/prepare_assets.py
+          python3 tools/verify_release_inputs.py
+          node --check game/landscape-v24.js
+          node --check game/supernova-v30.js
+          node --check game/static-v29.js
+          node qa/slot_economy_v28.cjs
+          node qa/coins.cjs
+          node qa/all_levels.cjs game/index.html
+          node qa/other_games.cjs
+          node qa/unlimited_modes.cjs
+          node qa/fresh_start_v29.cjs
+      - name: Compile release, test and matching native checks
+        run: ./gradlew --no-daemon --max-workers=2 assemblePreviewDebug assemblePreviewDebugAndroidTest assemblePreviewRelease assembleProductionRelease bundleProductionRelease lintProductionRelease
+      - name: Browser checks of taps, rewards and responsive layouts
+        run: |
+          npm install --no-save playwright@1.62.1
+          npx playwright install --with-deps chromium
+          node qa/coin_bonus_v32.cjs
+          node qa/bonus_banner_v31.cjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: BlastNexa-v32-build
+          path: |
+            app/build/outputs/apk/
+            app/build/outputs/bundle/
+            app/build/reports/lint-results-productionRelease.*
+            qa/*result.json
+            qa/*results.json
+            qa/v32-browser/
+          retention-days: 7
+  android:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {api: 31, screen: compact, size: 720x1280, density: 320, cutout: 0}
+          - {api: 36, screen: wide-cutout, size: 720x1600, density: 320, cutout: 1}
+    env:
+      BN_QA_SIZE: ${{ matrix.size }}
+      BN_QA_DENSITY: ${{ matrix.density }}
+      BN_QA_CUTOUT: ${{ matrix.cutout }}
+      BN_QA_ISOLATE_TESTS: 1
+      BN_QA_EXPECTED_TESTS: 4
+      BN_QA_TEST_METHODS: com.blastnexa.blockpuzzle.LaunchValidationTest#t_v32RelaunchIsLargeRedAndUsesPhysicalTouches,com.blastnexa.blockpuzzle.LaunchValidationTest#u_v32CoinPagesStayOpenAndNeverDuplicateSavedRewards,com.blastnexa.blockpuzzle.LaunchValidationTest#v_v32MapPagerAndPuzzleAreCentredAndDoNotOverlapAds,com.blastnexa.blockpuzzle.LaunchValidationTest#s_bannerStaysInsideRequestedCentreDeck
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with: {distribution: temurin, java-version: '17'}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with: {name: BlastNexa-v32-build, path: imported-build}
+      - name: Stage the matching APKs and KVM
+        run: |
+          mkdir imported-artifacts
+          cp -a imported-build/app/build/outputs/apk/. imported-artifacts/
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: ${{ matrix.api }}
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          emulator-build: 14472402
+          disable-animations: false
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory 4096 -cores 2
+          script: bash tools/run_android_validation_settled.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: BlastNexa-v32-api-${{ matrix.api }}-${{ matrix.screen }}
+          path: android-evidence/
+          retention-days: 7

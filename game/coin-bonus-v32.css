@@ -1,0 +1,84 @@
+/* v32: a proper relaunch target, interactive gold pages, and centred maps. */
+#app>#bnSlotBackdrop{position:absolute!important;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;opacity:.68;filter:brightness(.65);display:none}
+#app[data-slot-wide="play"]>#bnSlotBackdrop{display:block}
+#slotTemple{--bn-control-size:96px}
+#slotTemple .bn-slot-deck[data-respin="on"]{grid-template-columns:minmax(68px,.7fr) var(--bn-control-size) minmax(200px,2fr) minmax(64px,.6fr) 104px;gap:8px}
+#slotTemple .bn-slot-deck[data-respin="on"]>.bn-world-result{grid-column:4}
+#slotTemple .bn-slot-deck[data-respin="on"]>.bn-world-controls{grid-column:5}
+#slotTemple .bn-respin-wallet>.bn-arcade-auto{display:none}
+#slotTemple #slotRespinButton{position:relative;grid-column:2;grid-row:1;align-self:center;justify-self:center;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;width:var(--bn-control-size);height:var(--bn-control-size);min-height:0;margin:-15px 0 0;padding:5px;gap:4px;border:3px solid #ffcccf;border-bottom:5px solid #771729;border-radius:50%;background:radial-gradient(circle at 36% 28%,#8a273a,#3a1325 50%,#170f25 85%);color:#fff1ed;font-size:17px;font-weight:950;letter-spacing:.01em;line-height:1.1;text-shadow:0 0 7px #ff556d;box-shadow:inset 0 0 0 3px #ff627455,inset 0 0 20px #ff33445c,0 4px 0 #330b1a,0 0 10px #ff647788;isolation:isolate;touch-action:manipulation}
+#slotTemple #slotRespinButton::before{content:"";position:absolute;inset:-7px;border:1px solid #ff7188;border-radius:50%;box-shadow:0 0 8px #ff4e6a66;pointer-events:none}
+#slotTemple #slotRespinButton::after{content:"";position:absolute;inset:6px;border:2px solid #ff647b;border-radius:50%;box-shadow:inset 0 0 14px #ff263d,0 0 12px #ff3d58;opacity:.4;pointer-events:none}
+#slotTemple #slotRespinButton>small{max-width:85%;font-size:6px;line-height:1.35;color:#ffc3c6;text-shadow:none;white-space:normal}
+#slotTemple #slotRespinButton[data-ready="true"]::after{animation:bnRedRelaunch 1.2s ease-in-out infinite}
+#slotTemple #slotRespinButton:disabled{opacity:.68;filter:saturate(.6);cursor:default}
+#slotTemple #slotRespinButton:disabled::after{animation:none;opacity:.2}
+#slotTemple #slotRespinButton:active:not(:disabled){transform:translateY(3px) scale(.97)}
+@keyframes bnRedRelaunch{0%,100%{opacity:.35;box-shadow:inset 0 0 9px #ff3141,0 0 5px #ff3d58}50%{opacity:1;box-shadow:inset 0 0 28px #ff3141,inset 0 0 10px #ffbec0,0 0 16px #ff3d58}}
+#app #adventureMap{margin:0;width:100%;min-width:0;overflow:hidden!important;align-self:center}
+#adventureMap>.map-header{position:relative;flex:0 0 auto;padding:9px 14px;min-height:48px;width:100%}
+#adventureMap #mapScroll{min-height:0;min-width:0;width:100%;padding:10px 12px!important}
+#mapScroll>.map-hero,#mapScroll>.map-progress,#mapScroll>#worlds,#mapScroll>.map-tip{width:100%;max-width:1100px;margin-left:auto;margin-right:auto}
+#app #adventureMap>.bn-map-pager{position:relative;inset:auto;flex:0 0 32px;height:32px;min-height:32px;width:calc(100% - 24px);margin:4px 12px 6px;box-shadow:none}
+#app .bn-map-pager>button{height:27px;min-height:27px;width:42px}
+#game .bn-wide-left{align-self:center}
+/* The bonus hides the animated cabinet and its native accessibility nodes. */
+#app[data-super-bonus="on"] #universeScreen{visibility:hidden}
+#app[data-super-bonus="on"] #slotTemple *,#app[data-super-bonus="on"] #slotTemple *::before,#app[data-super-bonus="on"] #slotTemple *::after{animation-play-state:paused!important}
+#bnSupernova.sn-collect{padding:max(12px,env(safe-area-inset-top)) max(20px,var(--bn-safe-right,0px),env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(20px,var(--bn-safe-left,0px),env(safe-area-inset-left));display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:8px;background:radial-gradient(ellipse at 50% 46%,#6c351755,#24132de8 53%,#08091bf7);}
+.sn-collect .sn-top{position:relative;inset:auto;gap:12px;font-size:9px;letter-spacing:.13em}
+.sn-collect .sn-exit{border:1px solid #e9cd9780;border-radius:9px;background:#261c2be8;color:#f8e2b8;min-height:32px;padding:5px 12px;font-size:9px;font-weight:800;letter-spacing:.03em}
+.sn-collection{position:relative;z-index:2;align-self:stretch;min-height:0;width:min(100%,1050px);margin:auto;display:grid;grid-template-rows:auto minmax(0,1fr);gap:10px}
+.sn-collection-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.sn-collect .sn-title{font-size:clamp(22px,4.5vw,46px);line-height:1;margin:0;letter-spacing:.05em;text-shadow:0 2px 0 #81541d,0 0 20px #ffbd5644;color:#ffe5a2}
+.sn-collect .sn-copy{font-size:11px;color:#f8dfb5;margin:5px 0 0;letter-spacing:.07em}
+.sn-collect .sn-rewards{display:flex;gap:14px;margin:0;text-align:right;align-items:center}
+.sn-collect .sn-reward{display:flex;flex-direction:column;gap:2px;padding:0;border:0;background:none;box-shadow:none;min-width:0}
+.sn-collect .sn-reward>strong{font-size:clamp(20px,3vw,32px);line-height:1;color:#ffe7a2}
+.sn-collect .sn-reward>small{font-size:8px;line-height:1.3;color:#dbcbb9;white-space:pre-line;letter-spacing:.06em}
+.sn-coin-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:10px;min-height:0;align-items:center;justify-items:center;padding:6px 10px;border:1px solid #e0b56b4d;border-radius:22px;background:linear-gradient(120deg,#57322030,#0b07174d);box-shadow:inset 0 0 45px #ffc45d0d}
+.sn-coin{position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;width:min(100%,125px,calc((100dvh - 180px)/2));height:auto;aspect-ratio:1;min-width:44px;min-height:44px;max-height:100%;border:3px solid #ffdf7e;border-bottom:6px solid #9c541b;border-radius:50%;padding:6px;gap:3px;background:radial-gradient(circle at 32% 20%,#fff9cb,#f5c74f 33%,#c7891d 73%,#9c5918);box-shadow:inset 0 0 0 3px #9b5a1866,inset 0 0 0 6px #ffeb8880,0 4px 0 #643413,0 0 17px #ffc54c24;color:#8e4d16;text-shadow:0 1px #fff1b4;font-weight:950;touch-action:manipulation;isolation:isolate}
+.sn-coin::before{content:"";position:absolute;inset:10px;border:1px dashed #fff5ac8c;border-radius:50%;pointer-events:none}
+.sn-coin>strong{font-size:clamp(22px,4.3vw,44px);line-height:1;position:relative}
+.sn-coin>small{font-size:clamp(6px,1vw,9px);letter-spacing:.08em;position:relative}
+.sn-coin:active:not(:disabled){transform:translateY(3px) scale(.95)}
+.sn-coin:focus-visible{outline:3px solid #8ffff2;outline-offset:4px}
+.sn-coin.revealed{border-color:#ecc37399;background:radial-gradient(circle,#4c382d,#1c1627);border-bottom-color:#5c3823;box-shadow:inset 0 0 15px #ffc86717;color:#ffe4a0;text-shadow:0 0 8px #ffc26155;animation:snCoinReveal .35s ease-out both;opacity:1;cursor:default}
+.sn-coin.revealed>strong{font-size:clamp(15px,2.5vw,26px)}
+.sn-coin.revealed>small{font-size:7px;color:#cdb6a0}
+@keyframes snCoinReveal{0%{transform:scale(1.12);filter:brightness(1.5)}100%{transform:scale(1);filter:brightness(1)}}
+.sn-collect .sn-bottom{position:relative;inset:auto;z-index:3;display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:nowrap}
+.sn-page-info{font-size:11px;color:#ffe4ad;text-align:center;line-height:1.45;min-width:90px}
+.sn-page-info>small{display:block;font-size:9px;color:#cdbdcb}
+.sn-collect .sn-continue,.sn-reveal-all{min-height:40px;padding:9px 18px;font-size:11px;letter-spacing:.06em;border-radius:10px;margin:0}
+.sn-collect .sn-continue{min-width:170px;border:1px solid #fff1bd;background:linear-gradient(#ffe4a2,#da9b3e);color:#392012;box-shadow:0 3px 0 #7d4520}
+.sn-collect .sn-continue:disabled{opacity:.4;box-shadow:none;cursor:default}
+.sn-reveal-all{border:1px solid #c4b0e188;background:#231e3e;color:#f4e8ff;font-weight:850}
+.sn-collect .sn-saved{font-size:8px;max-width:150px;line-height:1.35;color:#cdbdcb}
+.sn-collect .sn-live{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+@media(orientation:landscape) and (max-height:500px){
+ #adventureMap .map-hero{min-height:94px;padding:11px 15px;border-radius:16px}
+ #adventureMap .map-hero h2{font-size:22px;margin:4px 0;line-height:1.05}
+ #adventureMap .map-hero h2 br{display:none}
+ #adventureMap .map-hero-orb{font-size:85px;top:4px}
+ #adventureMap .map-title{font-size:20px}
+ #adventureMap .map-kicker{font-size:8px}
+ #bnSupernova.sn-collect{gap:5px;padding-top:7px;padding-bottom:8px}
+ .sn-collection{gap:5px}.sn-collect .sn-copy{font-size:9px;margin-top:3px}.sn-collect .sn-top{font-size:8px}
+ .sn-coin-grid{gap:7px;padding:7px 16px;border-radius:16px}
+ .sn-coin{width:min(100%,82px,calc((100dvh - 150px)/2));height:auto}
+ .sn-coin>strong{font-size:30px}.sn-coin>small{font-size:7px}
+ .sn-collect .sn-continue,.sn-reveal-all{min-height:34px;padding:7px 12px;font-size:9px}
+ .sn-collect .sn-saved{display:none}
+}
+@media(max-width:740px){
+ #slotTemple{--bn-control-size:80px}
+ #slotTemple #slotSpinButton{width:80px;height:80px;font-size:23px}
+ #slotTemple .bn-slot-deck{grid-template-columns:minmax(68px,.7fr) minmax(120px,2fr) minmax(56px,.6fr) 86px;gap:7px}
+ #slotTemple .bn-slot-deck[data-respin="on"]{grid-template-columns:minmax(54px,.5fr) 80px minmax(180px,2fr) minmax(50px,.5fr) 86px;gap:5px}
+ #slotTemple #slotRespinButton{font-size:14px}
+ #slotTemple #slotRespinButton>small{font-size:5.5px}
+}
+@media(orientation:portrait){.sn-coin-grid{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:8px}.sn-collection-head{flex-direction:column;text-align:center;gap:8px}.sn-collect .sn-rewards{text-align:center}.sn-collect .sn-bottom{flex-wrap:wrap;gap:8px}.sn-collect .sn-saved{display:none}.sn-coin{width:min(100%,90px,calc((100dvh - 250px)/4));height:auto}}
+@media(prefers-reduced-motion:reduce){#slotTemple #slotRespinButton::after,.sn-coin.revealed{animation:none!important}}
+#app[data-effects="lite"] #slotRespinButton::after{animation:none;opacity:.9}

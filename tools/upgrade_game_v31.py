@@ -7,7 +7,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 source = ROOT / 'game/index.html'
 page = source.read_text()
-if 'ODYSSEY SUPERNOVA v31' in page:
+if 'ODYSSEY SUPERNOVA v31' in page or 'ODYSSEY COIN BONUS v32' in page:
     raise SystemExit(0)
 
 def replace(old, new, count=1):
@@ -76,3 +76,4 @@ replace('</head>', '<link rel="stylesheet" href="radiance-v30.css"><link rel="st
 replace('</body>', '<script defer src="radiance-v30.js"></script><script defer src="supernova-v30.js"></script></body>')
 source.write_text(page)
 print('Prepared v31 bonus-only song, uninterrupted spins and supernova presentation')
+

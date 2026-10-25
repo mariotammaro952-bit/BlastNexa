@@ -347,7 +347,7 @@ public class LaunchValidationTest {
    // Observe the native collect control before tapping. A slow accessibility
    // bridge must not outlive the collect window and accidentally buy a new spin.
    waitFor("!!document.getElementById('bnSupernova')",15000);
-   touchId("snContinue");waitFor("!slotBusy",15000);
+   touchId("snSkip");waitFor("!slotBusy",15000);
    truth("window.__qaLastTouch.label==='CONTINUA'");
    truth("lifeData.slot.total===window.__touchTotal+1 && lifeData.balance===window.__touchBalance+5");
    writeEvidence("touch-observed-"+machine+".json",js("JSON.stringify({start:window.__qaSpinStart,mid:window.__qaSpinMid,late:window.__qaSpinLate,last:window.__qaLastTouch,total:lifeData.slot.total,previous:window.__touchTotal,burstMs:"+elapsed+"})"));
@@ -538,7 +538,7 @@ public class LaunchValidationTest {
   truth("!window.BlastNexaBannerLayout().visible && slotBusy && slotMusicOffset===0");
   truth("lifeData.slot.total===window.__bonusTotal+1 && lifeData.slot.wallet.balance===window.__bonusCoins-lifeData.slot.last.coinCost+lifeData.slot.last.coinsCredited && lifeData.balance===window.__bonusLives+lifeData.slot.last.credited");
   capture("31_bonus_song_and_hidden_banner");
-  touchId("snContinue");waitFor("!slotBusy && !bnSupernovaRun && slotMusicKey==='music'",10000);
+  touchId("snSkip");waitFor("!slotBusy && !bnSupernovaRun && slotMusicKey==='music'",10000);
   truth("lifeData.slot.total===window.__bonusTotal+1 && slotSampleVoices.size===0 && window.BlastNexaBannerLayout().visible");
   js("bnSupernovaStart({title:'MEGA BONUS',duration:8000});true");waitFor("slotMusicKey==='hype'",10000);
   java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();withActivity(a->task.set(a.getTaskId()));
@@ -555,4 +555,40 @@ public class LaunchValidationTest {
   for(String world:new String[]{"crystal","forge","temple"}){js("setArcadeMachine('"+world+"');true");truth("window.BlastNexaBannerLayout().slot==='slot_control_deck'&&window.BlastNexaBannerLayout().visible");}
   truth("window.__qaErrors.length===0");
  }
+ @Test public void t_v32RelaunchIsLargeRedAndUsesPhysicalTouches()throws Exception{
+  slotFixture("forge","full");
+  js("lifeData.slot.last=chooseSlotResult('spin');lifeData.slot.arcade.reactor=6;slotHolds.clear();renderLifeSlot(document.getElementById('universeBody'));true");
+  truth("document.getElementById('slotRespinButton').disabled && getComputedStyle(document.getElementById('slotRespinButton'),'::after').animationName==='none'");
+  touchId("slotHold0");
+  truth("(()=>{const a=document.getElementById('slotRespinButton'),b=document.getElementById('slotSpinButton'),x=a.getBoundingClientRect(),y=b.getBoundingClientRect();return !a.disabled&&a.dataset.ready==='true'&&getComputedStyle(a,'::after').animationName==='bnRedRelaunch'&&Math.abs(x.width-y.width)<1&&Math.abs(x.height-y.height)<1&&x.top>=0&&x.bottom<=innerHeight;})()");
+  capture("32_large_red_relaunch");
+  js("window.__relaunchTotal=lifeData.slot.total;window.__relaunchCoins=lifeData.slot.wallet.balance;true");touchId("slotRespinButton");
+  truth("lifeData.slot.total===window.__relaunchTotal+1 && lifeData.slot.last.arcade.kind==='respin' && lifeData.slot.last.arcade.held[0]===0 && lifeData.slot.wallet.balance===window.__relaunchCoins-lifeData.slot.last.coinCost+lifeData.slot.last.coinsCredited && !spinLifeSlot('respin')");
+ }
+ @Test public void u_v32CoinPagesStayOpenAndNeverDuplicateSavedRewards()throws Exception{
+  slotFixture("temple","lite");
+  js("window.__coinBonusTotal=lifeData.slot.total;true");touchId("slotSpinButton");waitFor("!!bnSupernovaRun",12000);
+  js("window.__coinBonusWallet=lifeData.slot.wallet.balance;window.__coinBonusLives=lifeData.balance;true");
+  Thread.sleep(8500);truth("!!bnSupernovaRun && slotBusy && bnSupernovaRun.revealed.size===0 && !window.BlastNexaBannerLayout().visible");
+  capture("32_coin_bonus_page_1");
+  for(int page=0;page<3;page++){
+   truth("bnSupernovaRun.page==="+page+" && document.getElementById('snContinue').disabled");
+   touchId("snCoin0");truth("bnSupernovaRun.revealed.has("+(page*12)+")");
+   touchId("snRevealAll");truth("!document.getElementById('snContinue').disabled");
+   if(page==2)truth("bnSupernovaRun.counters.every(c=>c.collected===c.value)");
+   touchId("snContinue");
+  }
+  truth("!bnSupernovaRun && !slotBusy && lifeData.slot.total===window.__coinBonusTotal+1 && lifeData.slot.wallet.balance===window.__coinBonusWallet && lifeData.balance===window.__coinBonusLives && !document.getElementById('universeScreen').hasAttribute('inert')");
+  js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===lifeData.slot.last.beforeCoins-lifeData.slot.last.coinCost+lifeData.slot.last.coinsCredited && !bnSupernovaRun");
+ }
+ @Test public void v_v32MapPagerAndPuzzleAreCentredAndDoNotOverlapAds()throws Exception{
+  js("displayMenu();openAdventureMap();true");waitFor("!!document.getElementById('bnPages_mapScroll')",8000);
+  truth("(()=>{const a=document.getElementById('adventureMap').getBoundingClientRect(),s=document.getElementById('mapScroll').getBoundingClientRect(),h=document.querySelector('.map-hero').getBoundingClientRect(),p=document.getElementById('bnPages_mapScroll').getBoundingClientRect(),ad=document.getElementById('gameBanner').getBoundingClientRect();return !document.getElementById('bnPages_adventureMap')&&Math.abs(h.left+h.width/2-a.left-a.width/2)<2&&s.bottom<=p.top+1&&p.bottom<=ad.top+1;})()");
+  capture("32_centred_adventure_map");touchId("bnPageNext_mapScroll");truth("document.getElementById('mapScroll').scrollTop>0");touchId("bnPagePrev_mapScroll");truth("document.getElementById('mapScroll').scrollTop===0");
+  js("start('adventure',1);true");
+  truth("(()=>{const b=document.getElementById('boardShell').getBoundingClientRect(),a=document.querySelector('#game .bn-wide-game').getBoundingClientRect();return Math.abs(b.left+b.width/2-a.left-a.width/2)<2&&Math.abs(b.width-b.height)<2&&b.top>=0&&b.bottom<=innerHeight;})()");
+  capture("32_centred_puzzle_board");truth("window.__qaErrors.length===0");
+ }
+
 }
+

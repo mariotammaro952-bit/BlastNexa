@@ -2,7 +2,7 @@
 (()=>{
 'use strict';
 const id=n=>document.getElementById(n),states=new Map(),slotPages=new Map();
-const selectors=['#menu>.menu-buttons','.bn-home-sidebar','.bn-wide-info','#wordClues','#wordControls','#universeBody','.bn-slot-details','.collect-scroll','.map-scroll','.settings-scroll','#adventureMap','#trophiesScreen','#mosaicGallery','#themeStudio','.dialog'];
+const selectors=['#menu>.menu-buttons','.bn-home-sidebar','.bn-wide-info','#wordClues','#wordControls','#universeBody','.bn-slot-details','.collect-scroll','.map-scroll','.settings-scroll','#trophiesScreen','#mosaicGallery','#themeStudio','.dialog'];
 let queued=false,pagerSerial=0;
 function arrange(){
  const body=document.querySelector('#game .bn-wide-game'),info=body?.querySelector('.bn-wide-info'),right=body?.querySelector('.bn-wide-right'),actions=right?.querySelector('.bn-wide-actions');
@@ -31,7 +31,9 @@ function barFor(host,state){
   const b=document.createElement('button');b.type='button';b.id=(delta<0?'bnPagePrev_':'bnPageNext_')+key;b.setAttribute('aria-label',label);b.textContent=text;b.onclick=()=>page(host,state,state.index+delta);delta<0?state.prev=b:state.next=b;
  }
  state.caption=document.createElement('span');state.caption.setAttribute('aria-live','polite');bar.append(state.prev,state.caption,state.next);
- (host.closest('#overlay')?id('overlay'):id('app')).append(bar);state.bar=bar;return bar;
+ if(host.id==='mapScroll'){bar.classList.add('bn-map-pager');id('adventureMap').append(bar);}
+ else (host.closest('#overlay')?id('overlay'):id('app')).append(bar);
+ state.bar=bar;return bar;
 }
 function page(host,state,index){
  state.index=Math.max(0,Math.min(state.anchors.length-1,index));state.top=state.anchors[state.index]||0;host.scrollTop=state.top;host.scrollLeft=0;
@@ -47,7 +49,7 @@ function update(host){
  const padding=host.classList.contains('bn-static-paged')?32:0;
  if(host.scrollHeight-padding<=host.clientHeight+2){host.classList.remove('bn-static-paged');state.top=0;state.index=0;host.scrollTop=0;host.scrollLeft=0;if(state.bar)state.bar.hidden=true;return;}
  if(!host.classList.contains('bn-static-paged')){host.style.setProperty('--bn-page-padding',getComputedStyle(host).paddingBottom);host.classList.add('bn-static-paged');}
- const h=Math.max(40,host.clientHeight-36),max=Math.max(0,host.scrollHeight-host.clientHeight),top=host.scrollTop;
+ const h=Math.max(40,host.clientHeight-(host.id==='mapScroll'?8:36)),max=Math.max(0,host.scrollHeight-host.clientHeight),top=host.scrollTop;
  const starts=[...host.querySelectorAll(':scope>*,.u-card,.u-dashboard-card,.world-card,.bn-style-card,.bn-word-level,.setting-row,.audio-volume,.trophy-card')].map(n=>n.getBoundingClientRect().top-r.top+top).filter(v=>v>=0).sort((a,b)=>a-b);
  const anchors=[0];for(let n=0;n<500&&anchors[anchors.length-1]<max-1;n++){
   const current=anchors[anchors.length-1],limit=current+h,candidates=starts.filter(v=>v>current+h*.55&&v<=limit);
@@ -55,7 +57,7 @@ function update(host){
  }
  state.anchors=anchors;const bar=barFor(host,state);bar.hidden=anchors.length<2;
  const container=bar.parentElement.getBoundingClientRect();
- Object.assign(bar.style,{left:(r.left-container.left+3)+'px',top:(r.bottom-container.top-30)+'px',width:Math.max(40,r.width-6)+'px'});
+ if(host.id!=='mapScroll')Object.assign(bar.style,{left:(r.left-container.left+3)+'px',top:(r.bottom-container.top-30)+'px',width:Math.max(40,r.width-6)+'px'});
  page(host,state,state.index);
 }
 function refresh(){
@@ -86,3 +88,4 @@ function init(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
+
