@@ -2,7 +2,7 @@ name: BlastNexa v32 reconnect Android 36
 on:
   push:
     branches: [codex/v32-android36-reconnect]
-    paths: [.github/workflows/v32-android36-reconnect.yml, tools/reconnect_android36.sh, tools/android36_direct.cjs]
+    paths: [.github/workflows/v32-android36-reconnect.yml, tools/reconnect_android36.sh, tools/android36_direct.cjs, tools/watch_android_host.sh]
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,12 +12,20 @@ concurrency:
   cancel-in-progress: true
 jobs:
   android36:
+    name: Android 36 ${{ matrix.profile }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {profile: standard-4gb, size: 720x1280, cutout: 0, memory: 4096}
+          - {profile: cutout-4gb, size: 720x1600, cutout: 1, memory: 4096}
+          - {profile: cutout-2gb, size: 720x1600, cutout: 1, memory: 2048}
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     env:
-      BN_QA_SIZE: 720x1600
+      BN_QA_SIZE: ${{ matrix.size }}
       BN_QA_DENSITY: 320
-      BN_QA_CUTOUT: 1
+      BN_QA_CUTOUT: ${{ matrix.cutout }}
       BN_QA_ISOLATE_TESTS: 1
       BN_QA_EXPECTED_TESTS: 4
       BN_QA_DIRECT: 1
@@ -53,11 +61,11 @@ jobs:
           profile: pixel_2
           disable-animations: false
           emulator-boot-timeout: 600
-          emulator-options: -no-window -gpu software -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory 4096 -cores 2
+          emulator-options: -no-window -gpu software -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory ${{ matrix.memory }} -cores 2
           script: bash tools/reconnect_android36.sh
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: BlastNexa-v32-reconnect-api36-${{ github.run_attempt }}
+          name: BlastNexa-v32-reconnect-${{ matrix.profile }}-${{ github.run_attempt }}
           path: android-evidence/
           retention-days: 7

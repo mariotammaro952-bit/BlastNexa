@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 mkdir -p android-evidence
+bash tools/watch_android_host.sh &
+host_watch_pid=$!
+finish() {
+  kill "$host_watch_pid" 2>/dev/null || true
+  bash tools/watch_android_host.sh final
+}
+trap finish EXIT
 # Settle the final display orientation before the app's first cold launch.
 timeout 20 adb shell wm size "${BN_QA_SIZE:-720x1600}"
 timeout 20 adb shell wm density "${BN_QA_DENSITY:-320}"
 timeout 20 adb shell settings put system accelerometer_rotation 0
 timeout 20 adb shell settings put system user_rotation 1
-timeout 20 adb shell cmd overlay enable --user 0 com.android.internal.display.cutout.emulation.tall
+if [ "${BN_QA_CUTOUT:-0}" = 1 ]; then
+  timeout 20 adb shell cmd overlay enable --user 0 com.android.internal.display.cutout.emulation.tall
+fi
 timeout 30 adb shell am start -W -a android.settings.SETTINGS > android-evidence/os-health-start.txt
 # This control exercises Android without launching the game or its WebView.
 # Preserve an independent connection record before the existing four tests.
@@ -28,4 +37,4 @@ if [ "${BN_QA_DIRECT:-0}" = 1 ]; then
   node tools/android36_direct.cjs
   if [ "${BN_QA_BOOTSTRAP_ONLY:-0}" != 1 ]; then exit 0; fi
 fi
-exec bash tools/run_android_validation_settled.sh
+bash tools/run_android_validation_settled.sh
