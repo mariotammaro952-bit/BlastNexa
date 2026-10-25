@@ -36,12 +36,6 @@ jobs:
           node qa/fresh_start_v29.cjs
       - name: Compile release, test and matching native checks
         run: ./gradlew --no-daemon --max-workers=2 assemblePreviewDebug assemblePreviewDebugAndroidTest assemblePreviewRelease assembleProductionRelease bundleProductionRelease lintProductionRelease
-      - name: Browser checks of taps, rewards and responsive layouts
-        run: |
-          npm install --no-save playwright@1.62.1
-          npx playwright install --with-deps chromium
-          node qa/coin_bonus_v32.cjs
-          node qa/bonus_banner_v31.cjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
@@ -54,8 +48,35 @@ jobs:
             qa/*results.json
             qa/v32-browser/
           retention-days: 7
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: '24'}
+      - name: Prepare the actual UI and run browser checks
+        run: |
+          python3 tools/prepare_assets.py
+          python3 tools/package_preview_v32.py
+          npm install --no-save playwright@1.62.1
+          npx playwright install --with-deps chromium
+          node qa/coin_bonus_v32.cjs
+          node qa/bonus_banner_v31.cjs
+      - name: Preserve a browser for local diagnosis if a check fails
+        if: failure()
+        run: tar -C "$HOME/.cache/ms-playwright" -czf qa/v32-browser/chromium-runtime.tgz chromium_headless_shell-1234
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: BlastNexa-v32-browser
+          path: |
+            qa/v32-browser/
+            qa/v31_extras_results.json
+            qa/v31_extras_failure.txt
+          retention-days: 7
   android:
-    needs: build
+    needs: [build, browser]
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     strategy:

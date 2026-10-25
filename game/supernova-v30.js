@@ -106,8 +106,11 @@ function bnSupernovaStart(options={}){
  bnSupernovaRun=run;document.addEventListener('keydown',run.onKey);$('app').append(layer);$('app').dataset.superBonus='on';
  for(const node of $('app').children)if(node!==layer){run.background.push({node,inert:node.hasAttribute('inert'),hidden:node.getAttribute('aria-hidden')});node.setAttribute('inert','');node.setAttribute('aria-hidden','true');}
  bnSupernovaPage(run);
- const size=()=>{const rect=layer.getBoundingClientRect(),dpr=Math.min(1.5,devicePixelRatio||1);run.width=Math.max(1,rect.width);run.height=Math.max(1,rect.height);canvas.width=Math.round(run.width*dpr);canvas.height=Math.round(run.height*dpr);run.context=canvas.getContext('2d',{alpha:true});run.context?.setTransform(dpr,0,0,dpr,0,0);if(!run.frame)run.frame=requestAnimationFrame(t=>bnSupernovaDraw(run,t));};
- size();if(typeof ResizeObserver==='function'){run.observer=new ResizeObserver(size);run.observer.observe(layer);}
+ const size=()=>{const cell=grid.getBoundingClientRect(),style=getComputedStyle(grid),cols=style.gridTemplateColumns.split(' ').length,rows=12/cols,px=name=>parseFloat(style[name])||0;
+ const diameter=Math.max(44,Math.floor(Math.min(125,(cell.width-px('paddingLeft')-px('paddingRight')-px('borderLeftWidth')-px('borderRightWidth')-px('columnGap')*(cols-1))/cols,(cell.height-px('paddingTop')-px('paddingBottom')-px('borderTopWidth')-px('borderBottomWidth')-px('rowGap')*(rows-1))/rows)-3));
+ if(grid.style.getPropertyValue('--sn-coin-size')!==diameter+'px')grid.style.setProperty('--sn-coin-size',diameter+'px');
+ const rect=layer.getBoundingClientRect(),dpr=Math.min(1.5,devicePixelRatio||1);run.width=Math.max(1,rect.width);run.height=Math.max(1,rect.height);canvas.width=Math.round(run.width*dpr);canvas.height=Math.round(run.height*dpr);run.context=canvas.getContext('2d',{alpha:true});run.context?.setTransform(dpr,0,0,dpr,0,0);if(!run.frame)run.frame=requestAnimationFrame(t=>bnSupernovaDraw(run,t));};
+ size();if(typeof ResizeObserver==='function'){run.observer=new ResizeObserver(size);run.observer.observe(layer);run.observer.observe(grid);}
  grid.firstElementChild.focus({preventScroll:true});syncGameBanner(true);slotMediaSync();bnSupernovaAudio(run);
  return true;
 }

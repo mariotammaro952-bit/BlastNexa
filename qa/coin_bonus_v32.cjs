@@ -82,5 +82,10 @@ const ledger=page=>page.evaluate(()=>({coins:lifeData.slot.wallet.balance,lives:
   });
   await context.close();
  }
+ await test('The self-contained HTML preview opens its actual coin bonus and puzzle map',async()=>{
+  const context=await browser.newContext({viewport:{width:1100,height:650},hasTouch:true});const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.route('https://**/*',r=>r.abort());
+  await page.goto('file://'+path.join(root,'../output/BlastNexa_v32_Anteprima.html'));await page.locator('[data-action=mega]').waitFor();await page.waitForFunction(()=>!document.querySelector('[data-action=mega]').disabled);
+  await page.locator('[data-action=mega]').tap();const frame=page.frameLocator('#game');await frame.locator('#bnSupernova').waitFor();assert.equal(await frame.locator('.sn-coin').count(),12);await frame.locator('#snRevealAll').tap();await frame.locator('#snSkip').tap();await page.locator('[data-action=map]').tap();await frame.locator('#adventureMap').waitFor();await context.close();
+ });
  assert.deepEqual(errors,[]);fs.writeFileSync(path.join(out,'results.json'),JSON.stringify({passed:tests.length,tests,errors,geometry},null,2));console.log(JSON.stringify({passed:tests.length,errors}));await browser.close();
 })().catch(async e=>{console.error(e);fs.writeFileSync(path.join(out,'failure.txt'),e.stack);await browser?.close();process.exit(1);});
