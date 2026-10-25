@@ -179,9 +179,9 @@ public class LaunchValidationTest {
  }
  @Test public void b_threeSlotWorldsAndFiftySpinPersistence()throws Exception{
   js("lifeData.slot.wallet.balance=500000;true");
-  js("openUniverse('slot');setArcadeMachine('temple');slotRandomInt=max=>0;playerSettings.effects='full';document.getElementById('slotSpinButton').click();window.__qaCommitted=lifeData.slot.total;true");
+  js("openUniverse('slot');setArcadeMachine('temple');slotRandomInt=max=>0;playerSettings.effects='full';applyPlayerSettings();document.getElementById('slotSpinButton').click();window.__qaCommitted=lifeData.slot.total;true");
   waitFor("!slotBusy",15000);truth("lifeData.slot.total===window.__qaCommitted");
-  js("window.__BN_TEST_FAST__=true;playerSettings.effects='lite';true");
+  js("window.__BN_TEST_FAST__=true;playerSettings.effects='lite';applyPlayerSettings();true");
   for(String world:new String[]{"crystal","temple","forge"}){
    js("if(lifeData.slot.arcade.revealed&&!lifeData.slot.arcade.revealed.presented)dismissTempleScene();setArcadeMachine('"+world+"');slotRandomInt=max=>0;spinLifeSlot();true");waitFor("!slotBusy",10000);truth("document.querySelectorAll('.bn-temple-cell').length===15");
   }
@@ -200,7 +200,7 @@ public class LaunchValidationTest {
  }
  @Test public void c_allAdventureLevelsAcrossFourScenes()throws Exception{
   // Exact placement/scoring/mission/result code. Expensive presentation/IO is adapted only in this test.
-  js("document.body.style.display='none';window.__BN_TEST_FAST__=true;for(const n of ['render','showPlacementFx','showBlastFx','showUniverseImpact','showAdrenalineMoveFX','showVictoryFinish','sPlace','sClear','haptic','adUnlockAudio','syncFlair','refreshUniverseMenu','refreshLivesUI','refreshWordMenu','saveUniverse','storeSession','refreshPlayerUI','saveRanking']){try{eval(n+'=()=>{}')}catch{}}storage.set=()=>{};unlocked=2000;lifeData.balance=999999;playerSettings.effects='lite';true");
+  js("document.body.style.display='none';window.__BN_TEST_FAST__=true;for(const n of ['render','showPlacementFx','showBlastFx','showUniverseImpact','showAdrenalineMoveFX','showVictoryFinish','sPlace','sClear','haptic','adUnlockAudio','syncFlair','refreshUniverseMenu','refreshLivesUI','refreshWordMenu','saveUniverse','storeSession','refreshPlayerUI','saveRanking']){try{eval(n+'=()=>{}')}catch{}}storage.set=()=>{};unlocked=2000;lifeData.balance=999999;playerSettings.effects='lite';applyPlayerSettings();true");
   for(String scene:new String[]{"war","ocean","alien","explosive"})for(int start=1;start<=2000;start+=100){int end=start+100;
    truth("(()=>{setScene('"+scene+"');for(let n="+start+";n<"+end+";n++){if(start('adventure',n)!==true)return false;for(const p of LEVELS[n-1].proof){if(roundOutcome)break;if(!placePiece(p.slot,p.x,p.y))return false;}if(roundOutcome!=='win'||!roundFinalized||playing||!missionMet()||!hasMove())return false;}return true;})()");
    if(start%500==401)android.util.Log.i("BlastNexa-QA","Adventure "+scene+" completed: "+(end-1));
@@ -254,7 +254,7 @@ public class LaunchValidationTest {
   truth("document.getElementById('wordBoard').getBoundingClientRect().right<=document.getElementById('wordControls').getBoundingClientRect().left+16");
   assertSideBanner("wordsBannerSeat");
   truth("window.__qaErrors.length===0");
-  js("openUniverse('slot');setArcadeMachine('temple');lifeData.slot.arcade.treasure=29;playerSettings.effects='lite';slotRandomInt=max=>max===100?31:0;spinLifeSlot();true");
+  js("openUniverse('slot');setArcadeMachine('temple');lifeData.slot.arcade.treasure=29;playerSettings.effects='lite';applyPlayerSettings();slotRandomInt=max=>max===100?31:0;spinLifeSlot();true");
   waitFor("!slotBusy",15000);
   truth("!!lifeData.slot.arcade.bonus && document.querySelectorAll('.bn-world-chest').length===3");
   assertPinnedSlot();
@@ -321,7 +321,7 @@ public class LaunchValidationTest {
  private void touchText(String label)throws Exception{androidx.test.uiautomator.UiObject2 node=device.wait(Until.findObject(By.text(label)),7000);assertNotNull("Visible text target missing: "+label,node);android.graphics.Rect b=node.getVisibleBounds();rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void touchId(String id)throws Exception{android.graphics.Rect b=touchBounds(id,true);rawTouch(b.centerX(),b.centerY());Thread.sleep(100);}
  private void slotFixture(String machine,String effects)throws Exception{
-  js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.balance=50000;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
+  js("cancelSlotAnimation();openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.balance=50000;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{bonus:null,revealed:null,freeSpins:0,crystalJourney:null,reactor:0,treasure:0});setArcadeMachine('"+machine+"');slotRandomInt=max=>0;playerSettings.effects='"+effects+"';applyPlayerSettings();window.__BN_TEST_FAST__=false;renderLifeSlot(document.getElementById('universeBody'));true");
  }
  private void assertPinnedSlot()throws Exception{
   truth("document.getElementById('app').scrollTop===0 && document.scrollingElement.scrollTop===0");
@@ -378,14 +378,14 @@ public class LaunchValidationTest {
  }
  @Test public void j_realTouchesAutoStopPauseAndUninterruptedSpins()throws Exception{
   slotFixture("crystal","lite");js("window.__qaAutoDraw=0;slotRandomInt=max=>max===100?[0,14,31,47,63][Math.floor(window.__qaAutoDraw++/3)%5]:0;window.__touchTotal=lifeData.slot.total;true");touch("Avvia 5 giri automatici");waitFor("lifeData.slot.total===window.__touchTotal+5 && !slotBusy && slotAutoLeft===0 && slotAutoTimer===null",15000);
-  js("playerSettings.effects='full';window.__qaStopTotal=null;window.__touchTotal=lifeData.slot.total;true");truth("!reducedFX()");
+  js("playerSettings.effects='full';applyPlayerSettings();window.__qaStopTotal=null;window.__touchTotal=lifeData.slot.total;true");truth("!reducedFX()");
   android.graphics.Rect autoFive=touchBounds("Avvia 5 giri automatici"),autoTen=touchBounds("Avvia 10 giri automatici");
   android.graphics.Rect autoArea=new android.graphics.Rect(autoFive);autoArea.union(autoTen);
   rawTouch(autoTen.centerX(),autoTen.centerY());waitFor("!!document.getElementById('slotAutoStop') && slotAutoLeft>0",15000);
   // Stop fills the same control area previously occupied by Auto 5/10.
   touch("Ferma i giri automatici");waitFor("!slotBusy",12000);Thread.sleep(900);truth("window.__qaStopTotal!==null && lifeData.slot.total===window.__qaStopTotal && slotAutoLeft===0 && slotAutoTimer===null");
   java.util.concurrent.atomic.AtomicInteger task=new java.util.concurrent.atomic.AtomicInteger();withActivity(a->task.set(a.getTaskId()));touch("GIRA");waitFor("slotBusy",5000);String total=js("lifeData.slot.total"),balance=js("lifeData.balance");device.pressHome();device.executeShellCommand("am task focus "+task.get());awaitForeground();waitFor("!slotBusy",10000);assertEquals(total,js("lifeData.slot.total"));assertEquals(balance,js("lifeData.balance"));assertPinnedSlot();
-  js("playerSettings.effects='lite';lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");
+  js("playerSettings.effects='lite';applyPlayerSettings();lifeData.slot.sinceAd=49;window.__touchTotal=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");
   touch("GIRA");waitFor("!slotBusy",15000);truth("lifeData.slot.sinceAd===0 && !document.getElementById('overlay').classList.contains('on')");
   touch("GIRA");waitFor("!slotBusy",15000);truth("lifeData.slot.total===window.__touchTotal+2 && lifeData.slot.sinceAd===0");assertPinnedSlot();
 
@@ -413,7 +413,7 @@ public class LaunchValidationTest {
   // A player reopens the slot through the home control after a cold page load.
   // Retain that physical navigation and its WebView focus before the bonus fixture.
   touchId("openLifeSlot");truth("slotVisible()");
-  js("openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{machine:'crystal',lineCount:1,freeLineCount:1,freeSpins:1,bonus:null,revealed:null,crystalJourney:{id:'crystal:'+lifeData.slot.total,awarded:1,played:0,lives:0,coins:0,dismissed:false}});slotRandomInt=()=>0;playerSettings.effects='lite';renderLifeSlot(document.getElementById('universeBody'));true");
+  js("openUniverse('slot');lifeData.slot.sinceAd=0;lifeData.slot.wallet.anchor=Date.now();Object.assign(lifeData.slot.arcade,{machine:'crystal',lineCount:1,freeLineCount:1,freeSpins:1,bonus:null,revealed:null,crystalJourney:{id:'crystal:'+lifeData.slot.total,awarded:1,played:0,lives:0,coins:0,dismissed:false}});slotRandomInt=()=>0;playerSettings.effects='lite';applyPlayerSettings();renderLifeSlot(document.getElementById('universeBody'));true");
   waitFor("document.getElementById('slotSpinButton')?.getAttribute('aria-label')==='GIRA NELLA CAVERNA'&&!document.getElementById('slotSpinButton').disabled",15000);
   touchId("slotSpinButton");waitFor("!slotBusy",15000);truth("lifeData.slot.wallet.balance===25&&lifeData.slot.wallet.spent===2&&lifeData.slot.last.coinCost===0&&lifeData.slot.last.coinsCredited===25");
   assertPinnedSlot();capture("14_coins_and_embedded_banner");
@@ -515,7 +515,7 @@ public class LaunchValidationTest {
   device.executeShellCommand("svc wifi disable");device.executeShellCommand("svc data disable");
   try{
    slotFixture("crystal","lite");js("lifeData.slot.arcade.lineCount=1;lifeData.slot.wallet.balance=100;window.__offlineStart=lifeData.slot.total;renderLifeSlot(document.getElementById('universeBody'));true");touch("GIRA");waitFor("!slotBusy",15000);truth("lifeData.slot.wallet.balance===124 && lifeData.slot.total===window.__offlineStart+1");
-   js("unlocked=2000;lifeData.balance=1000;playerSettings.effects='lite';setScene('war');true");truth("start('adventure',1)===true");
+   js("unlocked=2000;lifeData.balance=1000;playerSettings.effects='lite';applyPlayerSettings();setScene('war');true");truth("start('adventure',1)===true");
    int moves=Integer.parseInt(js("LEVELS[0].proof.length"));
    for(int i=0;i<moves;i++){
     if("true".equals(js("!!roundOutcome")))break;
