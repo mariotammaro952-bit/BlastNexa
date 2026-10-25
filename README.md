@@ -1,70 +1,39 @@
-# BlastNexa: Block Puzzle — v27.1
+# BlastNexa v31 — musica bonus e banner centrale
 
-Android API 24–36, con Android System WebView / Chrome aggiornato. 2.000 livelli Avventura in quattro ambientazioni, 400 cruciverba, modalità extra, slot a tre mondi con premi virtuali e profilo giocatore. Classifica online facoltativa con replay delle mosse sul server, coda offline, codice di recupero, segnalazioni, blocchi ed eliminazione del profilo.
+Gioco Android orizzontale, con 2.000 livelli Avventura, quattro temi, 400 cruciverba e tre slot Tempio, Cristallo e Forgia. Il saldo è virtuale: monete e vite.
 
-## Novità v27 — monete giornaliere e inviti automatici (23 ottobre 2026)
+La v31 conserva la sequenza SUPERNOVA, il tasto GIRA neon e i giri senza la precedente pausa video ogni 50. Big Win Now parte quando si apre il bonus, riparte dall’inizio a ogni evento e si ferma con CONTINUA, uscita o perdita di focus. La musica originale di ogni mondo riprende dopo il bonus. Il banner occupa la fascia centrale sotto i rulli e viene nascosto durante la sequenza a tutto schermo. Lo stile della vecchia anteprima che nascondeva tutti i banner è stato rimosso.
 
-- Slot a schermo intero: scena più ampia, cornice dorata e personaggio a destra; la fascia blu inferiore è eliminata e il banner occupa una sede nel pannello dei comandi.
-- **100 monete virtuali ogni nuovo giorno**, conservando quelle rimaste. Puntata x1: una moneta per linea; 1, 5 o 10 linee colorate costano 1, 5 o 10 monete per giro o rilancio. A saldo zero un video completato aggiunge altre 100 monete. Premi in **vite** per il puzzle. I giri bonus Cristallo sono gratuiti. Nessun acquisto o valore in denaro reale.
-- Tre inviti nativi **automatici**, alle 09:00, 14:00 e 20:30 locali, dopo la prima apertura. Nessun selettore nel gioco. Android 13+ richiede il permesso notifiche; il programma viene ripristinato dopo riavvio, aggiornamento, cambio di orario o fuso. Gli allarmi rispettano i ritardi imposti dal risparmio energetico Android.
-- Monete, risultato e vite vinte sono salvati insieme prima degli effetti. Migrazione dei vecchi salvataggi senza azzerare vite, progressi o premi.
-- Nuova icona originale con blocchi lime, ciano e fucsia su fondo viola acceso: risorse adattive e legacy, con sorgente in `artwork/` e generatore `tools/prepare_icons.py`.
-- GIRA, monete, VITE VINTE, vite totali e AUTO sono visibili sui telefoni compatti. Le opzioni secondarie scorrono nella colonna sinistra.
-- Avvio orizzontale, tre mondi e motore **5 rulli × 3 righe**, bonus e pausa ogni 50 giri; puzzle e cruciverba conservano la disposizione orizzontale.
-- Versione Android **1.0.0-v27.1 / 2702**. Eseguire `python3 tools/prepare_assets.py` prima della compilazione. La firma usa la chiave di caricamento già in uso.
+## Preparare e compilare
 
-## Verifica prima del caricamento Play
+Eseguire sempre la preparazione: il file di base viene aggiornato in modo ripetibile dalla ricetta `tools/upgrade_game_v31.py`, inclusa la musica fornita dall’utente. L’operazione è idempotente.
 
-`qa/play_readiness_v27_1.json` conserva esiti e hash della consegna: 19/19 controlli nativi sui tre formati telefono, regressioni dei 2.000 livelli in quattro scene, 10.000 transazioni e video rewarded Google di prova con +100 monete una sola volta. Il test SDK usa un adattatore del servizio di consenso e non verifica UMP o disponibilità commerciale dell’account. Le prove native tablet restano incomplete per disconnessione dell’emulatore, anche nei tentativi isolati. Per la pubblicazione servono ancora verifica fisica/pre-lancio, configurazioni AdMob e aggiornamento della privacy pubblica.
-
-La v27.1 mantiene il focus sui controlli della slot ricreati, separa il permesso notifiche dal consenso UMP, dichiara la categoria Android game ed esclude backup/trasferimento dati. Con provider WebView obsoleto mostra una guida nativa ad aggiornare e riprovare, conservando i dati locali.
-
-## Compilazione
-
-Richiede JDK 17 e Android SDK 36. Il wrapper fissa Gradle 8.11.1 e il suo SHA256; AGP 8.10.1. `python3 tools/prepare_assets.py` prepara le risorse dal sorgente completo `game/index.html`.
-
-```
-./gradlew assemblePreviewRelease bundleProductionRelease
-./gradlew connectedPreviewDebugAndroidTest
+```bash
+python3 tools/prepare_assets.py
+python3 tools/verify_release_inputs.py
+./gradlew assemblePreviewRelease assembleProductionRelease bundleProductionRelease lintProductionRelease
 ```
 
-`preview` usa solo unità pubblicitarie di test e pacchetto `com.blastnexa.blockpuzzle.preview`. `production` usa il pacchetto Play esistente `com.blastnexa.blockpuzzle`, codice versione 2702 e le unità interstitial/rewarded autorizzate. La frequenza slot resta 50 giri complessivi, inclusi giri bonus e respin.
+La versione Android è 3101 / 1.0.0-v31, SDK minimo 24 e target 36. I pacchetti sono `com.blastnexa.blockpuzzle.preview` per le prove e `com.blastnexa.blockpuzzle` per la produzione. Usare la chiave di upload già esistente per firmare; non è inclusa nel repository.
 
-Il banner di produzione è disattivato se manca `BN_BANNER_AD_UNIT`: non viene usato un ID di prova nella release. Impostare un’unità banner dell’account `ca-app-pub-7428534984744854` prima della compilazione per monetizzare lo spazio già presente.
+Le build preview usano unità Google di prova. Per il banner commerciale occorre impostare `BN_BANNER_AD_UNIT` con l’unità di BlastNexa prima della compilazione. Se manca, la produzione non carica un banner commerciale; interstitial e rewarded mantengono gli ID già configurati. La generazione di una build non la pubblica su Play Console.
 
-Per firmare: variabili `BN_KEYSTORE_PATH`, `BN_STORE_PASSWORD`, `BN_KEY_ALIAS`, `BN_KEY_PASSWORD`. La chiave privata resta fuori dal repository. In CI nessuna chiave di caricamento viene trasferita: gli AAB non firmati prodotti dai runner sono solo verifiche di compilazione. Usare per Play l’AAB finale firmato consegnato.
+## Verifiche ripetibili
 
-## Servizio online
-
-- Privacy: https://blastnexa-online.mariotammaro952.chatgpt.site/privacy
-- Assistenza privata: https://blastnexa-online.mariotammaro952.chatgpt.site/assistenza
-- Eliminazione: https://blastnexa-online.mariotammaro952.chatgpt.site/elimina-profilo
-- Regole: https://blastnexa-online.mariotammaro952.chatgpt.site/regole
-- Moderazione: `/moderazione`, accessibile solo all’account proprietario del sito tramite identità verificata da Sites.
-
-Il client non contiene segreti server. Codici profilo 256 bit, memorizzati come hash sul server; solo il miglior risultato per livello può contribuire alla classifica. `server/` contiene il verificatore, l’API e lo schema SQLite del servizio. Il sito distribuito e il suo database sono gestiti nel progetto Sites dedicato.
-
-## Verifiche riproducibili
-
-```
+```bash
+node qa/slot_economy_v28.cjs
 node qa/coins.cjs
 node qa/all_levels.cjs game/index.html
-node qa/qa_arcade.cjs
-node qa/qa_spectra.cjs
-node qa/qa_odyssey.cjs
 node qa/other_games.cjs
 node qa/unlimited_modes.cjs
+node qa/fresh_start_v29.cjs
 node qa/soak.cjs
-node --experimental-sqlite qa/d1.mjs
 ```
 
-I test JavaScript usano il codice di produzione con adattatori DOM/clock. I test strumentali verificano Android WebView, ciclo di vita, richiesta HTTPS nativa e recupero del renderer. L’opzione Intent `bn_qa_no_ads` è accettata solo quando `BuildConfig.DEBUG` è vero. La suite generale non richiede annunci commerciali; il collaudo SDK dedicato riproduce la creatività dimostrativa Google.
+Il controllo dell’economia richiede 10.000 transazioni reali del motore per ciascun mondo, con registri indipendenti di monete e vite, bonus, rilanci, addebiti, riaperture e doppi tocchi. Le simulazioni del motore non equivalgono a prove su dispositivo.
 
-Il catalogo, le illustrazioni e la musica del gioco precedente sono conservati. Il breve effetto `faaah.mp3` è stato fornito dal titolare; i diritti di distribuzione devono essere confermati da lui prima della pubblicazione. Nessun asset o codice dell’APK di slot usato come riferimento è stato importato.
+Per il collaudo browser di musica e banner installare Playwright e Chromium, poi eseguire `node qa/bonus_banner_v31.cjs`. `BN_QA_CHROMIUM` permette di scegliere un eseguibile Chromium già disponibile. Il controllo usa clic reali, riproduzione WebAudio, stati dei bonus e geometria in sette formati.
 
+Il workflow `v31-bonus-banner.yml` compila e verifica i pacchetti completi. `v31-native-confirmation.yml` confronta gli asset dei binari già compilati ed esegue 17 controlli nativi su Android 31 e 36, telefoni, notch e tablet. Le prove native usano emulatori da 4 GB dopo la disconnessione dei precedenti emulatori da 2 GB. I risultati effettivi e le eventuali interruzioni sono nei log del singolo run; non dedurre un esito dal solo avvio del workflow.
 
-## Anteprima e compatibilità v27
-
-`npm run dev -- --host 0.0.0.0 --port 4173 --strictPort` prepara i file generati e avvia l’anteprima; `/device` offre cinque dimensioni di controllo. Il CSS e il JS esterni sono copiati nella WebView da `prepare_assets.py`, insieme al personaggio originale in `game/assets/`. Il generatore applica i collegamenti e la versione al catalogo HTML, scrivendo soltanto file cambiati e tramite sostituzione atomica.
-
-La nuova composizione usa rulli centrali, opzioni scorrevoli laterali e comandi in basso. Puzzle e cruciverba sfruttano l’altezza disponibile; il rack delle parole e le definizioni scorrono nella colonna destra. La resa dei blocchi include un fallback per WebView senza `color-mix`, e i test nativi verificano che griglia e pezzi abbiano una superficie colorata. `design-qa.md` documenta il confronto visivo e i formati verificati.
+La consegna v31 comprende APK di prova aggiornabile dalla v30, APK release e AAB firmato per Play Store. Il rapporto di consegna indica le verifiche completate e quelle rimaste aperte.
