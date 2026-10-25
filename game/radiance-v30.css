@@ -31,7 +31,7 @@
 #slotTemple .bn-slot-ad-seat>.bn-modern-win>small{font-size:8px;letter-spacing:.14em}
 #slotTemple .bn-slot-ad-seat>.bn-modern-win>strong{font-size:clamp(15px,2.7vw,28px);filter:none}
 #slotTemple .bn-slot-ad-seat>.bn-modern-win>span{font-size:5px;letter-spacing:.08em}
-#gameBanner{display:none!important}
+
 @keyframes bnRadiantLift{0%,100%{transform:scale(1.04)}35%,65%{transform:scale(1.10)}}
 @keyframes bnRadiantAura{0%,100%{opacity:.38;transform:scale(.9)}45%,65%{opacity:.78;transform:scale(1.12)}}
 @keyframes bnRadiantRing{0%{opacity:0;transform:scale(.7)}15%{opacity:.8}55%,100%{opacity:0;transform:scale(1.25)}}
