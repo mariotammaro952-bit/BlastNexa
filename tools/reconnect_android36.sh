@@ -24,4 +24,7 @@ done
 timeout 20 adb exec-out screencap -p > android-evidence/os-health-screen.png
 timeout 15 adb shell input keyevent 3
 printf 'OS_HEALTH_PASSED_GAME_NOT_YET_LAUNCHED\n' | tee -a android-evidence/os-health.txt
+if [ "${BN_QA_DIRECT:-0}" = 1 ]; then
+  exec node tools/android36_direct.cjs
+fi
 exec bash tools/run_android_validation_settled.sh
