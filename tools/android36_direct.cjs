@@ -14,15 +14,15 @@ async function attach(){
  const page=pages?.find(p=>p.type==='page'&&p.url==='file:///android_asset/index.html');assert.ok(page,'No game WebView debug target: '+last);
  ws=new WebSocket(page.webSocketDebuggerUrl);await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('WebView socket did not connect')),15000);ws.addEventListener('open',()=>{clearTimeout(timer);resolve();},{once:true});ws.addEventListener('error',e=>{clearTimeout(timer);reject(e);},{once:true});});
  ws.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.id){const p=pending.get(m.id);if(p){pending.delete(m.id);m.error?p.reject(Error(JSON.stringify(m.error))):p.resolve(m.result);}}else if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails.text);});
- await send('Runtime.enable');await send('Animation.enable');await wait("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')");
+ await send('Runtime.enable');await wait("typeof playerTotals==='function' && !!document.getElementById('openLifeSlot')");
 }
 function launch(){adb('shell','am','start','-W','-n',pkg+'/com.blastnexa.blockpuzzle.OdysseyActivity','--ez','bn_qa_no_ads','true');}
 function capture(name){const p=cp.execFileSync('adb',['exec-out','screencap','-p'],{timeout:20000,maxBuffer:8*1024*1024});fs.writeFileSync(dir+'/'+name+'.png',p);}
 async function tree(){
  // Pause only CSS animation for the accessibility snapshot, then resume it
  // before physical input. No game click or prize action is synthesized.
- await send('Animation.setPlaybackRate',{playbackRate:0});
- try{const path='/sdcard/bn-direct-'+(++snapshot)+'.xml';adb('shell','uiautomator','dump','--compressed',path);const xml=adb('exec-out','cat',path);assert.ok(xml.includes('<hierarchy'));fs.writeFileSync(dir+'/ui-'+snapshot+'.xml',xml);return xml;}finally{await send('Animation.setPlaybackRate',{playbackRate:1});}
+ await evaluate("(()=>{const s=document.createElement('style');s.id='bnQaSnapshotFreeze';s.textContent='*,*::before,*::after{animation-play-state:paused!important;transition:none!important}';document.head.append(s);return true;})()");
+ try{const path='/sdcard/bn-direct-'+(++snapshot)+'.xml';adb('shell','uiautomator','dump','--compressed',path);const xml=adb('exec-out','cat',path);assert.ok(xml.includes('<hierarchy'));fs.writeFileSync(dir+'/ui-'+snapshot+'.xml',xml);return xml;}finally{await evaluate("document.getElementById('bnQaSnapshotFreeze')?.remove();true");}
 }
 async function tap(label,optional=false){
  const xml=await tree(),script="import sys,re,json,xml.etree.ElementTree as E\ns=sys.stdin.read();s=s[s.index('<hierarchy'):s.index('</hierarchy>')+12];key=sys.argv[1]\nfor n in E.fromstring(s).iter('node'):\n a=n.attrib;r=a.get('resource-id','')\n if a.get('enabled')!='false' and (r==key or r.endswith('/'+key) or a.get('text')==key or a.get('content-desc')==key):\n  b=list(map(int,re.findall(r'-?\\d+',a.get('bounds',''))))\n  if len(b)==4 and b[2]>b[0] and b[3]>b[1]:print(json.dumps([(b[0]+b[2])//2,(b[1]+b[3])//2]));break\n";
@@ -37,7 +37,7 @@ async function test(name,fn){await fn();checks.push(name);console.log('DIRECT_PA
 async function main(){
  adb('install','-r','imported-artifacts/preview/debug/app-preview-debug.apk');adb('logcat','-c');
  const fd=fs.openSync(dir+'/direct-logcat.txt','w');logcat=cp.spawn('adb',['logcat','-v','threadtime'],{stdio:['ignore',fd,fd]});
- fs.writeFileSync(dir+'/webview-provider-direct.txt',adb('shell','dumpsys','webviewupdate'));launch();await attach();
+ fs.writeFileSync(dir+'/webview-provider-direct.txt',adb('shell','dumpsys','webviewupdate'));launch();await attach();console.log('DIRECT_APP_READY');capture('direct-started');
  await tap('Got it',true);await evaluate("localStorage.setItem('blastnexa_help_seen','true');document.getElementById('overlay').classList.remove('on');true");
  await test('Large red relaunch with native hold and relaunch touches',async()=>{
   await fixture('forge','full');await evaluate("lifeData.slot.last=chooseSlotResult('spin');lifeData.slot.arcade.reactor=6;slotHolds.clear();renderLifeSlot(document.getElementById('universeBody'));true");
