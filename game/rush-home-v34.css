@@ -119,3 +119,17 @@
 @keyframes snFpsImpact{from{transform:scale(.2);opacity:1}to{transform:scale(1.4);opacity:0}}
 @media(orientation:portrait){.sn-rush .sn-collection{grid-template-columns:minmax(0,1fr) minmax(92px,27%)}.sn-rush .sn-coin-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:8px}.sn-rush .sn-rifle-deck{grid-column:1/-1}.sn-rush .sn-rifle{grid-row:2}.sn-rifle-hint>strong{font-size:7px}}
 @media(prefers-reduced-motion:reduce){.sn-rush .sn-rifle.sn-fired img,.sn-fps-impact{animation:none}}
+
+/* v37: a movable first-person foreground, no side panel. */
+.sn-rush .sn-collection{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) 65px;overflow:visible}
+.sn-rush .sn-coin-grid{grid-column:1;grid-row:2;padding-bottom:12px}
+.sn-rush .sn-rifle-deck{grid-column:1;grid-row:3;align-self:start;position:relative;z-index:5;pointer-events:none;background:none;border:0;grid-template-columns:1fr 1fr;padding-top:6px}
+.sn-rush .sn-rifle-hint{max-width:210px;justify-self:end}
+.sn-rush .sn-rifle{position:absolute;z-index:4;left:50%;bottom:-34px;top:auto;width:min(58vh,420px);height:min(58vh,420px);min-height:0;grid-column:auto;grid-row:auto;transform:translate(calc(-50% + var(--gun-x,0px)),var(--gun-y,0px));border:0;border-radius:0;background:none;overflow:visible;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;filter:drop-shadow(-8px 6px 8px #0009)}
+.sn-rush .sn-rifle:active{cursor:grabbing}
+.sn-rush .sn-rifle img{object-position:center;transition:none}
+.sn-rush .sn-rifle>span{bottom:40px;left:15%;right:0;font-size:8px;padding:5px;background:#081b29c9}
+.sn-rush .sn-bottom{z-index:8}
+.sn-crosshair{z-index:10!important}
+@media(orientation:landscape) and (max-height:370px){.sn-rush .sn-collection{grid-template-rows:auto minmax(0,1fr) 52px}.sn-rush .sn-rifle{width:62vh;height:62vh;bottom:-32px}.sn-rush .sn-rifle-hint{max-width:150px}.sn-rush .sn-rifle>span{font-size:7px}}
+@media(orientation:portrait){.sn-rush .sn-collection{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) 125px}.sn-rush .sn-coin-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.sn-rush .sn-rifle{width:72vw;height:72vw;bottom:-20px}.sn-rush .sn-rifle-deck{grid-column:1;grid-row:3}.sn-rush .sn-rifle-hint{max-width:120px}.sn-rush .sn-rifle>span{bottom:34px}}

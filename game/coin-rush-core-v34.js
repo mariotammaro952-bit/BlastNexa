@@ -24,7 +24,7 @@ function coinRushBegin(key){
  const valid=m[1]==='spin'?last?.spin===index&&(last.prize===5||last.arcade?.freeAward>0||a.bonus?.id==='chest:'+index):a.revealed?.id===key&&a.revealed.prize===5;
  const field=m[1]==='spin'?'seenSpin':'seenChest';if(!valid||index<=s[field])return null;
  if(s.active?.state==='active')coinRushEnd(s.active.id,'replaced');
- const now=Date.now();s[field]=index;s.active={id:key,seed:(lifeData.slot.seed^Math.imul(index,2654435761)^(m[1]==='chest'?1548590733:0))>>>0,startedAt:now,endsAt:now+5000,state:'active',shots:0,claimed:[],receipts:{},collected:{coins:0,lives:0,respins:0}};
+ const now=Date.now();s[field]=index;s.active={id:key,seed:(lifeData.slot.seed^Math.imul(index,2654435761)^(m[1]==='chest'?1548590733:0))>>>0,startedAt:now,endsAt:now+10000,state:'active',shots:0,claimed:[],receipts:{},collected:{coins:0,lives:0,respins:0}};
  saveLives();return s.active;
 }
 function coinRushEnd(id,reason='time'){

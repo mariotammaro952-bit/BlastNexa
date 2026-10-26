@@ -1,4 +1,4 @@
-// Original arcade rifle: aim while pressing, one shot on release. Never auto-fire.
+// v37: drag the foreground weapon to aim; a short tap fires one shot.
 function bnRushUpdateAmmo(run){
  run.ammoCount.textContent=(5-run.round.shots)+' / 5';
  [...run.ammo.children].forEach((n,i)=>n.dataset.spent=String(i<run.round.shots));
@@ -9,10 +9,12 @@ function bnRushAim(run,x,y){
  if(run.ended)return;const r=run.layer.getBoundingClientRect();
  run.aimPoint={x:x-r.left,y:y-r.top};
  run.crosshair.style.left=run.aimPoint.x+'px';run.crosshair.style.top=run.aimPoint.y+'px';run.crosshair.hidden=false;
- const coin=document.elementFromPoint(x,y)?.closest('.sn-coin');
- run.aimIndex=coin&&run.grid.contains(coin)&&!coin.disabled?run.page*12+Number(coin.id.slice(6)):-1;
- for(const n of run.grid.children)n.classList.toggle('sn-targeted',n===coin&&!n.disabled);
- run.gun.style.setProperty('--aim-angle',Math.max(-8,Math.min(8,(x-r.left-r.width/2)/r.width*16))+'deg');
+ const coin=[...run.grid.children].find(n=>{const b=n.getBoundingClientRect();return !n.disabled&&x>=b.left&&x<=b.right&&y>=b.top&&y<=b.bottom;});
+ run.aimIndex=coin?run.page*12+Number(coin.id.slice(6)):-1;
+ for(const n of run.grid.children)n.classList.toggle('sn-targeted',n===coin);
+ const dx=(x-r.left-r.width*.5)*.68,dy=(y-r.top-r.height*.36)*.16;
+ run.gun.style.setProperty('--gun-x',dx+'px');run.gun.style.setProperty('--gun-y',Math.max(-22,Math.min(22,dy))+'px');
+ run.gun.style.setProperty('--aim-angle',Math.max(-18,Math.min(18,(x-r.left-r.width/2)/r.width*36))+'deg');
 }
 function bnRushAimCoin(run,index){
  if(run.ended)return;const c=run.grid.children[index%12],r=c.getBoundingClientRect();bnRushAim(run,r.left+r.width/2,r.top+r.height/2);
@@ -47,13 +49,35 @@ function bnRushInstallRifle(run,main){
  const ammoBox=uNode('div','sn-ammo-box'),ammoCount=uNode('strong','','5 / 5'),ammo=uNode('span','sn-ammo');ammoCount.id='snAmmoCount';ammo.setAttribute('aria-hidden','true');
  for(let i=0;i<5;i++)ammo.append(uNode('i',''));ammoBox.append(uNode('small','','COLPI RIMASTI'),ammoCount,ammo);
  const gun=uNode('button','sn-rifle');gun.type='button';gun.id='snRifle';gun.setAttribute('aria-label','Spara con il fucile alla moneta mirata');
- gun.innerHTML='<img src="assets/rifle-fps-v36.webp" alt="" draggable="false"><span>TOCCA L’ARMA · SPARA</span>';
- const hint=uNode('div','sn-rifle-hint');hint.append(uNode('strong','','1. MIRA ALLA MONETA'),uNode('small','','2. Tocca l’arma per sparare · Un tocco, un colpo'));
+ gun.innerHTML='<img src="assets/rifle-fps-v36.webp" alt="" draggable="false"><span>TRASCINA PER MIRARE · TOCCA PER SPARARE</span>';
+ const hint=uNode('div','sn-rifle-hint');hint.append(uNode('strong','','TRASCINA IL FUCILE PER MIRARE'),uNode('small','','Tocco breve sull’arma = un colpo'));
  deck.append(ammoBox,hint);main.append(deck);main.append(gun);
  const crosshair=uNode('span','sn-crosshair');crosshair.id='snCrosshair';crosshair.hidden=true;crosshair.setAttribute('aria-hidden','true');run.layer.append(crosshair);
  Object.assign(run,{gun,crosshair,ammo,ammoCount,ammoBox,aimPointer:null,aimIndex:-1,aimPoint:null});bnRushUpdateAmmo(run);
- gun.addEventListener('click',()=>{if(run.ended)return;const i=run.aimIndex;bnSupernovaReveal(run,i>=0&&Math.floor(i/12)===run.page&&!run.round.claimed.includes(i)?i:-1);});
- gun.addEventListener('keydown',e=>{if(e.repeat&&(e.key==='Enter'||e.key===' '))e.preventDefault();});
+ const fire=()=>{if(run.ended)return;const i=run.aimIndex;bnSupernovaReveal(run,i>=0&&Math.floor(i/12)===run.page&&!run.round.claimed.includes(i)?i:-1);};
+ run.suppressClickUntil=0;
+ gun.addEventListener('pointerdown',e=>{
+  if(run.ended||e.isPrimary===false||e.button!==0||run.weaponDrag)return;
+  e.preventDefault();const r=run.layer.getBoundingClientRect(),b=run.grid.getBoundingClientRect();
+  if(!run.aimPoint)bnRushAim(run,b.left+b.width/2,b.top+b.height/2);
+  run.weaponDrag={id:e.pointerId,x:e.clientX,y:e.clientY,aimX:run.aimPoint.x+r.left,aimY:run.aimPoint.y+r.top,moved:false,start:performance.now()};
+  try{gun.setPointerCapture(e.pointerId);}catch{}
+ });
+ gun.addEventListener('pointermove',e=>{
+  const d=run.weaponDrag;if(!d||d.id!==e.pointerId||run.ended)return;e.preventDefault();
+  const dx=e.clientX-d.x,dy=e.clientY-d.y;if(Math.hypot(dx,dy)>8)d.moved=true;
+  if(d.moved){const b=run.grid.getBoundingClientRect();bnRushAim(run,Math.max(b.left+2,Math.min(b.right-2,d.aimX+dx*1.7)),Math.max(b.top+2,Math.min(b.bottom-2,d.aimY+dy*1.7)));}
+ });
+ gun.addEventListener('pointerup',e=>{
+  const d=run.weaponDrag;if(!d||d.id!==e.pointerId)return;e.preventDefault();run.weaponDrag=null;run.suppressClickUntil=performance.now()+750;
+  if(!d.moved&&performance.now()-d.start<350)fire();
+ });
+ gun.addEventListener('pointercancel',()=>{run.weaponDrag=null;run.suppressClickUntil=performance.now()+750;});
+ gun.addEventListener('lostpointercapture',()=>{run.weaponDrag=null;});
+ // Android WebView can emit detail=0 compatibility clicks after pointerup.
+ gun.addEventListener('click',e=>{if(performance.now()<run.suppressClickUntil){e.preventDefault();return;}fire();});
+ gun.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){if(e.repeat)e.preventDefault();else run.suppressClickUntil=0;}});
+ run.timers.push(setTimeout(()=>{if(bnSupernovaRun===run&&!run.ended){const b=run.grid.getBoundingClientRect();bnRushAim(run,b.left+b.width/2,b.top+b.height/2);}},0));
  run.grid.addEventListener('pointerdown',e=>{if(run.ended||e.isPrimary===false||e.button!==0)return;run.aimPointer=e.pointerId;bnRushAim(run,e.clientX,e.clientY);});
  run.grid.addEventListener('pointermove',e=>{if(e.isPrimary!==false&&(run.aimPointer===e.pointerId||e.pointerType==='mouse'))bnRushAim(run,e.clientX,e.clientY);});
  run.grid.addEventListener('pointerup',e=>{if(run.aimPointer===e.pointerId){run.aimPointer=null;bnRushAim(run,e.clientX,e.clientY);}});

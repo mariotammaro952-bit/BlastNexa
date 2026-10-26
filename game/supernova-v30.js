@@ -21,7 +21,7 @@ function bnRushPaintCoin(run,index,coin){
  coin.replaceChildren(uNode('strong','sn-coin-value',value),uNode('small','',type));coin.setAttribute('aria-label',value+' '+type);
 }
 function bnSupernovaReveal(run,index){
- if(bnSupernovaRun!==run||run.ended||(index!==-1&&Math.floor(index/12)!==run.page))return false;
+ if(bnSupernovaRun!==run||run.ended||run.ready===false||(index!==-1&&Math.floor(index/12)!==run.page))return false;
  if(performance.now()>=run.monoEnd){bnRushComplete(run,'time');return false;}
  const prize=coinRushClaim(run.round.id,index);if(!prize){if(run.round.state==='closed')bnRushComplete(run,run.round.reason);return false;}
  bnRushUpdateAmmo(run);
@@ -51,7 +51,7 @@ function bnRushComplete(run,reason){
 }
 function bnRushClock(run){
  if(bnSupernovaRun!==run||run.ended)return;
- const left=Math.max(0,Math.min(run.round.endsAt-Date.now(),run.monoEnd-performance.now()));run.remaining=left;run.timerValue.textContent=(Math.ceil(left/100)/10).toFixed(1).replace('.',',');run.timer.style.setProperty('--rush-left',String(left/5000));run.layer.dataset.urgent=String(left<=2000);
+ const left=Math.max(0,Math.min(run.round.endsAt-Date.now(),run.monoEnd-performance.now()));run.remaining=left;run.timerValue.textContent=(Math.ceil(left/100)/10).toFixed(1).replace('.',',');run.timer.style.setProperty('--rush-left',String(left/10000));run.layer.dataset.urgent=String(left<=2000);
  const second=Math.ceil(left/1000);if(second<=3&&second>0&&second!==run.tickSecond){run.tickSecond=second;slotSound('tick',4-second);haptic([12]);}
  if(left<=0){bnRushComplete(run,'time');return;}run.clock=setTimeout(()=>bnRushClock(run),Math.min(100,left));
 }
@@ -62,20 +62,20 @@ function bnSupernovaStart(options={}){
  const layer=uNode('section','sn-collect sn-rush');layer.id='bnSupernova';layer.setAttribute('role','dialog');layer.setAttribute('aria-modal','true');layer.setAttribute('aria-labelledby','snTitle');layer.dataset.motion=reducedFX()?'lite':'full';
  const canvas=uNode('canvas','sn-canvas');canvas.setAttribute('aria-hidden','true');layer.append(canvas);
  const top=uNode('div','sn-top'),exit=uButton('ESCI DAL BONUS',bnSupernovaFinish,'sn-exit');exit.id='snSkip';top.append(uNode('span','','BLASTNEXTA / BONUS MONETE'),exit);layer.append(top);
- const main=uNode('div','sn-collection'),head=uNode('div','sn-collection-head'),copy=uNode('div',''),title=uNode('h2','sn-title','MIRA E SPARA!');title.id='snTitle';copy.append(title,uNode('p','sn-copy','5 SECONDI · 5 COLPI · UN PREMIO PER COLPO'));
+ const main=uNode('div','sn-collection'),head=uNode('div','sn-collection-head'),copy=uNode('div',''),title=uNode('h2','sn-title','MIRA E SPARA!');title.id='snTitle';copy.append(title,uNode('p','sn-copy','10 SECONDI · 5 COLPI · UN PREMIO PER COLPO'));
  const timer=uNode('div','sn-rush-clock');timer.id='snHourglass';timer.setAttribute('role','timer');timer.setAttribute('aria-live','off');timer.innerHTML='<svg viewBox="0 0 40 60" aria-hidden="true"><path d="M6 4h28M6 56h28M9 6c0 13 1 15 11 24C10 39 9 41 9 54h22c0-13-1-15-11-24C30 21 31 19 31 6Z" fill="none" stroke="currentColor" stroke-width="3"/><path class="rush-sand-top" d="M12 10h16c-1 8-4 11-8 15-4-4-7-7-8-15"/><path class="rush-sand-bottom" d="m12 51 8-11 8 11Z"/><path class="rush-sand-stream" d="M20 29v12" stroke="currentColor" stroke-width="2"/></svg>';
- const timeText=uNode('div',''),timerValue=uNode('strong','','5,0');timerValue.id='snTimer';timeText.append(timerValue,uNode('small','','SECONDI'));timer.append(timeText);head.append(copy,timer);
+ const timeText=uNode('div',''),timerValue=uNode('strong','','10,0');timerValue.id='snTimer';timeText.append(timerValue,uNode('small','','SECONDI'));timer.append(timeText);head.append(copy,timer);
  const rewards=uNode('div','sn-rewards'),counters=[];rewards.id='snRewards';for(const [key,label]of [['coins','MONETE'],['lives','VITE'],['respins','RILANCI GRATIS']]){const row=uNode('div','sn-reward'),count=uNode('strong','','+0');row.append(count,uNode('small','',label));rewards.append(row);counters.push({key,node:count});}head.append(rewards);
- const grid=uNode('div','sn-coin-grid');grid.setAttribute('role','group');grid.setAttribute('aria-label','Tocca una moneta per mirare, poi tocca il fucile per sparare. Cinque colpi in cinque secondi');main.append(head,grid);layer.append(main);
+ const grid=uNode('div','sn-coin-grid');grid.id='snCoinGrid';grid.setAttribute('role','group');grid.setAttribute('aria-label','Trascina il fucile per mirare, toccalo brevemente per sparare. Cinque colpi in dieci secondi');main.append(head,grid);layer.append(main);
  const bottom=uNode('div','sn-bottom'),info=uNode('div','sn-page-info'),pageLabel=uNode('strong','','PAGINA 1 / 3'),progress=uNode('small','','0 PREMI · 0 / 5 COLPI');info.append(pageLabel,progress);
  const prev=uButton('‹ PAGINA',()=>{const run=bnSupernovaRun;if(run&&!run.ended&&run.page>0){run.page--;bnSupernovaPage(run);}},'sn-rush-nav');prev.id='snPrev';const next=uButton('PAGINA ›',()=>{const run=bnSupernovaRun;if(run&&!run.ended&&run.page<2){run.page++;bnSupernovaPage(run);}},'sn-rush-nav');next.id='snNext';
  const status=uNode('p','sn-live');status.setAttribute('aria-live','polite');bottom.append(prev,info,next,uNode('small','sn-saved','200 / 300 MONETE · VITE · RILANCIA ×1 / ×2'));layer.append(bottom,status);
- const now=performance.now(),run={serial:++bnSupernovaSerial,round,monoEnd:now+5000,ended:false,layer,canvas,title,timer,timerValue,counters,started:now,duration:5000,voices:new Set(),timers:[],frame:0,clock:0,previousFocus:document.activeElement,audioStopped:false,lite:reducedFX(),width:1,height:1,particles:[],rings:[],hit:0,seed:round.seed,collecting:true,parts:coinRushPrizes(round.seed),page:0,grid,pageLabel,progress,next,prev,status,lastImpact:0,background:[]};
+ const now=performance.now(),run={serial:++bnSupernovaSerial,round,monoEnd:now+10000,ended:false,ready:false,layer,canvas,title,timer,timerValue,counters,started:now,duration:10000,voices:new Set(),timers:[],frame:0,clock:0,previousFocus:document.activeElement,audioStopped:false,lite:reducedFX(),width:1,height:1,particles:[],rings:[],hit:0,seed:round.seed,collecting:true,parts:coinRushPrizes(round.seed),page:0,grid,pageLabel,progress,next,prev,status,lastImpact:0,background:[]};
  run.onKey=event=>{if(event.key==='Escape'){event.preventDefault();bnSupernovaFinish();return;}if(event.key==='Tab'){const buttons=[...layer.querySelectorAll('button:not(:disabled)')],first=buttons[0],last=buttons.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}};
  bnSupernovaRun=run;document.addEventListener('keydown',run.onKey);$('app').append(layer);$('app').dataset.superBonus='on';for(const node of $('app').children)if(node!==layer){run.background.push({node,inert:node.hasAttribute('inert'),hidden:node.getAttribute('aria-hidden')});node.setAttribute('inert','');node.setAttribute('aria-hidden','true');}
  bnRushInstallRifle(run,main);bnSupernovaPage(run);
  const size=()=>{const cell=grid.getBoundingClientRect(),style=getComputedStyle(grid),cols=style.gridTemplateColumns.split(' ').length,rows=12/cols,px=name=>parseFloat(style[name])||0;const diameter=Math.max(44,Math.floor(Math.min(125,(cell.width-px('paddingLeft')-px('paddingRight')-px('borderLeftWidth')-px('borderRightWidth')-px('columnGap')*(cols-1))/cols,(cell.height-px('paddingTop')-px('paddingBottom')-px('borderTopWidth')-px('borderBottomWidth')-px('rowGap')*(rows-1))/rows)-3));grid.style.setProperty('--sn-coin-size',diameter+'px');const rect=layer.getBoundingClientRect(),dpr=Math.min(1.5,devicePixelRatio||1);run.width=Math.max(1,rect.width);run.height=Math.max(1,rect.height);canvas.width=Math.round(run.width*dpr);canvas.height=Math.round(run.height*dpr);run.context=canvas.getContext('2d',{alpha:true});run.context?.setTransform(dpr,0,0,dpr,0,0);if(!run.frame&&!run.ended)run.frame=requestAnimationFrame(t=>bnSupernovaDraw(run,t));};
- size();if(typeof ResizeObserver==='function'){run.observer=new ResizeObserver(size);run.observer.observe(layer);run.observer.observe(grid);}grid.firstElementChild.focus({preventScroll:true});syncGameBanner(true);slotMediaSync();bnSupernovaAudio(run);bnRushClock(run);return true;
+ size();if(typeof ResizeObserver==='function'){run.observer=new ResizeObserver(size);run.observer.observe(layer);run.observer.observe(grid);}grid.firstElementChild.focus({preventScroll:true});syncGameBanner(true);slotMediaSync();bnRushReady(run);return true;
 }
 
 function bnSupernovaAudio(run){
@@ -162,3 +162,13 @@ document.addEventListener('pointerdown',()=>{if(slotVisible()&&!muted){slotLoadA
 window.addEventListener('blur',()=>{if(bnSupernovaRun)bnSupernovaFinish()});
 
 
+
+// Arm only after the foreground image is decoded and the layout has painted.
+function bnRushReady(run){
+ const img=run.gun.querySelector('img');
+ Promise.resolve(img.decode?img.decode():null).catch(()=>{}).then(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  if(bnSupernovaRun!==run||run.ended||document.hidden)return;
+  const now=Date.now();run.round.startedAt=now;run.round.endsAt=now+10000;run.started=performance.now();run.monoEnd=run.started+10000;run.ready=true;saveLives();
+  const b=run.grid.getBoundingClientRect();bnRushAim(run,b.left+b.width/2,b.top+b.height/2);bnSupernovaAudio(run);bnRushClock(run);
+ })));
+}
