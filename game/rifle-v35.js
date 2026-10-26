@@ -30,7 +30,9 @@ function bnRushGunSound(run,impact=false){
 function bnRushShotEffect(run,index,onImpact){
  run.gun.classList.remove('sn-fired');void run.gun.offsetWidth;run.gun.classList.add('sn-fired');haptic([18]);bnRushGunSound(run);
  const layer=run.layer.getBoundingClientRect(),g=run.gun.getBoundingClientRect(),point=run.aimPoint||{x:layer.width*.5,y:layer.height*.45};
- const from={x:g.left-layer.left+g.width*.26,y:g.top-layer.top+g.height*.18};
+ const side=Math.min(g.width,g.height),ox=g.width*.75,oy=g.height,theta=(parseFloat(run.gun.style.getPropertyValue('--aim-angle'))||0)*Math.PI/180;
+ const mx=(g.width-side)/2+side*.26-ox,my=g.height-side+side*.18-oy;
+ const from={x:g.left-layer.left+ox+mx*Math.cos(theta)-my*Math.sin(theta),y:g.top-layer.top+oy+mx*Math.sin(theta)+my*Math.cos(theta)};
  const flash=uNode('i','sn-fps-flash');flash.style.left=from.x+'px';flash.style.top=from.y+'px';run.layer.append(flash);
  const bullet=uNode('i','sn-projectile');bullet.style.left=from.x+'px';bullet.style.top=from.y+'px';
  const dx=point.x-from.x,dy=point.y-from.y,angle=Math.atan2(dy,dx)*180/Math.PI;
