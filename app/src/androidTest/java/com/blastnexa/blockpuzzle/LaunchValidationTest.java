@@ -622,7 +622,7 @@ public class LaunchValidationTest {
   waitFor("bnSupernovaRun.ready===true",3000);
   float sx=weapon.centerX(),sy=weapon.centerY(),ex=sx+(target.centerX()-gallery.centerX())/1.7f,ey=sy+(target.centerY()-gallery.centerY())/1.7f;
   long down=android.os.SystemClock.uptimeMillis();
-  for(int i=0;i<=10;i++){int action=i==0?android.view.MotionEvent.ACTION_DOWN:i==10?android.view.MotionEvent.ACTION_UP:android.view.MotionEvent.ACTION_MOVE;android.view.MotionEvent event=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),action,sx+(ex-sx)*i/10f,sy+(ey-sy)*i/10f,0);androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(event,true);event.recycle();Thread.sleep(18);}
+  for(int i=0;i<=10;i++){int action=i==0?android.view.MotionEvent.ACTION_DOWN:i==10?android.view.MotionEvent.ACTION_UP:android.view.MotionEvent.ACTION_MOVE;android.view.MotionEvent event=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),action,sx+(ex-sx)*Math.min(i,9)/9f,sy+(ey-sy)*Math.min(i,9)/9f,0);event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(event,true));event.recycle();Thread.sleep(18);}
   truth("lifeData.slot.rush.active.shots===0 && bnSupernovaRun.aimIndex===0");touchId("snRifle");Thread.sleep(170);
   writeEvidence("37_live_shot.json",js("JSON.stringify({round:lifeData.slot.rush.active,now:Date.now(),events:window.__shotEvents})"));
   truth("lifeData.slot.rush.active.shots===1 && lifeData.slot.rush.active.claimed.length===1");
