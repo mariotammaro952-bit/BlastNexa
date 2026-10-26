@@ -16,7 +16,7 @@ function bnRushUpdateCounters(run){for(const c of run.counters)c.node.textConten
 function bnRushPaintCoin(run,index,coin){
  const prize=run.parts[index],amount=run.round.receipts[index]||0,major=prize.kind==='coins'&&amount>=200||prize.kind==='respins'&&amount===2||prize.kind==='lives'&&amount>=3;
  coin.disabled=true;coin.classList.add('revealed');coin.dataset.prize=major?'major':'regular';
- const value=prize.kind==='respins'?'↻ ×'+amount:'+'+amount;
+ const value=prize.kind==='respins'?'×'+amount:'+'+amount;
  const type=amount===0?'SALDO MASSIMO':prize.kind==='coins'?'MONETE':prize.kind==='lives'?'VITE':'RILANCI GRATIS';
  coin.replaceChildren(uNode('strong','sn-coin-value',value),uNode('small','',type));coin.setAttribute('aria-label',value+' '+type);
 }
