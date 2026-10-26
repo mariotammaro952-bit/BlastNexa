@@ -111,7 +111,7 @@ public class LaunchValidationTest {
  }
  private void recordFailure(String reason){
   try{String name=reason.replaceAll("[^a-zA-Z0-9_-]","_");if(name.length()>65)name=name.substring(0,65);
-   writeEvidence(name+".json",js("JSON.stringify({phase:typeof slotPhase==='undefined'?null:slotPhase,busy:typeof slotBusy==='undefined'?null:slotBusy,total:lifeData.slot.total,sinceAd:lifeData.slot.sinceAd,coins:lifeData.slot.wallet.balance,autoLeft:slotAutoLeft,autoTimer:slotAutoTimer,batchLeft:window.__qaBatchLeft,batchTrace:window.__qaBatchTrace,pending:bnPendingAd?{token:bnPendingAd.token,session:bnPendingAd.session}:null,session:gameSession,hidden:document.hidden,focused:document.hasFocus(),active:document.activeElement?.outerHTML.slice(0,600),overlay:document.getElementById('overlay').className,spin:document.getElementById('slotSpinButton')?.outerHTML,spinAncestors:(()=>{let n=document.getElementById('slotSpinButton'),a=[];for(;n;n=n.parentElement){const r=n.getBoundingClientRect(),s=getComputedStyle(n);a.push({tag:n.tagName,id:n.id,cls:n.className,rect:[r.x,r.y,r.width,r.height],hidden:n.getAttribute('aria-hidden'),inert:n.hasAttribute('inert'),display:s.display,visibility:s.visibility,overflow:s.overflow});}return a;})(),bannerLayout:window.BlastNexaBannerLayout?.(),bannerGeometry:['gameBanner','gameBannerFrame','puzzleBannerSeat','wordsBannerSeat','wordsScreen','wordsScroll'].map(id=>{const n=document.getElementById(id);if(!n)return null;const r=n.getBoundingClientRect(),s=getComputedStyle(n);return{id,rect:[r.x,r.y,r.width,r.height],display:s.display,visibility:s.visibility,basis:s.flexBasis,fits:n.dataset.fits};}),errors:window.__qaErrors})"));
+   writeEvidence(name+".json",js("JSON.stringify({phase:typeof slotPhase==='undefined'?null:slotPhase,busy:typeof slotBusy==='undefined'?null:slotBusy,total:lifeData.slot.total,sinceAd:lifeData.slot.sinceAd,coins:lifeData.slot.wallet.balance,rush:lifeData.slot.rush.active,shotEvents:window.__shotEvents,autoLeft:slotAutoLeft,autoTimer:slotAutoTimer,batchLeft:window.__qaBatchLeft,batchTrace:window.__qaBatchTrace,pending:bnPendingAd?{token:bnPendingAd.token,session:bnPendingAd.session}:null,session:gameSession,hidden:document.hidden,focused:document.hasFocus(),active:document.activeElement?.outerHTML.slice(0,600),overlay:document.getElementById('overlay').className,spin:document.getElementById('slotSpinButton')?.outerHTML,spinAncestors:(()=>{let n=document.getElementById('slotSpinButton'),a=[];for(;n;n=n.parentElement){const r=n.getBoundingClientRect(),s=getComputedStyle(n);a.push({tag:n.tagName,id:n.id,cls:n.className,rect:[r.x,r.y,r.width,r.height],hidden:n.getAttribute('aria-hidden'),inert:n.hasAttribute('inert'),display:s.display,visibility:s.visibility,overflow:s.overflow});}return a;})(),bannerLayout:window.BlastNexaBannerLayout?.(),bannerGeometry:['gameBanner','gameBannerFrame','puzzleBannerSeat','wordsBannerSeat','wordsScreen','wordsScroll'].map(id=>{const n=document.getElementById(id);if(!n)return null;const r=n.getBoundingClientRect(),s=getComputedStyle(n);return{id,rect:[r.x,r.y,r.width,r.height],display:s.display,visibility:s.visibility,basis:s.flexBasis,fits:n.dataset.fits};}),errors:window.__qaErrors})"));
    File folder=new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null),"metrics");device.takeScreenshot(new File(folder,name+".png"));
   }catch(Exception ignored){}
  }
@@ -610,9 +610,18 @@ public class LaunchValidationTest {
 
  @Test public void x_v35FiveSecondRifleBonus()throws Exception{
   truth("[...document.querySelectorAll('#bnPrimaryGames>button')].map(n=>n.id).join(',')==='openLifeSlot,openPuzzle,openWords'");
-  slotFixture("temple","lite");touchId("slotSpinButton");waitFor("!!bnSupernovaRun",8000);
+  // Accessibility discovery can take longer than the real five-second round.
+  // Preflight the unchanged layout using actual UI-tree bounds, then inject
+  // the live shot immediately. Never extend or pause the production clock.
+  slotFixture("temple","lite");android.graphics.Rect spin=touchBounds("slotSpinButton",true);rawTouch(spin.centerX(),spin.centerY());waitFor("!!bnSupernovaRun",8000);
+  android.graphics.Rect target=touchBounds("snCoin0",true);
+  slotFixture("temple","lite");awaitTouchFrame();
+  js("window.__shotEvents=[];for(const type of ['pointerdown','pointerup','pointercancel','click'])document.addEventListener(type,e=>{if(bnSupernovaRun&&window.__shotEvents.length<40)window.__shotEvents.push({type,at:Date.now(),button:e.button,pointerType:e.pointerType,primary:e.isPrimary,target:e.target.id,left:lifeData.slot.rush.active.endsAt-Date.now()});},true);true");
+  rawTouch(spin.centerX(),spin.centerY());waitFor("!!bnSupernovaRun",8000);
   truth("!!document.getElementById('snRifle') && !!document.getElementById('snHourglass') && lifeData.slot.rush.active.endsAt-lifeData.slot.rush.active.startedAt===5000");
-  touchId("snCoin0");truth("lifeData.slot.rush.active.shots===1 && lifeData.slot.rush.active.claimed.length===1");
+  rawTouch(target.centerX(),target.centerY());Thread.sleep(100);
+  writeEvidence("35_live_shot.json",js("JSON.stringify({round:lifeData.slot.rush.active,now:Date.now(),events:window.__shotEvents})"));
+  truth("lifeData.slot.rush.active.shots===1 && lifeData.slot.rush.active.claimed.length===1");
   js("window.__shotSaved=JSON.stringify([lifeData.slot.wallet.balance,lifeData.balance,coinRushTokens()]);true");
   waitFor("!!document.getElementById('snSummary')",10000);
   truth("lifeData.slot.rush.active.state==='closed' && JSON.stringify([lifeData.slot.wallet.balance,lifeData.balance,coinRushTokens()])===window.__shotSaved && !coinRushClaim(lifeData.slot.rush.active.id,1)");
