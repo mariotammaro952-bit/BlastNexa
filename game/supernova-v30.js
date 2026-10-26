@@ -24,19 +24,26 @@ function bnSupernovaReveal(run,index){
  if(bnSupernovaRun!==run||run.ended||(index!==-1&&Math.floor(index/12)!==run.page))return false;
  if(performance.now()>=run.monoEnd){bnRushComplete(run,'time');return false;}
  const prize=coinRushClaim(run.round.id,index);if(!prize){if(run.round.state==='closed')bnRushComplete(run,run.round.reason);return false;}
- bnRushShotEffect(run);bnRushUpdateAmmo(run);
- if(prize.kind!=='miss'){bnRushPaintCoin(run,index,run.grid.children[index%12]);bnRushUpdateCounters(run);}
+ bnRushUpdateAmmo(run);
+ const target=index<0?null:run.grid.children[index%12];
+ if(target){target.disabled=true;target.classList.add('sn-hit-pending');}
+ run.pendingImpacts=(run.pendingImpacts||0)+1;
+ bnRushShotEffect(run,index,()=>{
+ run.pendingImpacts--;if(target&&target.isConnected){target.classList.remove('sn-hit-pending');bnRushPaintCoin(run,index,target);}bnRushUpdateCounters(run);
+ if(run.finishReason&&!run.pendingImpacts)bnRushComplete(run,run.finishReason);
+ });
+ 
  run.progress.textContent=run.round.claimed.length+' PREMI · '+run.round.shots+' / 5 COLPI';
  const type=prize.kind==='coins'?' monete':prize.kind==='lives'?' vite':' rilanci gratis';run.status.textContent=prize.kind==='miss'?'COLPO A VUOTO':'+'+prize.credited+type;
  run.lastImpact=performance.now();if(!run.lite)bnSupernovaBurst(run,run.lastImpact,index<0?0:index);if(!run.frame)run.frame=requestAnimationFrame(t=>bnSupernovaDraw(run,t));
  if(run.round.shots===5)bnRushComplete(run,'ammo');return true;
 }
 function bnSupernovaPage(run){
- run.grid.replaceChildren();run.pageLabel.textContent='PAGINA '+(run.page+1)+' / 3';run.prev.disabled=run.page===0||run.ended;run.next.disabled=run.page===2||run.ended;
- for(let i=0;i<12;i++){const index=run.page*12+i,coin=uButton('',()=>bnSupernovaReveal(run,index),'sn-coin');coin.id='snCoin'+i;coin.setAttribute('aria-label','Spara alla moneta '+(i+1));coin.append(uNode('strong','','✦'),uNode('small','','MIRA'));if(run.round.claimed.includes(index))bnRushPaintCoin(run,index,coin);if(run.ended)coin.disabled=true;run.grid.append(coin);}
+ run.aimIndex=-1;if(run.crosshair)run.crosshair.hidden=true;run.grid.replaceChildren();run.pageLabel.textContent='PAGINA '+(run.page+1)+' / 3';run.prev.disabled=run.page===0||run.ended;run.next.disabled=run.page===2||run.ended;
+ for(let i=0;i<12;i++){const index=run.page*12+i,coin=uButton('',()=>bnRushAimCoin(run,index),'sn-coin');coin.id='snCoin'+i;coin.setAttribute('aria-label','Mira alla moneta '+(i+1));coin.append(uNode('strong','','✦'),uNode('small','','MIRA'));if(run.round.claimed.includes(index))bnRushPaintCoin(run,index,coin);if(run.ended)coin.disabled=true;run.grid.append(coin);}
 }
 function bnRushComplete(run,reason){
- if(bnSupernovaRun!==run||run.ended)return;run.ended=true;clearTimeout(run.clock);coinRushEnd(run.round.id,reason);bnSupernovaStopAudio(true);slotStopMusic();
+ if(bnSupernovaRun!==run||run.ended)return;if(run.pendingImpacts){run.finishReason=reason;run.gun.disabled=true;return;}run.ended=true;run.gun.disabled=true;clearTimeout(run.clock);coinRushEnd(run.round.id,reason);bnSupernovaStopAudio(true);slotStopMusic();
  cancelAnimationFrame(run.frame);run.frame=0;run.layer.dataset.state='finished';if(reason==='time')run.timerValue.textContent='0,0';run.timer.setAttribute('aria-label',reason==='ammo'?'Cinque colpi esauriti':'Tempo scaduto');run.prev.disabled=run.next.disabled=true;for(const coin of run.grid.children)coin.disabled=true;
  const summary=uNode('section','sn-rush-summary');summary.id='snSummary';summary.setAttribute('role','status');summary.append(uNode('small','',reason==='ammo'?'COLPI ESAURITI':'TEMPO SCADUTO'),uNode('h2','',run.round.claimed.length+(run.round.claimed.length===1?' PREMIO COLPITO':' PREMI COLPITI')));
  const totals=uNode('div','sn-summary-prizes');for(const [key,label]of [['coins','MONETE'],['lives','VITE'],['respins','RILANCI GRATIS']]){const item=uNode('div','');item.append(uNode('strong','','+'+run.round.collected[key]),uNode('small','',label));totals.append(item);}summary.append(totals,uNode('p','','I premi raccolti sono tuoi. I rilanci gratis ti aspettano nella Forgia.'));
@@ -59,7 +66,7 @@ function bnSupernovaStart(options={}){
  const timer=uNode('div','sn-rush-clock');timer.id='snHourglass';timer.setAttribute('role','timer');timer.setAttribute('aria-live','off');timer.innerHTML='<svg viewBox="0 0 40 60" aria-hidden="true"><path d="M6 4h28M6 56h28M9 6c0 13 1 15 11 24C10 39 9 41 9 54h22c0-13-1-15-11-24C30 21 31 19 31 6Z" fill="none" stroke="currentColor" stroke-width="3"/><path class="rush-sand-top" d="M12 10h16c-1 8-4 11-8 15-4-4-7-7-8-15"/><path class="rush-sand-bottom" d="m12 51 8-11 8 11Z"/><path class="rush-sand-stream" d="M20 29v12" stroke="currentColor" stroke-width="2"/></svg>';
  const timeText=uNode('div',''),timerValue=uNode('strong','','5,0');timerValue.id='snTimer';timeText.append(timerValue,uNode('small','','SECONDI'));timer.append(timeText);head.append(copy,timer);
  const rewards=uNode('div','sn-rewards'),counters=[];rewards.id='snRewards';for(const [key,label]of [['coins','MONETE'],['lives','VITE'],['respins','RILANCI GRATIS']]){const row=uNode('div','sn-reward'),count=uNode('strong','','+0');row.append(count,uNode('small','',label));rewards.append(row);counters.push({key,node:count});}head.append(rewards);
- const grid=uNode('div','sn-coin-grid');grid.setAttribute('role','group');grid.setAttribute('aria-label','Bersagli: mira e rilascia per sparare, massimo cinque colpi in cinque secondi');main.append(head,grid);layer.append(main);
+ const grid=uNode('div','sn-coin-grid');grid.setAttribute('role','group');grid.setAttribute('aria-label','Tocca una moneta per mirare, poi tocca il fucile per sparare. Cinque colpi in cinque secondi');main.append(head,grid);layer.append(main);
  const bottom=uNode('div','sn-bottom'),info=uNode('div','sn-page-info'),pageLabel=uNode('strong','','PAGINA 1 / 3'),progress=uNode('small','','0 PREMI · 0 / 5 COLPI');info.append(pageLabel,progress);
  const prev=uButton('‹ PAGINA',()=>{const run=bnSupernovaRun;if(run&&!run.ended&&run.page>0){run.page--;bnSupernovaPage(run);}},'sn-rush-nav');prev.id='snPrev';const next=uButton('PAGINA ›',()=>{const run=bnSupernovaRun;if(run&&!run.ended&&run.page<2){run.page++;bnSupernovaPage(run);}},'sn-rush-nav');next.id='snNext';
  const status=uNode('p','sn-live');status.setAttribute('aria-live','polite');bottom.append(prev,info,next,uNode('small','sn-saved','200 / 300 MONETE · VITE · RILANCIA ×1 / ×2'));layer.append(bottom,status);

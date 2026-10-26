@@ -99,3 +99,23 @@
 @media(orientation:portrait){.sn-rifle-deck{grid-template-columns:1fr 65px 1fr;padding:0 6px}.sn-rifle{height:65px;width:65px}.sn-rifle-hint>small{font-size:6px}.sn-rifle-hint>strong{font-size:8px}.sn-ammo-box{column-gap:4px}.sn-ammo-box>small{font-size:6px}.sn-ammo-box>strong{font-size:18px}.sn-ammo{gap:5px}}
 @media(prefers-reduced-motion:reduce){.sn-rifle,.sn-rifle.sn-fired{animation:none}}
 .sn-rush .sn-coin.revealed>strong.sn-coin-value{font-size:clamp(16px,2.4vw,28px);white-space:nowrap}.sn-rush .sn-coin.revealed>small{line-height:1.1}
+
+/* v36 — first-person weapon occupies its own lane, never covers a target. */
+.sn-rush .sn-collection{grid-template-columns:minmax(0,1fr) minmax(150px,27%);grid-template-rows:auto minmax(0,1fr) 45px}
+.sn-rush .sn-collection-head{grid-column:1/-1}
+.sn-rush .sn-coin-grid{grid-column:1;grid-row:2}
+.sn-rush .sn-rifle-deck{grid-column:1;grid-row:3;grid-template-columns:auto 1fr;padding:3px 10px}
+.sn-rush .sn-rifle{grid-column:2;grid-row:2/4;align-self:stretch;justify-self:stretch;position:relative;width:100%;height:100%;min-width:0;min-height:44px;margin:0;padding:0;border:0;border-radius:14px;pointer-events:auto;background:radial-gradient(ellipse at 60% 90%,#5f6d7233,transparent 70%);overflow:hidden;cursor:crosshair;touch-action:manipulation;transform:none;filter:drop-shadow(-3px 5px 5px #0008);animation:none}
+.sn-rush .sn-rifle img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:bottom;pointer-events:none;transform:rotate(var(--aim-angle,0deg));transform-origin:75% 100%;transition:transform .07s}
+.sn-rush .sn-rifle>span{position:absolute;bottom:4px;left:3px;right:3px;background:#081b29df;border:1px solid #82d3d2aa;border-radius:8px;padding:7px 2px;color:#edffff;font-size:9px;font-weight:900;pointer-events:none}
+.sn-rush .sn-rifle:focus-visible{outline:2px solid #90fff3;outline-offset:2px}
+.sn-rush .sn-rifle.sn-fired img{animation:snFpsRecoil .18s ease-out}
+@keyframes snFpsRecoil{0%{transform:translate(4px,12px) rotate(var(--aim-angle,0deg))}100%{transform:translate(0,0) rotate(var(--aim-angle,0deg))}}
+.sn-coin.sn-targeted{outline:2px solid #7cfff1;outline-offset:3px;box-shadow:0 0 18px #69ffe6aa}
+.sn-projectile,.sn-fps-flash,.sn-fps-impact{position:absolute;z-index:20;pointer-events:none;display:block}
+.sn-projectile{width:24px;height:3px;border-radius:70%;background:linear-gradient(90deg,transparent,#ffbe48,#fffbe3);box-shadow:0 0 7px #ffc343;transform-origin:center}
+.sn-fps-flash{width:36px;height:36px;margin:-18px;border-radius:50%;background:radial-gradient(circle,#fff 5%,#fff6ad 20%,#ffa32b99 40%,transparent 68%)}
+.sn-fps-impact{width:48px;height:48px;margin:-24px;border-radius:50%;border:3px solid #ffe8a1;box-shadow:0 0 12px #ffd55f,inset 0 0 12px #ffcc61;animation:snFpsImpact .28s ease-out both}
+@keyframes snFpsImpact{from{transform:scale(.2);opacity:1}to{transform:scale(1.4);opacity:0}}
+@media(orientation:portrait){.sn-rush .sn-collection{grid-template-columns:minmax(0,1fr) minmax(92px,27%)}.sn-rush .sn-coin-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:8px}.sn-rush .sn-rifle-deck{grid-column:1/-1}.sn-rush .sn-rifle{grid-row:2}.sn-rifle-hint>strong{font-size:7px}}
+@media(prefers-reduced-motion:reduce){.sn-rush .sn-rifle.sn-fired img,.sn-fps-impact{animation:none}}

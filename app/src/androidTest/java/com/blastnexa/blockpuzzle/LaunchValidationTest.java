@@ -614,12 +614,12 @@ public class LaunchValidationTest {
   // Preflight the unchanged layout using actual UI-tree bounds, then inject
   // the live shot immediately. Never extend or pause the production clock.
   slotFixture("temple","lite");android.graphics.Rect spin=touchBounds("slotSpinButton",true);rawTouch(spin.centerX(),spin.centerY());waitFor("!!bnSupernovaRun",8000);
-  android.graphics.Rect target=touchBounds("snCoin0",true);
+  android.graphics.Rect target=touchBounds("snCoin0",true);android.graphics.Rect weapon=touchBounds("snRifle",true);
   slotFixture("temple","lite");awaitTouchFrame();
   js("window.__shotEvents=[];for(const type of ['pointerdown','pointerup','pointercancel','click'])document.addEventListener(type,e=>{if(bnSupernovaRun&&window.__shotEvents.length<40)window.__shotEvents.push({type,at:Date.now(),button:e.button,pointerType:e.pointerType,primary:e.isPrimary,target:e.target.id,left:lifeData.slot.rush.active.endsAt-Date.now()});},true);true");
   rawTouch(spin.centerX(),spin.centerY());waitFor("!!bnSupernovaRun",8000);
   truth("!!document.getElementById('snRifle') && !!document.getElementById('snHourglass') && lifeData.slot.rush.active.endsAt-lifeData.slot.rush.active.startedAt===5000");
-  rawTouch(target.centerX(),target.centerY());Thread.sleep(100);
+  rawTouch(target.centerX(),target.centerY());rawTouch(weapon.centerX(),weapon.centerY());Thread.sleep(170);
   writeEvidence("35_live_shot.json",js("JSON.stringify({round:lifeData.slot.rush.active,now:Date.now(),events:window.__shotEvents})"));
   truth("lifeData.slot.rush.active.shots===1 && lifeData.slot.rush.active.claimed.length===1");
   js("window.__shotSaved=JSON.stringify([lifeData.slot.wallet.balance,lifeData.balance,coinRushTokens()]);true");
