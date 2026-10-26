@@ -608,5 +608,18 @@ public class LaunchValidationTest {
   js("saveLives();true");recreateActivity();truth("lifeData.slot.rush.active.state==='closed' && !bnSupernovaRun");
  }
 
+ @Test public void x_v35FiveSecondRifleBonus()throws Exception{
+  truth("[...document.querySelectorAll('#bnPrimaryGames>button')].map(n=>n.id).join(',')==='openLifeSlot,openPuzzle,openWords'");
+  slotFixture("temple","lite");touchId("slotSpinButton");waitFor("!!bnSupernovaRun",8000);
+  truth("!!document.getElementById('snRifle') && !!document.getElementById('snHourglass') && lifeData.slot.rush.active.endsAt-lifeData.slot.rush.active.startedAt===5000");
+  touchId("snCoin0");truth("lifeData.slot.rush.active.shots===1 && lifeData.slot.rush.active.claimed.length===1");
+  js("window.__shotSaved=JSON.stringify([lifeData.slot.wallet.balance,lifeData.balance,coinRushTokens()]);true");
+  waitFor("!!document.getElementById('snSummary')",10000);
+  truth("lifeData.slot.rush.active.state==='closed' && JSON.stringify([lifeData.slot.wallet.balance,lifeData.balance,coinRushTokens()])===window.__shotSaved && !coinRushClaim(lifeData.slot.rush.active.id,1)");
+  capture("35_rifle_bonus_summary");touchId("snContinue");truth("!slotBusy && !bnSupernovaRun");
+  js("saveLives();true");recreateActivity();truth("lifeData.slot.rush.active.state==='closed' && !bnSupernovaRun");
+ }
+
 }
+
 

@@ -28,6 +28,7 @@ page=page.replace('BLAST<span>NEXA</span>','BLAST<span>NEXTA</span>')
 page=page.replace('<div class="kicker">BLOCK PUZZLE</div>','<div class="kicker">3 IN 1 · SLOT · PUZZLE · CRUCIVERBA</div>')
 page=page.replace('BLASTNEXA · ODYSSEY v29 · AVVENTURE ORIZZONTALI','BLASTNEXTA 3 IN 1 · TRE GIOCHI, UNA SOLA AVVENTURA')
 page=page.replace('</head>','<link rel="stylesheet" href="rush-home-v34.css"></head>',1)
-page=page.replace('</body>','<script defer src="trio-home-v34.js"></script></body>',1)
+page=page.replace('</body>','<script defer src="rifle-v35.js"></script><script defer src="trio-home-v34.js"></script></body>',1)
 source.write_text(page)
 print('Prepared BlastNexta 3 in 1 v34: timed collection and free relaunches')
+
