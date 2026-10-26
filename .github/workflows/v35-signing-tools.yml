@@ -12,13 +12,13 @@ jobs:
     steps:
       - name: Package the installed Android signing utilities
         run: |
-          tool_path=$(rg --files "$ANDROID_HOME/build-tools" -g zipalign | sort -V | tail -n 1)
+          tool_path=$(find "$ANDROID_HOME/build-tools" -type f -name zipalign | sort -V | tail -n 1)
           tool_dir=$(dirname "$tool_path")
           test -f "$tool_dir/lib/apksigner.jar"
           mkdir -p signing-tools/lib
           cp "$tool_path" signing-tools/zipalign
           cp "$tool_dir/lib/apksigner.jar" signing-tools/lib/
-          cp -a "$tool_dir/lib64" signing-tools/
+          if [ -d "$tool_dir/lib64" ]; then cp -a "$tool_dir/lib64" signing-tools/; fi
           tar -czf signing-tools.tgz signing-tools
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
