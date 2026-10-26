@@ -565,29 +565,35 @@ public class LaunchValidationTest {
   js("window.__relaunchTotal=lifeData.slot.total;window.__relaunchCoins=lifeData.slot.wallet.balance;true");touchId("slotRespinButton");
   truth("lifeData.slot.total===window.__relaunchTotal+1 && lifeData.slot.last.arcade.kind==='respin' && lifeData.slot.last.arcade.held[0]===0 && lifeData.slot.wallet.balance===window.__relaunchCoins-lifeData.slot.last.coinCost+lifeData.slot.last.coinsCredited && !spinLifeSlot('respin')");
  }
- @Test public void u_v32CoinPagesStayOpenAndNeverDuplicateSavedRewards()throws Exception{
+ @Test public void u_v33VariedCoinPagesPreserveSavedRewards()throws Exception{
   slotFixture("temple","lite");
   js("window.__coinBonusTotal=lifeData.slot.total;true");touchId("slotSpinButton");waitFor("!!bnSupernovaRun",12000);
   js("window.__coinBonusWallet=lifeData.slot.wallet.balance;window.__coinBonusLives=lifeData.balance;true");
+  truth("new Set(bnSupernovaRun.parts.map(p=>p.coins)).size>1 && new Set(bnSupernovaRun.parts.filter(p=>p.lives).map(p=>p.lives)).size>1");
+  truth("['coins','lives','free'].every(key=>bnSupernovaRun.parts.reduce((n,p)=>n+p[key],0)===(bnSupernovaRun.counters.find(c=>c.key===key)?.value||0))");
   Thread.sleep(8500);truth("!!bnSupernovaRun && slotBusy && bnSupernovaRun.revealed.size===0 && !window.BlastNexaBannerLayout().visible");
-  capture("32_coin_bonus_page_1");
+  capture("33_coin_bonus_page_1");
   for(int page=0;page<3;page++){
    truth("bnSupernovaRun.page==="+page+" && document.getElementById('snContinue').disabled");
    touchId("snCoin0");truth("bnSupernovaRun.revealed.has("+(page*12)+")");
    touchId("snRevealAll");truth("!document.getElementById('snContinue').disabled");
+   if(page==0)capture("33_varied_coin_prizes");
    if(page==2)truth("bnSupernovaRun.counters.every(c=>c.collected===c.value)");
    touchId("snContinue");
   }
   truth("!bnSupernovaRun && !slotBusy && lifeData.slot.total===window.__coinBonusTotal+1 && lifeData.slot.wallet.balance===window.__coinBonusWallet && lifeData.balance===window.__coinBonusLives && !document.getElementById('universeScreen').hasAttribute('inert')");
   js("saveLives();true");recreateActivity();truth("lifeData.slot.wallet.balance===lifeData.slot.last.beforeCoins-lifeData.slot.last.coinCost+lifeData.slot.last.coinsCredited && !bnSupernovaRun");
  }
- @Test public void v_v32MapPagerAndPuzzleAreCentredAndDoNotOverlapAds()throws Exception{
+ @Test public void v_v33CompleteWorldPageUsesNativeNavigation()throws Exception{
   js("displayMenu();openAdventureMap();true");waitFor("!!document.getElementById('bnPages_mapScroll')",8000);
-  truth("(()=>{const a=document.getElementById('adventureMap').getBoundingClientRect(),s=document.getElementById('mapScroll').getBoundingClientRect(),h=document.querySelector('.map-hero').getBoundingClientRect(),p=document.getElementById('bnPages_mapScroll').getBoundingClientRect(),ad=document.getElementById('gameBanner').getBoundingClientRect();return !document.getElementById('bnPages_adventureMap')&&Math.abs(h.left+h.width/2-a.left-a.width/2)<2&&s.bottom<=p.top+1&&p.bottom<=ad.top+1;})()");
-  capture("32_centred_adventure_map");touchId("bnPageNext_mapScroll");truth("document.getElementById('mapScroll').scrollTop>0");touchId("bnPagePrev_mapScroll");truth("document.getElementById('mapScroll').scrollTop===0");
-  js("start('adventure',1);true");
+  truth("(()=>{const a=document.getElementById('adventureMap').getBoundingClientRect(),s=document.getElementById('mapScroll').getBoundingClientRect(),h=document.querySelector('#adventureMap>.map-header').getBoundingClientRect(),c=document.getElementById('mapCurrentWorld').getBoundingClientRect(),p=document.getElementById('bnPages_mapScroll').getBoundingClientRect(),ad=document.getElementById('gameBanner').getBoundingClientRect(),levels=[...document.querySelectorAll('#worlds .level-node')];return !document.getElementById('bnPages_adventureMap')&&document.querySelectorAll('#worlds>.world-card').length===1&&Math.abs(a.left+a.width/2-innerWidth/2)<2&&s.bottom<=p.top+1&&p.bottom<=ad.top+1&&levels.length===10&&[document.querySelector('.bn-world-heading'),document.querySelector('.world-pagebar'),...levels].every(n=>{const r=n.getBoundingClientRect();return r.left>=s.left&&r.right<=s.right+1&&r.top>=h.bottom&&r.bottom<=s.bottom+1&&r.bottom<=c.bottom+1});})()");
+  capture("33_complete_adventure_world");
+  touchId("bnPageNext_mapScroll");truth("BlastNexaWorldPage().world===1");touchId("bnPagePrev_mapScroll");truth("BlastNexaWorldPage().world===0");
+  touchId("mapLevelsNext");truth("BlastNexaWorldPage().first===11");touchId("mapLevelsPrev");truth("BlastNexaWorldPage().first===1");
+  truth("!document.getElementById('mapLevel1').disabled && document.getElementById('mapLevel2').disabled");
+  touchId("mapLevel1");waitFor("document.getElementById('game').style.display==='flex'",10000);
   truth("(()=>{const b=document.getElementById('boardShell').getBoundingClientRect(),a=document.querySelector('#game .bn-wide-game').getBoundingClientRect();return Math.abs(b.left+b.width/2-a.left-a.width/2)<2&&Math.abs(b.width-b.height)<2&&b.top>=0&&b.bottom<=innerHeight;})()");
-  capture("32_centred_puzzle_board");truth("window.__qaErrors.length===0");
+  capture("33_centred_puzzle_board");truth("window.__qaErrors.length===0");
  }
 
 }
