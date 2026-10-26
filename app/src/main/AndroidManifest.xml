@@ -8,7 +8,7 @@
         android:appCategory="game"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
-        android:label="BlastNexa: Block Puzzle"
+        android:label="BlastNexta 3 in 1"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
@@ -35,3 +35,4 @@
         </activity>
     </application>
 </manifest>
+

@@ -3,7 +3,7 @@ from pathlib import Path
 root=Path(__file__).resolve().parents[1]
 source=root/'game/index.html'
 page=source.read_text()
-if 'ODYSSEY MONDI v33' in page:
+if 'ODYSSEY MONDI v33' in page or 'ODYSSEY RUSH v34' in page:
     raise SystemExit(0)
 assert 'ODYSSEY COIN BONUS v32' in page
 page=page.replace('ODYSSEY COIN BONUS v32','ODYSSEY MONDI v33').replace('NEXA WORDS · v32','NEXA WORDS · v33')

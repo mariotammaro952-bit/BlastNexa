@@ -1,0 +1,49 @@
+name: BlastNexta 3 in 1 v34 HTML review
+on:
+  push:
+    branches: [codex/coin-rush-home-v34]
+    paths: [game/**, tools/prepare_assets.py, tools/upgrade_game_v*.py, tools/package_preview_v34.py, qa/*.cjs, .github/workflows/v34-html.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: blastnexta-v34-html-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: '24'}
+      - name: Prepare the actual UI and the review HTML
+        run: |
+          python3 tools/prepare_assets.py
+          python3 tools/package_preview_v34.py
+      - name: Install pinned browser
+        run: |
+          npm install --no-save playwright@1.62.1
+          npx playwright install --with-deps chromium
+      - name: Check actual rewards and thirty thousand committed spins
+        run: |
+          node qa/coin_rush_v34.cjs
+          node qa/slot_economy_v28.cjs
+          node qa/fresh_start_v29.cjs
+      - name: Check rendered home, timed collection, audio and layouts
+        run: node qa/coin_rush_v34_browser.cjs
+      - name: Preserve the browser for local diagnosis if needed
+        if: failure()
+        run: |
+          mkdir -p qa/v34-browser
+          tar -C "$HOME/.cache/ms-playwright" -czf qa/v34-browser/chromium-runtime.tgz chromium_headless_shell-1234
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: BlastNexta-v34-browser
+          path: |
+            qa/v34-browser/
+            qa/v34_rush_engine_results.json
+            qa/slot_economy_v28_result.json
+            qa/fresh_start_v29_result.json
+          retention-days: 7

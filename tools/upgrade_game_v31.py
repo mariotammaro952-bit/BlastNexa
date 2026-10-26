@@ -7,7 +7,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 source = ROOT / 'game/index.html'
 page = source.read_text()
-if 'ODYSSEY SUPERNOVA v31' in page or 'ODYSSEY COIN BONUS v32' in page or 'ODYSSEY MONDI v33' in page:
+if 'ODYSSEY SUPERNOVA v31' in page or 'ODYSSEY COIN BONUS v32' in page or 'ODYSSEY MONDI v33' in page or 'ODYSSEY RUSH v34' in page:
     raise SystemExit(0)
 
 def replace(old, new, count=1):

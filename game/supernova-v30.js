@@ -1,50 +1,73 @@
-/* Presentation has no authority to draw a result, spend coins or award lives. */
 'use strict';
 let bnSupernovaRun=null,bnSupernovaSerial=0;
-const BN_SUPERNOVA_HITS=[0,960,1920,3200,4480,5760,6800];
-
-// Only divide an existing saved award. This generator is independent of the
-// slot RNG and cannot change the result, balance, odds or number of spins.
-function bnSupernovaAmount(value){return Math.max(0,Math.min(Number.MAX_SAFE_INTEGER,Math.floor(Number(value)||0)));}
-function bnSupernovaParts(totals,identity){
- let seed=2166136261;for(const c of String(identity))seed=Math.imul(seed^c.charCodeAt(0),16777619)>>>0;
- const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
- const parts=Array.from({length:36},()=>({coins:0,lives:0,free:0}));
- for(const key of ['coins','lives','free']){
-  const total=bnSupernovaAmount(totals[key]);if(!total)continue;
-  const active=total<3?1:Math.min(key==='coins'?36:12,key==='coins'&&total>=72?36:Math.max(2,Math.ceil(total*.6)));
-  const order=Array.from({length:36},(_,i)=>i);for(let i=35;i>0;i--){const j=Math.floor(random()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
-  const weights=Array.from({length:active},()=>{const n=1+Math.floor(random()*8);return BigInt(n*n);}),sum=weights.reduce((a,b)=>a+b,0n),left=BigInt(total-active);
-  const amounts=weights.map((w,i)=>({i,value:1n+left*w/sum,remainder:left*w%sum,tie:random()}));
-  let remaining=BigInt(total)-amounts.reduce((n,a)=>n+a.value,0n);
-  for(const a of [...amounts].sort((a,b)=>a.remainder===b.remainder?a.tie-b.tie:a.remainder>b.remainder?-1:1)){if(!remaining)break;a.value++;remaining--;}
-  for(const a of amounts)parts[order[a.i]][key]=Number(a.value);
-  // Totals such as 36 or 72 must not collapse back into equal coin awards.
-  const occupied=order.slice(0,active),values=new Set(occupied.map(i=>parts[i][key]));
-  if(values.size===1&&active>1&&parts[occupied[0]][key]>1){parts[occupied[0]][key]--;parts[occupied[1]][key]++;}
- }
- return parts;
-}
-
+const BN_SUPERNOVA_HITS=[0,960,1920,3200,4480,5760,6800,8200,9200];
 function bnSupernovaStopAudio(){
- const run=bnSupernovaRun;if(!run)return;
- for(const voice of run.voices){try{voice.source.stop()}catch{}try{voice.source.disconnect();voice.gain.disconnect()}catch{}}
- run.voices.clear();run.audioStopped=true;
+ const run=bnSupernovaRun;if(!run)return;for(const voice of run.voices){try{voice.source.stop()}catch{}try{voice.source.disconnect();voice.gain.disconnect()}catch{}}run.voices.clear();run.audioStopped=true;
 }
 function bnSupernovaCleanup(){
  const run=bnSupernovaRun;if(!run)return false;
- bnSupernovaStopAudio();if(slotMusicKey==='hype'){slotStopMusic();slotMusicOffsets.delete('hype');}bnSupernovaRun=null;bnSupernovaSerial++;
- cancelAnimationFrame(run.frame);run.timers.forEach(clearTimeout);run.observer?.disconnect();run.layer.remove();
- document.removeEventListener('keydown',run.onKey);
- for(const {node,inert,hidden}of run.background||[]){if(!inert)node.removeAttribute('inert');if(hidden===null)node.removeAttribute('aria-hidden');else node.setAttribute('aria-hidden',hidden);}
- delete $('app').dataset.superBonus;
- if(run.previousFocus?.isConnected)try{run.previousFocus.focus({preventScroll:true})}catch{}
- return true;
+ coinRushEnd(run.round.id,'exit');bnSupernovaStopAudio();if(slotMusicKey==='hype'){slotStopMusic();slotMusicOffsets.delete('hype');}bnSupernovaRun=null;bnSupernovaSerial++;
+ clearTimeout(run.clock);cancelAnimationFrame(run.frame);run.timers.forEach(clearTimeout);run.observer?.disconnect();run.layer.remove();document.removeEventListener('keydown',run.onKey);
+ for(const {node,inert,hidden}of run.background){if(!inert)node.removeAttribute('inert');if(hidden===null)node.removeAttribute('aria-hidden');else node.setAttribute('aria-hidden',hidden);}
+ delete $('app').dataset.superBonus;if(run.previousFocus?.isConnected)try{run.previousFocus.focus({preventScroll:true})}catch{}return true;
 }
-function bnSupernovaFinish(){
- if(!bnSupernovaRun)return false;
- bnSupernovaCleanup();finishSlotCelebration();syncGameBanner(true);slotMediaSync();return true;
+function bnSupernovaFinish(){if(!bnSupernovaRun)return false;bnSupernovaCleanup();finishSlotCelebration();syncGameBanner(true);slotMediaSync();return true;}
+function bnRushUpdateCounters(run){for(const c of run.counters)c.node.textContent='+'+run.round.collected[c.key].toLocaleString('it-IT');}
+function bnRushPaintCoin(run,index,coin){
+ const prize=run.parts[index],amount=run.round.receipts[index]||0,major=prize.kind==='coins'&&amount>=200||prize.kind==='respins'&&amount===2||prize.kind==='lives'&&amount>=3;
+ coin.disabled=true;coin.classList.add('revealed');coin.dataset.prize=major?'major':'regular';
+ const value=prize.kind==='respins'?'↻ ×'+amount:'+'+amount;
+ const type=amount===0?'SALDO MASSIMO':prize.kind==='coins'?'MONETE':prize.kind==='lives'?'VITE':'RILANCI GRATIS';
+ coin.replaceChildren(uNode('strong','sn-coin-value',value),uNode('small','',type));coin.setAttribute('aria-label',value+' '+type);
 }
+function bnSupernovaReveal(run,index){
+ if(bnSupernovaRun!==run||run.ended||Math.floor(index/12)!==run.page||performance.now()>=run.monoEnd)return false;
+ const prize=coinRushClaim(run.round.id,index);if(!prize){if(run.round.state==='closed')bnRushComplete(run,'time');return false;}
+ bnRushPaintCoin(run,index,run.grid.children[index%12]);bnRushUpdateCounters(run);run.progress.textContent=run.round.claimed.length+' / 36 RACCOLTE';
+ const type=prize.kind==='coins'?' monete':prize.kind==='lives'?' vite':' rilanci gratis';run.status.textContent='+'+prize.credited+type;
+ slotSound('tick',index%5+1);haptic([10]);run.lastImpact=performance.now();if(!run.lite)bnSupernovaBurst(run,run.lastImpact,index);if(!run.frame)run.frame=requestAnimationFrame(t=>bnSupernovaDraw(run,t));
+ if(run.round.claimed.length===36)bnRushComplete(run,'complete');return true;
+}
+function bnSupernovaPage(run){
+ run.grid.replaceChildren();run.pageLabel.textContent='PAGINA '+(run.page+1)+' / 3';run.prev.disabled=run.page===0||run.ended;run.next.disabled=run.page===2||run.ended;
+ for(let i=0;i<12;i++){const index=run.page*12+i,coin=uButton('',()=>bnSupernovaReveal(run,index),'sn-coin');coin.id='snCoin'+i;coin.setAttribute('aria-label','Raccogli moneta '+(i+1));coin.append(uNode('strong','','✦'),uNode('small','','TOCCA'));if(run.round.claimed.includes(index))bnRushPaintCoin(run,index,coin);if(run.ended)coin.disabled=true;run.grid.append(coin);}
+}
+function bnRushComplete(run,reason){
+ if(bnSupernovaRun!==run||run.ended)return;run.ended=true;clearTimeout(run.clock);coinRushEnd(run.round.id,reason);bnSupernovaStopAudio();slotStopMusic();
+ cancelAnimationFrame(run.frame);run.frame=0;run.layer.dataset.state='finished';run.timerValue.textContent=reason==='complete'?'PRESO TUTTO':'0,0';run.timer.setAttribute('aria-label',reason==='complete'?'Tutte le monete raccolte':'Tempo scaduto');run.prev.disabled=run.next.disabled=true;for(const coin of run.grid.children)coin.disabled=true;
+ const summary=uNode('section','sn-rush-summary');summary.id='snSummary';summary.setAttribute('role','status');summary.append(uNode('small','',reason==='complete'?'INCREDIBILE!':'TEMPO SCADUTO'),uNode('h2','',run.round.claimed.length+' MONETE RACCOLTE'));
+ const totals=uNode('div','sn-summary-prizes');for(const [key,label]of [['coins','MONETE'],['lives','VITE'],['respins','RILANCI GRATIS']]){const item=uNode('div','');item.append(uNode('strong','','+'+run.round.collected[key]),uNode('small','',label));totals.append(item);}summary.append(totals,uNode('p','','I premi raccolti sono tuoi. I rilanci gratis ti aspettano nella Forgia.'));
+ const close=uButton('TORNA ALLA SLOT',bnSupernovaFinish,'sn-continue');close.id='snContinue';summary.append(close);run.layer.append(summary);close.focus({preventScroll:true});
+}
+function bnRushClock(run){
+ if(bnSupernovaRun!==run||run.ended)return;
+ const left=Math.max(0,Math.min(run.round.endsAt-Date.now(),run.monoEnd-performance.now()));run.remaining=left;run.timerValue.textContent=(Math.ceil(left/100)/10).toFixed(1).replace('.',',');run.timer.style.setProperty('--rush-left',String(left/10000));run.layer.dataset.urgent=String(left<=3000);
+ const second=Math.ceil(left/1000);if(second<=3&&second>0&&second!==run.tickSecond){run.tickSecond=second;slotSound('tick',4-second);haptic([12]);}
+ if(left<=0){bnRushComplete(run,'time');return;}run.clock=setTimeout(()=>bnRushClock(run),Math.min(100,left));
+}
+function bnSupernovaStart(options={}){
+ if(window.__BN_TEST_FAST__||bnSupernovaRun||!slotVisible()||document.hidden||!slotPlaybackAllowed())return false;
+ const key=options.key||'spin:'+lifeData.slot.last?.spin,round=coinRushBegin(key);if(!round)return false;
+ clearSlotSpectacle();stopSlotSample();slotStopMusic();slotMusicOffsets.delete('hype');stopSlotAuto();const ownLock=!slotBusy;slotBusy=true;slotPhase='celebrating';if(ownLock&&arcadeCurrentLast())renderLifeSlot($('universeBody'));
+ const layer=uNode('section','sn-collect sn-rush');layer.id='bnSupernova';layer.setAttribute('role','dialog');layer.setAttribute('aria-modal','true');layer.setAttribute('aria-labelledby','snTitle');layer.dataset.motion=reducedFX()?'lite':'full';
+ const canvas=uNode('canvas','sn-canvas');canvas.setAttribute('aria-hidden','true');layer.append(canvas);
+ const top=uNode('div','sn-top'),exit=uButton('ESCI DAL BONUS',bnSupernovaFinish,'sn-exit');exit.id='snSkip';top.append(uNode('span','','BLASTNEXTA / BONUS MONETE'),exit);layer.append(top);
+ const main=uNode('div','sn-collection'),head=uNode('div','sn-collection-head'),copy=uNode('div',''),title=uNode('h2','sn-title','PRENDI TUTTO!');title.id='snTitle';copy.append(title,uNode('p','sn-copy','HAI 10 SECONDI · TOCCA PIÙ MONETE CHE PUOI'));
+ const timer=uNode('div','sn-rush-clock');timer.id='snHourglass';timer.setAttribute('role','timer');timer.setAttribute('aria-live','off');timer.innerHTML='<svg viewBox="0 0 40 60" aria-hidden="true"><path d="M6 4h28M6 56h28M9 6c0 13 1 15 11 24C10 39 9 41 9 54h22c0-13-1-15-11-24C30 21 31 19 31 6Z" fill="none" stroke="currentColor" stroke-width="3"/><path class="rush-sand-top" d="M12 10h16c-1 8-4 11-8 15-4-4-7-7-8-15"/><path class="rush-sand-bottom" d="m12 51 8-11 8 11Z"/><path class="rush-sand-stream" d="M20 29v12" stroke="currentColor" stroke-width="2"/></svg>';
+ const timeText=uNode('div',''),timerValue=uNode('strong','','10,0');timerValue.id='snTimer';timeText.append(timerValue,uNode('small','','SECONDI'));timer.append(timeText);head.append(copy,timer);
+ const rewards=uNode('div','sn-rewards'),counters=[];rewards.id='snRewards';for(const [key,label]of [['coins','MONETE'],['lives','VITE'],['respins','RILANCI GRATIS']]){const row=uNode('div','sn-reward'),count=uNode('strong','','+0');row.append(count,uNode('small','',label));rewards.append(row);counters.push({key,node:count});}head.append(rewards);
+ const grid=uNode('div','sn-coin-grid');grid.setAttribute('role','group');grid.setAttribute('aria-label','Premi da raccogliere entro dieci secondi');main.append(head,grid);layer.append(main);
+ const bottom=uNode('div','sn-bottom'),info=uNode('div','sn-page-info'),pageLabel=uNode('strong','','PAGINA 1 / 3'),progress=uNode('small','','0 / 36 RACCOLTE');info.append(pageLabel,progress);
+ const prev=uButton('‹ PAGINA',()=>{const run=bnSupernovaRun;if(run&&!run.ended&&run.page>0){run.page--;bnSupernovaPage(run);}},'sn-rush-nav');prev.id='snPrev';const next=uButton('PAGINA ›',()=>{const run=bnSupernovaRun;if(run&&!run.ended&&run.page<2){run.page++;bnSupernovaPage(run);}},'sn-rush-nav');next.id='snNext';
+ const status=uNode('p','sn-live');status.setAttribute('aria-live','polite');bottom.append(prev,info,next,uNode('small','sn-saved','200 / 300 MONETE · VITE · RILANCIA ×1 / ×2'));layer.append(bottom,status);
+ const now=performance.now(),run={serial:++bnSupernovaSerial,round,monoEnd:now+10000,ended:false,layer,canvas,title,timer,timerValue,counters,started:now,duration:10000,voices:new Set(),timers:[],frame:0,clock:0,previousFocus:document.activeElement,audioStopped:false,lite:reducedFX(),width:1,height:1,particles:[],rings:[],hit:0,seed:round.seed,collecting:true,parts:coinRushPrizes(round.seed),page:0,grid,pageLabel,progress,next,prev,status,lastImpact:0,background:[]};
+ run.onKey=event=>{if(event.key==='Escape'){event.preventDefault();bnSupernovaFinish();return;}if(event.key==='Tab'){const buttons=[...layer.querySelectorAll('button:not(:disabled)')],first=buttons[0],last=buttons.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}}};
+ bnSupernovaRun=run;document.addEventListener('keydown',run.onKey);$('app').append(layer);$('app').dataset.superBonus='on';for(const node of $('app').children)if(node!==layer){run.background.push({node,inert:node.hasAttribute('inert'),hidden:node.getAttribute('aria-hidden')});node.setAttribute('inert','');node.setAttribute('aria-hidden','true');}
+ bnSupernovaPage(run);
+ const size=()=>{const cell=grid.getBoundingClientRect(),style=getComputedStyle(grid),cols=style.gridTemplateColumns.split(' ').length,rows=12/cols,px=name=>parseFloat(style[name])||0;const diameter=Math.max(44,Math.floor(Math.min(125,(cell.width-px('paddingLeft')-px('paddingRight')-px('borderLeftWidth')-px('borderRightWidth')-px('columnGap')*(cols-1))/cols,(cell.height-px('paddingTop')-px('paddingBottom')-px('borderTopWidth')-px('borderBottomWidth')-px('rowGap')*(rows-1))/rows)-3));grid.style.setProperty('--sn-coin-size',diameter+'px');const rect=layer.getBoundingClientRect(),dpr=Math.min(1.5,devicePixelRatio||1);run.width=Math.max(1,rect.width);run.height=Math.max(1,rect.height);canvas.width=Math.round(run.width*dpr);canvas.height=Math.round(run.height*dpr);run.context=canvas.getContext('2d',{alpha:true});run.context?.setTransform(dpr,0,0,dpr,0,0);if(!run.frame&&!run.ended)run.frame=requestAnimationFrame(t=>bnSupernovaDraw(run,t));};
+ size();if(typeof ResizeObserver==='function'){run.observer=new ResizeObserver(size);run.observer.observe(layer);run.observer.observe(grid);}grid.firstElementChild.focus({preventScroll:true});syncGameBanner(true);slotMediaSync();bnSupernovaAudio(run);bnRushClock(run);return true;
+}
+
 function bnSupernovaAudio(run){
  const context=slotAudioContext(),levels=audioVolumeSettings();
  if(!context||muted||!levels.master||!levels.effects)return;
@@ -56,7 +79,7 @@ function bnSupernovaAudio(run){
   const elapsed=performance.now()-run.started;
   BN_SUPERNOVA_HITS.forEach((ms,i)=>{
    if(ms<elapsed-140||ms>=run.duration)return;
-   const source=context.createBufferSource(),gain=context.createGain();source.buffer=buffer;source.playbackRate.value=[1,1.055,1.11,1,1.07,1.14,1.18][i];
+   const source=context.createBufferSource(),gain=context.createGain();source.buffer=buffer;source.playbackRate.value=[1,1.055,1.11,1,1.07,1.14,1.18,1.2,1.25][i];
    const start=context.currentTime+Math.max(0,ms-elapsed)/1000;
    gain.gain.setValueAtTime(.22,start);gain.gain.setTargetAtTime(.001,start+1.35,.12);
    source.connect(gain).connect(audioOutput('effects'));const entry={source,gain};run.voices.add(entry);
@@ -65,81 +88,7 @@ function bnSupernovaAudio(run){
   });
  }).catch(()=>{});
 }
-// The coins reveal portions of the already committed result. They never draw
-// odds, spend currency, grant a second reward, or save a second transaction.
-function bnSupernovaReveal(run,index){
- if(bnSupernovaRun!==run||run.revealed.has(index)||Math.floor(index/12)!==run.page)return false;
- run.revealed.add(index);const coin=run.grid.children[index%12];coin.disabled=true;coin.classList.add('revealed');
- const part=run.parts[index],labels=[];
- if(part.coins)labels.push('+'+part.coins+' ◉');if(part.lives)labels.push('+'+part.lives+' ♥');if(part.free)labels.push('+'+part.free+' GIRI');
- const prize=uNode('div','sn-coin-prize');for(const label of labels.length?labels:['—'])prize.append(uNode('strong','',label));
- const major=Object.keys(part).some(key=>part[key]>0&&part[key]===run.maxParts[key]);coin.dataset.prize=labels.length?(major?'major':'regular'):'empty';
- coin.replaceChildren(prize,uNode('small','',labels.length?(major?'PREMIO MAX':'SCOPERTO'):'VUOTA'));
- coin.setAttribute('aria-label','Moneta '+(index%12+1)+': '+(labels.join(', ')||'nessun premio'));
- for(const c of run.counters){c.collected+=part[c.key]||0;c.node.textContent='+'+c.collected.toLocaleString('it-IT');}
- const found=[...run.revealed].filter(i=>Math.floor(i/12)===run.page).length;
- run.progress.textContent=found+' / 12 MONETE';run.next.disabled=found<12;run.all.disabled=found===12;
- if(found===12){run.status.textContent=run.page===2?'Tutte le monete scoperte. Il premio è salvo.':'Pagina completata. Puoi passare alla prossima.';haptic([12,25,20]);}
- else {run.status.textContent=labels.length?'Scoperto '+labels.join(', '):'Moneta scoperta';haptic([8]);}
- slotSound('tick',index%5+1);run.lastImpact=performance.now();
- if(!run.lite)bnSupernovaBurst(run,run.lastImpact,index);
- if(!run.frame)run.frame=requestAnimationFrame(t=>bnSupernovaDraw(run,t));
- return true;
-}
-function bnSupernovaPage(run){
- run.grid.replaceChildren();run.next.disabled=true;run.all.disabled=false;
- run.pageLabel.textContent='PAGINA '+(run.page+1)+' / 3';run.progress.textContent='0 / 12 MONETE';
- run.next.textContent=run.page===2?'TORNA ALLA SLOT':'PAGINA SUCCESSIVA';
- for(let i=0;i<12;i++){
-  const index=run.page*12+i,coin=uButton('',()=>bnSupernovaReveal(run,index),'sn-coin');coin.id='snCoin'+i;
-  coin.setAttribute('aria-label','Scopri moneta '+(i+1));coin.append(uNode('strong','','✦'),uNode('small','','TOCCA'));run.grid.append(coin);
- }
-}
-function bnSupernovaStart(options={}){
- if(window.__BN_TEST_FAST__||!slotVisible()||document.hidden||!slotPlaybackAllowed())return false;
- bnSupernovaCleanup();clearSlotSpectacle();stopSlotSample();slotStopMusic();slotMusicOffsets.delete('hype');stopSlotAuto();
- const ownLock=!slotBusy;slotBusy=true;slotPhase='celebrating';if(ownLock&&arcadeCurrentLast())renderLifeSlot($('universeBody'));
- const layer=uNode('section','sn-collect');layer.id='bnSupernova';layer.setAttribute('role','dialog');layer.setAttribute('aria-modal','true');layer.setAttribute('aria-labelledby','snTitle');layer.setAttribute('aria-describedby','snInstructions');
- layer.dataset.motion=reducedFX()?'lite':'full';
- const canvas=uNode('canvas','sn-canvas');canvas.setAttribute('aria-hidden','true');layer.append(canvas);
- const top=uNode('div','sn-top'),exit=uButton('TORNA ALLA SLOT',bnSupernovaFinish,'sn-exit');exit.id='snSkip';
- top.append(uNode('span','','NEXA LUCK / SUPER BONUS'),exit);layer.append(top);
- const main=uNode('div','sn-collection'),head=uNode('div','sn-collection-head'),copy=uNode('div','');
- const title=uNode('h2','sn-title','SUPER BONUS');title.id='snTitle';const instructions=uNode('p','sn-copy','TOCCA LE MONETE E SCOPRI IL TUO PREMIO');instructions.id='snInstructions';copy.append(title,instructions);head.append(copy);
- const rewards=uNode('div','sn-rewards');rewards.id='snRewards';const counters=[];
- const coins=bnSupernovaAmount(options.coins),lives=bnSupernovaAmount(options.lives),free=String(options.copy||'').includes('+3')?3:0;
- for(const [key,value,label]of [['coins',coins,'MONETE VIRTUALI'],['lives',lives,'VITE EXTRA'],['free',free,'GIRI BONUS']]){
-  if(!value)continue;const row=uNode('div','sn-reward'),count=uNode('strong','','+0');row.append(count,uNode('small','',label));rewards.append(row);counters.push({key,node:count,value,collected:0});
- }
- if(!counters.length)rewards.append(uNode('small','sn-copy',String(options.copy||'ENERGIA NEXA')));
- head.append(rewards);const grid=uNode('div','sn-coin-grid');grid.setAttribute('role','group');grid.setAttribute('aria-label','Monete del super bonus');main.append(head,grid);layer.append(main);
- const bottom=uNode('div','sn-bottom'),info=uNode('div','sn-page-info'),pageLabel=uNode('strong','','PAGINA 1 / 3'),progress=uNode('small','','0 / 12 MONETE');info.append(pageLabel,progress);
- const all=uButton('SCOPRI QUESTA PAGINA',()=>{const run=bnSupernovaRun;if(run)for(let i=0;i<12;i++)bnSupernovaReveal(run,run.page*12+i);},'sn-reveal-all');all.id='snRevealAll';
- const next=uButton('PAGINA SUCCESSIVA',()=>{const run=bnSupernovaRun;if(!run||run.next.disabled)return;if(run.page===2){bnSupernovaFinish();return;}run.page++;bnSupernovaPage(run);run.grid.firstElementChild.focus({preventScroll:true});},'sn-continue');next.id='snContinue';
- const status=uNode('p','sn-live');status.setAttribute('aria-live','polite');status.setAttribute('role','status');
- bottom.append(info,all,next,uNode('small','sn-saved','PREMIO GIÀ SALVATO · MONETE VIRTUALI E VITE'));layer.append(bottom,status);
- const identity=String(options.key||options.spin||lifeData.slot.total)+':'+coins+':'+lives+':'+free;
- const parts=bnSupernovaParts({coins,lives,free},identity),maxParts=Object.fromEntries(['coins','lives','free'].map(key=>[key,Math.max(...parts.map(p=>p[key]))]));
- const run={serial:++bnSupernovaSerial,layer,canvas,title,duration:8000,counters,started:performance.now(),voices:new Set(),timers:[],frame:0,previousFocus:document.activeElement,audioStopped:false,lite:reducedFX(),width:1,height:1,particles:[],rings:[],hit:0,seed:(Number(options.spin)||13)*971+1,collecting:true,parts,maxParts,revealed:new Set(),page:0,grid,pageLabel,progress,next,all,status,lastImpact:0,background:[]};
- run.onKey=event=>{
-  if(event.key==='Escape'){event.preventDefault();bnSupernovaFinish();return;}
-  if(event.key==='Tab'){
-   const buttons=[...layer.querySelectorAll('button:not(:disabled)')],first=buttons[0],last=buttons.at(-1);
-   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
-   else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
-  }
- };
- bnSupernovaRun=run;document.addEventListener('keydown',run.onKey);$('app').append(layer);$('app').dataset.superBonus='on';
- for(const node of $('app').children)if(node!==layer){run.background.push({node,inert:node.hasAttribute('inert'),hidden:node.getAttribute('aria-hidden')});node.setAttribute('inert','');node.setAttribute('aria-hidden','true');}
- bnSupernovaPage(run);
- const size=()=>{const cell=grid.getBoundingClientRect(),style=getComputedStyle(grid),cols=style.gridTemplateColumns.split(' ').length,rows=12/cols,px=name=>parseFloat(style[name])||0;
- const diameter=Math.max(44,Math.floor(Math.min(125,(cell.width-px('paddingLeft')-px('paddingRight')-px('borderLeftWidth')-px('borderRightWidth')-px('columnGap')*(cols-1))/cols,(cell.height-px('paddingTop')-px('paddingBottom')-px('borderTopWidth')-px('borderBottomWidth')-px('rowGap')*(rows-1))/rows)-3));
- if(grid.style.getPropertyValue('--sn-coin-size')!==diameter+'px')grid.style.setProperty('--sn-coin-size',diameter+'px');
- const rect=layer.getBoundingClientRect(),dpr=Math.min(1.5,devicePixelRatio||1);run.width=Math.max(1,rect.width);run.height=Math.max(1,rect.height);canvas.width=Math.round(run.width*dpr);canvas.height=Math.round(run.height*dpr);run.context=canvas.getContext('2d',{alpha:true});run.context?.setTransform(dpr,0,0,dpr,0,0);if(!run.frame)run.frame=requestAnimationFrame(t=>bnSupernovaDraw(run,t));};
- size();if(typeof ResizeObserver==='function'){run.observer=new ResizeObserver(size);run.observer.observe(layer);run.observer.observe(grid);}
- grid.firstElementChild.focus({preventScroll:true});syncGameBanner(true);slotMediaSync();bnSupernovaAudio(run);
- return true;
-}
+
 function bnSupernovaRandom(run){run.seed=(Math.imul(run.seed,1664525)+1013904223)>>>0;return run.seed/4294967296;}
 function bnSupernovaBurst(run,now,index){
  const palette=['#61ffe5','#fd65df','#90a1ff','#ffe59d','#72d8ff','#c3ff81'];
@@ -156,7 +105,7 @@ function bnSupernovaBurst(run,now,index){
 }
 function bnSupernovaDraw(run,now){
  if(bnSupernovaRun!==run)return;run.frame=0;
- if(!slotVisible()||document.hidden){bnSupernovaCleanup();return;}
+ if(!slotVisible()||document.hidden){bnSupernovaFinish();return;}
  const t=now-run.started,progress=Math.min(1,t/Math.min(5800,run.duration*.8));
  if(!run.collecting)for(const counter of run.counters)counter.node.textContent='+'+Math.floor(counter.value*(1-Math.pow(1-progress,3))).toLocaleString('it-IT');
  const ctx=run.context,w=run.width,h=run.height,cx=w*.5,cy=h*.49;
