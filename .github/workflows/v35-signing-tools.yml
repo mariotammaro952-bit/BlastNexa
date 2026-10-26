@@ -1,0 +1,27 @@
+name: Android signing toolchain for v35
+on:
+  push:
+    branches: [codex/coin-shoot-v35]
+    paths: [.github/workflows/v35-signing-tools.yml]
+permissions:
+  contents: read
+jobs:
+  tools:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Package the installed Android signing utilities
+        run: |
+          tool_path=$(rg --files "$ANDROID_HOME/build-tools" -g zipalign | sort -V | tail -n 1)
+          tool_dir=$(dirname "$tool_path")
+          test -f "$tool_dir/lib/apksigner.jar"
+          mkdir -p signing-tools/lib
+          cp "$tool_path" signing-tools/zipalign
+          cp "$tool_dir/lib/apksigner.jar" signing-tools/lib/
+          cp -a "$tool_dir/lib64" signing-tools/
+          tar -czf signing-tools.tgz signing-tools
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: BlastNexta-v35-signing-tools
+          path: signing-tools.tgz
+          retention-days: 7
