@@ -596,5 +596,17 @@ public class LaunchValidationTest {
   capture("33_centred_puzzle_board");truth("window.__qaErrors.length===0");
  }
 
+ @Test public void w_v34TimedCoinCollection()throws Exception{
+  truth("[...document.querySelectorAll('#bnPrimaryGames>button')].map(n=>n.id).join(',')==='openLifeSlot,openPuzzle,openWords'");
+  capture("34_trio_home");slotFixture("temple","lite");touchId("slotSpinButton");waitFor("!!bnSupernovaRun",12000);
+  truth("!!document.getElementById('snHourglass') && lifeData.slot.rush.active.endsAt-lifeData.slot.rush.active.startedAt===10000 && !document.getElementById('snRevealAll')");
+  touchId("snCoin0");truth("lifeData.slot.rush.active.claimed.length===1");
+  js("window.__rushSaved=JSON.stringify([lifeData.slot.wallet.balance,lifeData.balance,coinRushTokens()]);true");
+  waitFor("!!document.getElementById('snSummary')",15000);
+  truth("lifeData.slot.rush.active.state==='closed' && JSON.stringify([lifeData.slot.wallet.balance,lifeData.balance,coinRushTokens()])===window.__rushSaved && !coinRushClaim(lifeData.slot.rush.active.id,1)");
+  capture("34_timed_bonus_summary");touchId("snContinue");truth("!slotBusy && !bnSupernovaRun");
+  js("saveLives();true");recreateActivity();truth("lifeData.slot.rush.active.state==='closed' && !bnSupernovaRun");
+ }
+
 }
 
