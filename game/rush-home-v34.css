@@ -133,3 +133,10 @@
 .sn-crosshair{z-index:10!important}
 @media(orientation:landscape) and (max-height:370px){.sn-rush .sn-collection{grid-template-rows:auto minmax(0,1fr) 52px}.sn-rush .sn-rifle{width:62vh;height:62vh;bottom:-32px}.sn-rush .sn-rifle-hint{max-width:150px}.sn-rush .sn-rifle>span{font-size:7px}}
 @media(orientation:portrait){.sn-rush .sn-collection{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) 125px}.sn-rush .sn-coin-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.sn-rush .sn-rifle{width:72vw;height:72vw;bottom:-20px}.sn-rush .sn-rifle-deck{grid-column:1;grid-row:3}.sn-rush .sn-rifle-hint{max-width:120px}.sn-rush .sn-rifle>span{bottom:34px}}
+
+/* v38: sight belongs to the weapon, no detached crosshair or target ring. */
+.sn-rush .sn-crosshair{display:none!important}.sn-rush .sn-coin.sn-targeted{outline:none}
+.sn-rush .sn-rifle{will-change:transform}.sn-rush .sn-rifle img{will-change:transform;transition:none!important}.sn-rush .sn-coin:focus:not(:focus-visible){outline:none}
+.bn-slot-leverage{display:flex;align-items:center;gap:3px;padding:2px 4px;border:1px solid #dfc08066;border-radius:8px;background:#171d29}
+.bn-slot-leverage>small{font-size:7px;color:#e9d4a9}.bn-slot-leverage select{min-height:30px;min-width:65px;background:#1c2736;color:#ffdf91;border:1px solid #b68b54;border-radius:6px;font-size:12px;font-weight:900}.bn-slot-leverage select:disabled{opacity:.5}
+@media(max-height:370px){.bn-slot-leverage{padding:1px 2px}.bn-slot-leverage>small{display:none}.bn-slot-leverage select{min-width:58px;min-height:28px;font-size:10px}}

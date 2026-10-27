@@ -11,6 +11,7 @@ subprocess.run([sys.executable,str(root/'tools/upgrade_game_v31.py')],check=True
 subprocess.run([sys.executable,str(root/'tools/upgrade_game_v32.py')],check=True)
 subprocess.run([sys.executable,str(root/'tools/upgrade_game_v33.py')],check=True)
 subprocess.run([sys.executable,str(root/'tools/upgrade_game_v34.py')],check=True)
+subprocess.run([sys.executable,str(root/'tools/upgrade_game_v38.py')],check=True)
 source=root/'game/index.html';h=source.read_text(encoding='utf-8')
 # Package the landscape UI alongside the complete embedded game catalogs.
 # The source game owns the preserved v27 wallet and v28 paired coin/life awards.
@@ -58,5 +59,6 @@ import shutil
 if (root/'game/assets').exists():
     shutil.copytree(root/'game/assets',assets/'assets',dirs_exist_ok=True)
 print('Game SHA256',hashlib.sha256(h.encode()).hexdigest())
+
 
 

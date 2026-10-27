@@ -5,16 +5,22 @@ function bnRushUpdateAmmo(run){
  run.ammoBox.setAttribute('aria-label',(5-run.round.shots)+' colpi rimasti');
 }
 // v36: aiming never fires. The weapon's native click is the only trigger.
+// Batch drag rendering once per display frame. Aim coordinates remain immediate.
 function bnRushAim(run,x,y){
- if(run.ended)return;const r=run.layer.getBoundingClientRect();
- run.aimPoint={x:x-r.left,y:y-r.top};
- run.crosshair.style.left=run.aimPoint.x+'px';run.crosshair.style.top=run.aimPoint.y+'px';run.crosshair.hidden=false;
+ if(run.ended)return;
+ const layer=run.layer.getBoundingClientRect();run.aimPoint={x:x-layer.left,y:y-layer.top};
+ run.aimClient={x,y};if(!run.aimFrame)run.aimFrame=requestAnimationFrame(()=>{run.aimFrame=0;bnRushRenderAim(run);});
+}
+function bnRushRenderAim(run){
+ if(bnSupernovaRun!==run||run.ended||!run.aimClient)return;
+ const {x,y}=run.aimClient,layer=run.layer.getBoundingClientRect(),main=run.gun.parentElement.getBoundingClientRect(),size=run.gun.offsetWidth;
+ const dx=(x-layer.left-layer.width*.5)*.45,dy=Math.max(-18,Math.min(18,(y-layer.top-layer.height*.36)*.12));
+ const pivotX=main.left+main.width*.5+dx+size*.25,pivotY=main.bottom+34+dy;
+ const angle=Math.atan2(y-pivotY,x-pivotX)*180/Math.PI-Math.atan2(-.82,-.49)*180/Math.PI;
+ run.gun.style.setProperty('--gun-x',dx+'px');run.gun.style.setProperty('--gun-y',dy+'px');run.gun.style.setProperty('--aim-angle',Math.max(-55,Math.min(70,angle))+'deg');
+ // Hit testing uses coin geometry, so the foreground never blocks a target.
  const coin=[...run.grid.children].find(n=>{const b=n.getBoundingClientRect();return !n.disabled&&x>=b.left&&x<=b.right&&y>=b.top&&y<=b.bottom;});
  run.aimIndex=coin?run.page*12+Number(coin.id.slice(6)):-1;
- for(const n of run.grid.children)n.classList.toggle('sn-targeted',n===coin);
- const dx=(x-r.left-r.width*.5)*.68,dy=(y-r.top-r.height*.36)*.16;
- run.gun.style.setProperty('--gun-x',dx+'px');run.gun.style.setProperty('--gun-y',Math.max(-22,Math.min(22,dy))+'px');
- run.gun.style.setProperty('--aim-angle',Math.max(-18,Math.min(18,(x-r.left-r.width/2)/r.width*36))+'deg');
 }
 function bnRushAimCoin(run,index){
  if(run.ended)return;const c=run.grid.children[index%12],r=c.getBoundingClientRect();bnRushAim(run,r.left+r.width/2,r.top+r.height/2);
@@ -54,7 +60,7 @@ function bnRushInstallRifle(run,main){
  deck.append(ammoBox,hint);main.append(deck);main.append(gun);
  const crosshair=uNode('span','sn-crosshair');crosshair.id='snCrosshair';crosshair.hidden=true;crosshair.setAttribute('aria-hidden','true');run.layer.append(crosshair);
  Object.assign(run,{gun,crosshair,ammo,ammoCount,ammoBox,aimPointer:null,aimIndex:-1,aimPoint:null});bnRushUpdateAmmo(run);
- const fire=()=>{if(run.ended)return;const i=run.aimIndex;bnSupernovaReveal(run,i>=0&&Math.floor(i/12)===run.page&&!run.round.claimed.includes(i)?i:-1);};
+ const fire=()=>{if(run.ended)return;bnRushRenderAim(run);const i=run.aimIndex;bnSupernovaReveal(run,i>=0&&Math.floor(i/12)===run.page&&!run.round.claimed.includes(i)?i:-1);};
  run.suppressClickUntil=0;
  gun.addEventListener('pointerdown',e=>{
   if(run.ended||e.isPrimary===false||e.button!==0||run.weaponDrag)return;
@@ -65,11 +71,12 @@ function bnRushInstallRifle(run,main){
  });
  gun.addEventListener('pointermove',e=>{
   const d=run.weaponDrag;if(!d||d.id!==e.pointerId||run.ended)return;e.preventDefault();
-  const dx=e.clientX-d.x,dy=e.clientY-d.y;if(Math.hypot(dx,dy)>8)d.moved=true;
-  if(d.moved){const b=run.grid.getBoundingClientRect();bnRushAim(run,Math.max(b.left+2,Math.min(b.right-2,d.aimX+dx*1.7)),Math.max(b.top+2,Math.min(b.bottom-2,d.aimY+dy*1.7)));}
+  const dx=e.clientX-d.x,dy=e.clientY-d.y;if(Math.hypot(dx,dy)>3)d.moved=true;
+  if(d.moved){const b=run.grid.getBoundingClientRect();bnRushAim(run,Math.max(b.left+2,Math.min(b.right-2,d.aimX+dx)),Math.max(b.top+2,Math.min(b.bottom-2,d.aimY+dy)));}
  });
  gun.addEventListener('pointerup',e=>{
   const d=run.weaponDrag;if(!d||d.id!==e.pointerId)return;e.preventDefault();run.weaponDrag=null;run.suppressClickUntil=performance.now()+750;
+  if(d.moved){const b=run.grid.getBoundingClientRect();bnRushAim(run,Math.max(b.left+2,Math.min(b.right-2,d.aimX+e.clientX-d.x)),Math.max(b.top+2,Math.min(b.bottom-2,d.aimY+e.clientY-d.y)));bnRushRenderAim(run);}
   if(!d.moved&&performance.now()-d.start<350)fire();
  });
  gun.addEventListener('pointercancel',()=>{run.weaponDrag=null;run.suppressClickUntil=performance.now()+750;});

@@ -608,7 +608,7 @@ public class LaunchValidationTest {
   js("saveLives();true");recreateActivity();truth("lifeData.slot.rush.active.state==='closed' && !bnSupernovaRun");
  }
 
- @Test public void x_v37DragTenSecondRifleBonus()throws Exception{
+ @Test public void x_v38SmoothTenSecondRifleBonus()throws Exception{
   truth("[...document.querySelectorAll('#bnPrimaryGames>button')].map(n=>n.id).join(',')==='openLifeSlot,openPuzzle,openWords'");
   // Accessibility discovery can take longer than the real five-second round.
   // Preflight the unchanged layout using actual UI-tree bounds, then inject
@@ -620,7 +620,7 @@ public class LaunchValidationTest {
   rawTouch(spin.centerX(),spin.centerY());waitFor("!!bnSupernovaRun",8000);
   truth("!!document.getElementById('snRifle') && !!document.getElementById('snHourglass') && lifeData.slot.rush.active.endsAt-lifeData.slot.rush.active.startedAt===10000");
   waitFor("bnSupernovaRun.ready===true",3000);
-  float sx=weapon.centerX(),sy=weapon.centerY(),ex=sx+(target.centerX()-gallery.centerX())/1.7f,ey=sy+(target.centerY()-gallery.centerY())/1.7f;
+  float sx=weapon.centerX(),sy=weapon.centerY(),ex=sx+(target.centerX()-gallery.centerX())/1f,ey=sy+(target.centerY()-gallery.centerY())/1f;
   long down=android.os.SystemClock.uptimeMillis();
   for(int i=0;i<=10;i++){int action=i==0?android.view.MotionEvent.ACTION_DOWN:i==10?android.view.MotionEvent.ACTION_UP:android.view.MotionEvent.ACTION_MOVE;android.view.MotionEvent event=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),action,sx+(ex-sx)*Math.min(i,9)/9f,sy+(ey-sy)*Math.min(i,9)/9f,0);event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(event,true));event.recycle();Thread.sleep(18);}
   truth("lifeData.slot.rush.active.shots===0 && bnSupernovaRun.aimIndex===0");touchId("snRifle");Thread.sleep(170);
@@ -633,6 +633,14 @@ public class LaunchValidationTest {
   js("saveLives();true");recreateActivity();truth("lifeData.slot.rush.active.state==='closed' && !bnSupernovaRun");
  }
 
+ @Test public void z_v38LeverageSelection()throws Exception{
+  slotFixture("temple","lite");touchId("slotLines10");touchId("slotLeverage");touchText("×100");
+  truth("slotWager()===100 && slotSpinCoinCost()===1000");capture("38_leverage_100");
+  touchId("slotSpinButton");waitFor("lifeData.slot.last && lifeData.slot.last.arcade.wager===100",5000);
+  truth("lifeData.slot.last.coinCost===1000 && lifeData.slot.last.coinPrize===25000 && lifeData.slot.last.credited===500");
+ }
+
 }
+
 
 

@@ -1,0 +1,54 @@
+name: BlastNexta 3 in 1 v38 HTML review
+on:
+  push:
+    branches: [codex/fps-coin-bonus-v38]
+    paths: [game/**, tools/prepare_assets.py, tools/upgrade_game_v*.py, tools/package_preview_v38.py, qa/*.cjs, .github/workflows/v38-html.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: blastnexta-v38-html-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: '24'}
+      - name: Prepare the actual UI and the review HTML
+        run: |
+          python3 tools/prepare_assets.py
+          python3 tools/package_preview_v38.py
+      - name: Install pinned browser
+        run: |
+          npm install --no-save playwright@1.62.1
+          npx playwright install --with-deps chromium
+      - name: Check actual rewards and thirty thousand committed spins
+        run: |
+          node qa/coin_shoot_v37.cjs
+          node qa/leverage_v38.cjs
+          node qa/slot_economy_v28.cjs
+          node qa/fresh_start_v29.cjs
+      - name: Check rendered home, timed collection, audio and layouts
+        run: node qa/coin_fps_v38_browser.cjs
+      - name: Preserve the browser and prepared assets for visual diagnosis
+        if: always()
+        run: |
+          mkdir -p qa/v38-browser
+          tar -czf qa/v38-browser/prepared-game.tgz game/index.html game/assets game/*.css game/*.js
+          cp ../output/BlastNexta_3_in_1_v38_Anteprima.html qa/v38-browser/
+          tar -C "$HOME/.cache/ms-playwright" -czf qa/v38-browser/chromium-runtime.tgz chromium_headless_shell-1234
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: BlastNexta-v38-browser
+          path: |
+            qa/v38-browser/
+            qa/v38_shoot_engine_results.json
+            qa/slot_economy_v28_result.json
+            qa/fresh_start_v29_result.json
+          retention-days: 7
+
+
