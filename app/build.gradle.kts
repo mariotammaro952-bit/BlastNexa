@@ -7,8 +7,8 @@ android {
         applicationId = "com.blastnexa.blockpuzzle"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3801
-        versionName = "1.0.0-v38"
+        versionCode = 3901
+        versionName = "1.0.0-v39"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

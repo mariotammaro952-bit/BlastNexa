@@ -608,33 +608,21 @@ public class LaunchValidationTest {
   js("saveLives();true");recreateActivity();truth("lifeData.slot.rush.active.state==='closed' && !bnSupernovaRun");
  }
 
- @Test public void x_v38SmoothTenSecondRifleBonus()throws Exception{
-  truth("[...document.querySelectorAll('#bnPrimaryGames>button')].map(n=>n.id).join(',')==='openLifeSlot,openPuzzle,openWords'");
-  // Accessibility discovery can take longer than the real ten-second round.
-  // Preflight the unchanged layout using actual UI-tree bounds, then inject
-  // the live shot immediately. Never extend or pause the production clock.
+ @Test public void x_v39DirectTouchRifleBonus()throws Exception{
   slotFixture("temple","lite");android.graphics.Rect spin=touchBounds("slotSpinButton",true);rawTouch(spin.centerX(),spin.centerY());waitFor("!!bnSupernovaRun",8000);
-  android.graphics.Rect target=touchBounds("snCoin0",true);android.graphics.Rect weapon=touchBounds("snRifle",true);android.graphics.Rect gallery=touchBounds("snCoinGrid",true);
-  // Resolve the moved weapon before the measured round; UIAutomator may
-  // spend eight seconds waiting for this continuously animated screen to idle.
+  android.graphics.Rect target0=touchBounds("snCoin0",true),target1=touchBounds("snCoin1",true),target2=touchBounds("snCoin2",true);
+  // Resolve UI bounds in advance, so accessibility idle waits never consume
+  // the measured ten-second round. No production clock is paused or extended.
   slotFixture("temple","lite");awaitTouchFrame();rawTouch(spin.centerX(),spin.centerY());waitFor("!!bnSupernovaRun && bnSupernovaRun.ready",8000);
-  js("(()=>{const r=document.getElementById('snCoin0').getBoundingClientRect();bnRushAim(bnSupernovaRun,r.left+r.width/2,r.top+r.height/2);return true;})()");awaitTouchFrame();
-  android.graphics.Rect aimedWeapon=touchBounds("snRifle",true);
-  slotFixture("temple","lite");awaitTouchFrame();
-  js("window.__shotEvents=[];for(const type of ['pointerdown','pointerup','pointercancel','click'])document.addEventListener(type,e=>{if(bnSupernovaRun&&window.__shotEvents.length<40)window.__shotEvents.push({type,at:Date.now(),button:e.button,pointerType:e.pointerType,primary:e.isPrimary,target:e.target.id,left:lifeData.slot.rush.active.endsAt-Date.now()});},true);true");
-  rawTouch(spin.centerX(),spin.centerY());waitFor("!!bnSupernovaRun",8000);
-  truth("!!document.getElementById('snRifle') && !!document.getElementById('snHourglass') && lifeData.slot.rush.active.endsAt-lifeData.slot.rush.active.startedAt===10000");
-  waitFor("bnSupernovaRun.ready===true",3000);
-  float sx=weapon.centerX(),sy=weapon.centerY(),ex=sx+(target.centerX()-gallery.centerX())/1f,ey=sy+(target.centerY()-gallery.centerY())/1f;
+  rawTouch(target0.centerX(),target0.centerY());
   long down=android.os.SystemClock.uptimeMillis();
-  for(int i=0;i<=10;i++){int action=i==0?android.view.MotionEvent.ACTION_DOWN:i==10?android.view.MotionEvent.ACTION_UP:android.view.MotionEvent.ACTION_MOVE;android.view.MotionEvent event=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),action,sx+(ex-sx)*Math.min(i,9)/9f,sy+(ey-sy)*Math.min(i,9)/9f,0);event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(event,true));event.recycle();Thread.sleep(18);}
-  truth("lifeData.slot.rush.active.shots===0 && bnSupernovaRun.aimIndex===0");rawTouch(aimedWeapon.centerX(),aimedWeapon.centerY());Thread.sleep(170);
-  writeEvidence("37_live_shot.json",js("JSON.stringify({round:lifeData.slot.rush.active,now:Date.now(),events:window.__shotEvents})"));
-  truth("lifeData.slot.rush.active.shots===1 && lifeData.slot.rush.active.claimed.length===1");
+  for(int i=0;i<=10;i++){int action=i==0?android.view.MotionEvent.ACTION_DOWN:i==10?android.view.MotionEvent.ACTION_UP:android.view.MotionEvent.ACTION_MOVE;float t=Math.min(i,9)/9f;android.view.MotionEvent event=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),action,target1.centerX()+(target2.centerX()-target1.centerX())*t,target1.centerY()+(target2.centerY()-target1.centerY())*t,0);event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(event,true));event.recycle();Thread.sleep(18);}
+  truth("lifeData.slot.rush.active.shots===2 && lifeData.slot.rush.active.claimed.join(',')==='0,2'");
+  truth("lifeData.slot.rush.active.endsAt-lifeData.slot.rush.active.startedAt===10000");
   js("window.__shotSaved=JSON.stringify([lifeData.slot.wallet.balance,lifeData.balance,coinRushTokens()]);true");
-  waitFor("!!document.getElementById('snSummary')",10000);
+  waitFor("!!document.getElementById('snSummary')",12000);
   truth("lifeData.slot.rush.active.state==='closed' && JSON.stringify([lifeData.slot.wallet.balance,lifeData.balance,coinRushTokens()])===window.__shotSaved && !coinRushClaim(lifeData.slot.rush.active.id,1)");
-  capture("37_rifle_bonus_summary");touchId("snContinue");truth("!slotBusy && !bnSupernovaRun");
+  capture("39_direct_touch_bonus_summary");touchId("snContinue");truth("!slotBusy && !bnSupernovaRun");
   js("saveLives();true");recreateActivity();truth("lifeData.slot.rush.active.state==='closed' && !bnSupernovaRun");
  }
 
