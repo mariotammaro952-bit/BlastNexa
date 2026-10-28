@@ -1,0 +1,52 @@
+name: Validate v39 Play Console bundle
+on:
+  push:
+    branches: [codex/fps-coin-bonus-v39]
+    paths: [.github/workflows/v39-bundlecheck.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with: {distribution: temurin, java-version: '17'}
+      - name: Wait for v39 build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 40); do
+            found=$(gh api repos/${{ github.repository }}/actions/runs/40687628522/artifacts --jq '[.artifacts[] | select(.name == "BlastNexa-v39-build")] | length')
+            if [ "$found" -gt 0 ]; then exit 0; fi
+            sleep 15
+          done
+          exit 1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: BlastNexa-v39-build
+          run-id: 40687628522
+          github-token: ${{ github.token }}
+          path: imported-build
+      - name: Validate production bundle and export its manifest
+        run: |
+          mkdir bundle-evidence
+          curl --fail --location --retry 3 'https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar' -o bundle-evidence/bundletool.jar
+          java -jar bundle-evidence/bundletool.jar validate --bundle=imported-build/app/build/outputs/bundle/productionRelease/app-production-release.aab > bundle-evidence/validation.txt
+          java -jar bundle-evidence/bundletool.jar dump manifest --bundle=imported-build/app/build/outputs/bundle/productionRelease/app-production-release.aab --module=base > bundle-evidence/manifest.xml
+          python3 - <<'PY'
+          import xml.etree.ElementTree as E
+          r=E.parse('bundle-evidence/manifest.xml').getroot();a='{http://schemas.android.com/apk/res/android}'
+          assert r.attrib['package']=='com.blastnexa.blockpuzzle'
+          assert r.attrib[a+'versionCode']=='3901'
+          assert r.find('uses-sdk').attrib[a+'targetSdkVersion']=='36'
+          assert r.find('application').attrib.get(a+'debuggable','false')=='false'
+          print('PASS package, version, target SDK and non-debuggable release')
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: BlastNexta-v39-bundle-validation
+          path: bundle-evidence/
+          retention-days: 7
