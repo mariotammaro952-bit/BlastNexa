@@ -63,12 +63,12 @@ final class OdysseyAds {
         if(started||destroyed)return;started=true;
         consent.requestConsentInfoUpdate(activity,new ConsentRequestParameters.Builder().build(),
             ()->UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity,error->ui(this::afterConsent)),
-            error->ui(this::afterConsent));
+            error->{ android.util.Log.w("BlastNexa-Ads","Consent info update failed: "+error);ui(this::afterConsent); });
         if(consent.canRequestAds())afterConsent();
     }
     private void afterConsent() {
         syncStatus();
-        if(!consent.canRequestAds()||initialized||initializing||destroyed)return;
+        if(!consent.canRequestAds()||initialized||initializing||destroyed){ if(!consent.canRequestAds())android.util.Log.i("BlastNexa-Ads","Ads pending consent");return; }
         initializing=true;
         try {
             MobileAds.initialize(activity.getApplicationContext(),new InitializationConfig.Builder(APP_ID).build(),status->ui(()->{
@@ -101,14 +101,14 @@ final class OdysseyAds {
             loadingInterstitial=true;
             InterstitialAd.load(new AdRequest.Builder(INTERSTITIAL_ID).build(),new AdLoadCallback<InterstitialAd>() {
                 @Override public void onAdLoaded(InterstitialAd ad) { ui(()->{if(epoch!=adEpoch){ad.destroy();return;}loadingInterstitial=false;if(interstitial!=null)interstitial.destroy();interstitial=ad;interstitialLoaded=SystemClock.elapsedRealtime();}); }
-                @Override public void onAdFailedToLoad(LoadAdError error) { ui(()->{if(epoch!=adEpoch)return;loadingInterstitial=false;handler.postDelayed(()->{if(active)preload();},60000);}); }
+                @Override public void onAdFailedToLoad(LoadAdError error) { android.util.Log.w("BlastNexa-Ads","Interstitial load failed: "+error);ui(()->{if(epoch!=adEpoch)return;loadingInterstitial=false;handler.postDelayed(()->{if(active)preload();},60000);}); }
             });
         }
         if(reward==null&&!loadingReward) {
             loadingReward=true;
             RewardedAd.load(new AdRequest.Builder(REWARDED_ID).build(),new AdLoadCallback<RewardedAd>() {
                 @Override public void onAdLoaded(RewardedAd ad) { ui(()->{if(epoch!=adEpoch){ad.destroy();return;}loadingReward=false;if(reward!=null)reward.destroy();reward=ad;rewardLoaded=SystemClock.elapsedRealtime();}); }
-                @Override public void onAdFailedToLoad(LoadAdError error) { ui(()->{if(epoch!=adEpoch)return;loadingReward=false;}); }
+                @Override public void onAdFailedToLoad(LoadAdError error) { android.util.Log.w("BlastNexa-Ads","Rewarded load failed: "+error);ui(()->{if(epoch!=adEpoch)return;loadingReward=false;handler.postDelayed(()->{if(active)preload();},60000);}); }
             });
         }
     }
@@ -130,7 +130,7 @@ final class OdysseyAds {
         ad.setAdEventCallback(new InterstitialAdEventCallback() {
             @Override public void onAdShowedFullScreenContent() { ui(()->{lastAd=SystemClock.elapsedRealtime();rounds=0;}); }
             @Override public void onAdDismissedFullScreenContent() { ui(()->{ad.destroy();complete(token,false);}); }
-            @Override public void onAdFailedToShowFullScreenContent(FullScreenContentError error) { ui(()->{ad.destroy();complete(token,false);}); }
+            @Override public void onAdFailedToShowFullScreenContent(FullScreenContentError error) { android.util.Log.w("BlastNexa-Ads","Fullscreen display failed: "+error);ui(()->{ad.destroy();complete(token,false);}); }
         });
         try { ad.show(activity); } catch(Exception error) { ad.destroy();complete(token,false); }
     }
@@ -144,7 +144,7 @@ final class OdysseyAds {
         final AtomicBoolean earned=new AtomicBoolean(false);
         ad.setAdEventCallback(new RewardedAdEventCallback() {
             @Override public void onAdDismissedFullScreenContent() { ui(()->{ad.destroy();complete(token,earned.get());}); }
-            @Override public void onAdFailedToShowFullScreenContent(FullScreenContentError error) { ui(()->{ad.destroy();complete(token,false);}); }
+            @Override public void onAdFailedToShowFullScreenContent(FullScreenContentError error) { android.util.Log.w("BlastNexa-Ads","Rewarded display failed: "+error);ui(()->{ad.destroy();complete(token,false);}); }
         });
         try { ad.show(activity,item->earned.set(true)); } catch(Exception error) { ad.destroy();complete(token,false); }
     }
@@ -177,7 +177,7 @@ final class OdysseyAds {
         bannerHost.addView(candidate,new FrameLayout.LayoutParams(-1,-1));
         candidate.loadAd(new BannerAdRequest.Builder(BANNER_ID,AdSize.getInlineAdaptiveBannerAdSize(width,50)).build(),new AdLoadCallback<BannerAd>() {
             @Override public void onAdLoaded(BannerAd ad) { ui(()->{if(candidate!=banner){ad.destroy();return;}loadingBanner=false;bannerLoaded=true;applyBanner();}); }
-            @Override public void onAdFailedToLoad(LoadAdError error) { ui(()->{if(candidate!=banner)return;loadingBanner=false;bannerLoaded=false;candidate.destroy();bannerHost.removeAllViews();banner=null;bannerHost.setVisibility(View.GONE);bannerStatus("unavailable");}); }
+            @Override public void onAdFailedToLoad(LoadAdError error) { android.util.Log.w("BlastNexa-Ads","Banner load failed: "+error);ui(()->{if(candidate!=banner)return;loadingBanner=false;bannerLoaded=false;candidate.destroy();bannerHost.removeAllViews();banner=null;bannerHost.setVisibility(View.GONE);bannerStatus("unavailable");}); }
         });
     }
     void destroy() {
