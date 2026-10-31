@@ -1,7 +1,7 @@
 name: BlastNexa v39 Android release and native checks
 on:
   push:
-    branches: [codex/fps-coin-bonus-v39]
+    branches: [codex/fps-coin-bonus-v39, fix/blastnexa-production-banner-2253410546]
     paths: [game/**, tools/prepare_assets.py, tools/upgrade_game_v*.py, tools/run_android_validation*.sh, app/**, qa/*.cjs, .github/workflows/v39-android.yml]
   workflow_dispatch:
 permissions:
