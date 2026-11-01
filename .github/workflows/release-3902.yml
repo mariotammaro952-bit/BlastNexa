@@ -34,6 +34,17 @@ jobs:
           grep -q 'versionName = "1.0.0-v39.1"' app/build.gradle.kts
       - name: Build and lint production
         run: ./gradlew --no-daemon --max-workers=2 :app:bundleProductionRelease :app:lintProductionRelease
+      - name: Copy unsigned AAB for offline upload-key signing
+        run: |
+          mkdir -p unsigned-release
+          cp app/build/outputs/bundle/productionRelease/app-production-release.aab unsigned-release/BlastNexa-3902-UNSIGNED.aab
+      - name: Upload UNSIGNED AAB (NOT Play-ready)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlastNexa-3902-UNSIGNED-NOT-FOR-PLAY
+          path: unsigned-release/BlastNexa-3902-UNSIGNED.aab
+          if-no-files-found: error
+          retention-days: 7
       - name: Create release report
         run: |
           mkdir -p release-report
