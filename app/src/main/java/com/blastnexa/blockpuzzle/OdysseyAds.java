@@ -177,7 +177,7 @@ final class OdysseyAds {
         bannerHost.addView(candidate,new FrameLayout.LayoutParams(-1,-1));
         candidate.loadAd(new BannerAdRequest.Builder(BANNER_ID,AdSize.getInlineAdaptiveBannerAdSize(width,50)).build(),new AdLoadCallback<BannerAd>() {
             @Override public void onAdLoaded(BannerAd ad) { ui(()->{if(candidate!=banner){ad.destroy();return;}loadingBanner=false;bannerLoaded=true;applyBanner();}); }
-            @Override public void onAdFailedToLoad(LoadAdError error) { android.util.Log.w("BlastNexa-Ads","Banner load failed: "+error);ui(()->{if(candidate!=banner)return;loadingBanner=false;bannerLoaded=false;candidate.destroy();bannerHost.removeAllViews();banner=null;bannerHost.setVisibility(View.GONE);bannerStatus("unavailable");}); }
+            @Override public void onAdFailedToLoad(LoadAdError error) { android.util.Log.w("BlastNexa-Ads","Banner load failed: "+error);ui(()->{if(candidate!=banner)return;loadingBanner=false;bannerLoaded=false;candidate.destroy();bannerHost.removeAllViews();banner=null;bannerHost.setVisibility(View.GONE);bannerStatus("unavailable");handler.postDelayed(()->{if(active&&!destroyed)applyBanner();},60000);}); }
         });
     }
     void destroy() {
