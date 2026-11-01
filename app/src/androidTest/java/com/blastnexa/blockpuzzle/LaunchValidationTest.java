@@ -613,9 +613,16 @@ public class LaunchValidationTest {
   rawTouch(spin.centerX(),spin.centerY());waitFor("!!bnSupernovaRun && bnSupernovaRun.ready",8000);
   // Read native WebView layout in a single non-idling query after the active
   // bonus is rendered. Never reuse coordinates from an earlier bonus round.
-  org.json.JSONArray targets=new org.json.JSONArray(js("['snCoin0','snCoin1','snCoin2'].map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [Math.round(r.left+r.width/2),Math.round(r.top+r.height/2)]})"));
+  org.json.JSONArray targets=new org.json.JSONArray(js("(()=>{const ids=['snCoin0','snCoin1','snCoin2'];return [...ids.map(id=>{const r=document.getElementById(id).getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2]}),[innerWidth,innerHeight]]})()"));
+  int[] webOrigin=new int[2];java.util.concurrent.atomic.AtomicInteger webWidth=new java.util.concurrent.atomic.AtomicInteger();
+  InstrumentationRegistry.getInstrumentation().runOnMainSync(()->{web.getLocationOnScreen(webOrigin);webWidth.set(web.getWidth());});
+  // WebView DOM coordinates are CSS pixels, whereas UiAutomation injects
+  // screen pixels. Apply the actual WebView scale and screen origin.
+  double scale=(double)webWidth.get()/targets.getJSONArray(3).getDouble(0);
+  assertTrue("WebView pixel scale must be positive",scale>0);
   int[][] pos=new int[3][2];
-  for(int i=0;i<3;i++){pos[i][0]=targets.getJSONArray(i).getInt(0);pos[i][1]=targets.getJSONArray(i).getInt(1);}
+  for(int i=0;i<3;i++){pos[i][0]=webOrigin[0]+(int)Math.round(targets.getJSONArray(i).getDouble(0)*scale);pos[i][1]=webOrigin[1]+(int)Math.round(targets.getJSONArray(i).getDouble(1)*scale);}
+  android.util.Log.i("BlastNexa-QA","RIFLE_COORDINATES origin="+java.util.Arrays.toString(webOrigin)+" scale="+scale+" coins="+java.util.Arrays.deepToString(pos));
   rawTouch(pos[0][0],pos[0][1]);
   long down=android.os.SystemClock.uptimeMillis();
   for(int i=0;i<=10;i++){int action=i==0?android.view.MotionEvent.ACTION_DOWN:i==10?android.view.MotionEvent.ACTION_UP:android.view.MotionEvent.ACTION_MOVE;float t=Math.min(i,9)/9f;android.view.MotionEvent event=android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),action,pos[1][0]+(pos[2][0]-pos[1][0])*t,pos[1][1]+(pos[2][1]-pos[1][1])*t,0);event.setSource(android.view.InputDevice.SOURCE_TOUCHSCREEN);assertTrue(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().getUiAutomation().injectInputEvent(event,true));event.recycle();Thread.sleep(18);}
