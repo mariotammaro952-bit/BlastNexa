@@ -1,7 +1,7 @@
 name: BlastNexa v39 Android release and native checks
 on:
   push:
-    branches: [codex/fps-coin-bonus-v39]
+    branches: [codex/fps-coin-bonus-v39, fix/blastnexa-production-banner-2253410546]
     paths: [game/**, tools/prepare_assets.py, tools/upgrade_game_v*.py, tools/run_android_validation*.sh, app/**, qa/*.cjs, .github/workflows/v39-android.yml]
   workflow_dispatch:
 permissions:
@@ -39,6 +39,34 @@ jobs:
           node qa/fresh_start_v29.cjs
       - name: Compile release, test and matching native checks
         run: ./gradlew --no-daemon --max-workers=2 assemblePreviewDebug assemblePreviewDebugAndroidTest assemblePreviewRelease assembleProductionRelease bundleProductionRelease lintProductionRelease
+      - name: Build a signed Play bundle when private signing secrets exist
+        id: signing
+        env:
+          BN_KEYSTORE_B64: ${{ secrets.BN_KEYSTORE_B64 }}
+          BN_STORE_PASSWORD: ${{ secrets.BN_STORE_PASSWORD }}
+          BN_KEY_ALIAS: ${{ secrets.BN_KEY_ALIAS }}
+          BN_KEY_PASSWORD: ${{ secrets.BN_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$BN_KEYSTORE_B64" || -z "$BN_STORE_PASSWORD" || -z "$BN_KEY_ALIAS" || -z "$BN_KEY_PASSWORD" ]]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No private upload-signing secrets configured; do not upload the unsigned AAB to Google Play."
+            exit 0
+          fi
+          printf '%s' "$BN_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/blastnexa-upload.jks"
+          chmod 600 "$RUNNER_TEMP/blastnexa-upload.jks"
+          export BN_KEYSTORE_PATH="$RUNNER_TEMP/blastnexa-upload.jks"
+          ./gradlew --no-daemon --max-workers=2 :app:bundleProductionRelease
+          jarsigner -verify -verbose -certs app/build/outputs/bundle/productionRelease/app-production-release.aab | grep -q 'jar verified.'
+          mkdir -p signed-release
+          cp app/build/outputs/bundle/productionRelease/app-production-release.aab signed-release/BlastNexa-3902-SIGNED-REVIEW-ONLY.aab
+          echo "available=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: steps.signing.outputs.available == 'true'
+        with:
+          name: BlastNexa-3902-SIGNED-REVIEW-ONLY
+          path: signed-release/BlastNexa-3902-SIGNED-REVIEW-ONLY.aab
+          retention-days: 7
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
@@ -91,7 +119,7 @@ jobs:
           profile: pixel_2
           disable-animations: false
           emulator-boot-timeout: 600
-          emulator-options: -no-window -gpu software -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory 4096 -cores 2
+          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -memory 4096 -cores 2
           script: |
             if [ "${{ matrix.api }}" = 36 ]; then BN_QA_DIRECT=1 BN_QA_BOOTSTRAP_ONLY=1 bash tools/reconnect_android36.sh; else bash tools/run_android_validation_settled.sh; fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

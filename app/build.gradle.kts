@@ -7,8 +7,8 @@ android {
         applicationId = "com.blastnexa.blockpuzzle"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3901
-        versionName = "1.0.0-v39"
+        versionCode = 3902
+        versionName = "1.0.0-v39.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -26,7 +26,9 @@ android {
         }
         create("production") {
             dimension = "environment"
-            val banner = System.getenv("BN_BANNER_AD_UNIT") ?: ""
+            // Use the verified BlastNexa production banner when the CI variable is not set.
+            val banner = System.getenv("BN_BANNER_AD_UNIT")?.takeIf { it.isNotBlank() }
+                ?: "ca-app-pub-7428534984744854/2253410546"
             require(banner.isEmpty() || banner.matches(Regex("ca-app-pub-7428534984744854/[0-9]{10}"))) { "Invalid BlastNexa banner ad unit" }
             buildConfigField("String", "AD_APP_ID", "\"ca-app-pub-7428534984744854~6791579488\"")
             buildConfigField("String", "BANNER_AD_UNIT", "\"$banner\"")

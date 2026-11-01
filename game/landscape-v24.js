@@ -193,7 +193,9 @@ function installBanner(){
   const inMenu=$id('menu')?.style.display!=='none';
   const pending=typeof bnPendingAd!=='undefined'&&!!bnPendingAd;
   const valid=n=>Number.isFinite(n)?Math.round(n*10)/10:0;
-  const homeAvailable=(!inMenu&&!inGame&&!inWords)||typeof bnBannerState==='undefined'||bnBannerState!=='unavailable';
+  // A failed/no-fill banner should collapse its preview but must not disable
+  // later native ad requests when inventory becomes available again.
+  const homeAvailable=true;
   const fits=r.left>=-1&&r.top>=0&&r.right<=window.innerWidth+1&&r.bottom<=window.innerHeight+1;
   return {slot:inSlot&&$id('slotBannerSeat')?'slot_control_deck':inMenu?'home_sidebar':inGame?'puzzle_sidepanel':inWords?'words_sidepanel':'landscape_bottom',context:inSlot?'slot':inWords?'words':inGame?'blocks':inMenu?'home':'other',session:typeof gameSession==='number'?gameSession:0,visible:homeAvailable&&fits&&!document.getElementById('bnSupernova')&&!document.hidden&&!$id('overlay')?.classList.contains('on')&&!pending&&width>=200,x:valid(r.left),y:valid(r.top),width,height:50,coordinateSpace:'css-pixels',maxHeight:50};
  };
